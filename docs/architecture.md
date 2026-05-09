@@ -64,45 +64,91 @@ System overview, data flow, and module responsibilities.
                               └──────────────────┘
 ```
 
-## Data flow: new email arrives
+## Email pipeline — 4 idempotent stages
+
+Gmail ingestion is structured as four explicit stages, each idempotent, each resumable. State machine on the `Email` row's `processing_status` column:
 
 ```
-  Cron tick (every 15 min)
-        │
-        ▼
-  /api/gmail/poll  ──→  gmail.ts: fetch threads modified since lastSyncAt
-        │
-        ▼
-  For each new email:
-    1. matcher.ts: find matching Application
-       (priority: existing thread match → sender domain match → unmatched)
-    2. classifier.ts:
-       a. rules-first: regex against subject + body excerpt
-       b. if confidence < 0.85 AND email seems relevant: LLM fallback (Haiku)
-       c. produce { label, confidence, suggestedStage? }
-    3. Decision:
-       - confidence ≥ 0.85 AND matched application:
-         → update Application.canonical_status
-         → write Event (type='auto_status_change', undoable=true)
-       - else:
-         → store Email row with classification
-         → surface in /inbox review queue
+received  →  matched  →  classified  →  acted
+                                     ↘  needs_review
+                                     ↘  failed
 ```
 
-## Module responsibilities
+```
+Cron tick (every 15 min)
+      │
+      ▼
+/api/cron/poll-gmail
+      │
+      ├─→ Stage 1: ingest          [features/inbox/service.ts]
+      │   • fetch from Gmail (history.list + watermark)
+      │   • INSERT INTO emails ... ON CONFLICT(user_id, gmail_message_id) DO NOTHING
+      │   • set processing_status = 'received'
+      │
+      ├─→ Stage 2: match            [features/matcher/service.ts]
+      │   • try thread continuity (gmail_thread_id → existing application)
+      │   • try sender domain match (from_domain → Company.domain)
+      │   • else: status = 'matched' with application_id = NULL
+      │
+      ├─→ Stage 3: classify         [features/classifier/service.ts]
+      │   • rules-first regex against subject + body_excerpt
+      │   • if confidence < 0.85 AND relevant: LLM fallback (Claude Haiku)
+      │   • persist {label, confidence, classified_by}
+      │   • set processing_status = 'classified'
+      │
+      └─→ Stage 4: act              [features/inbox/service.ts]
+          • if confidence >= CLASSIFIER_AUTO_THRESHOLD AND matched:
+              → update Application.canonical_status (via tenantDb)
+              → write Event(type='auto_status_changed', undoable=true)
+              → status = 'acted'
+          • else:
+              → status = 'needs_review' (surfaces in /inbox)
+```
 
-| Module | Responsibility | Pure? |
+**Why this shape:** each stage reads the previous stage's column and writes its own. Re-running a stage on an already-acted row is a no-op. Replay is free. Crashes between stages are safe — the next tick picks up where the previous left off. `gmail_message_id` is the natural idempotency key (`UNIQUE(user_id, gmail_message_id)` constraint).
+
+See [PRINCIPLES.md §"Email pipeline"](../PRINCIPLES.md) for full rules.
+
+## Module responsibilities (Vertical Slice layout)
+
+The codebase uses Vertical Slice Architecture (see [ADR-0010](./decisions/0010-architecture-vertical-slice.md)). Every feature is a self-contained slice; cross-cutting code lives in `src/core/`.
+
+### `src/core/` — cross-cutting (keep small)
+
+| Module | Responsibility | Notes |
 |---|---|---|
-| `src/lib/db.ts` | Prisma singleton; type re-exports | I/O wrapper |
-| `src/lib/env.ts` | Zod-validated environment variables; parsed once at boot | Pure config |
-| `src/lib/gmail.ts` | OAuth flow + Gmail API wrapper; thread fetching | I/O |
-| `src/lib/classifier.ts` | Rules + LLM hybrid; takes email → returns `{label, confidence}` | Pure given inputs |
-| `src/lib/matcher.ts` | Email → Application matching logic | Pure given DB state |
-| `src/lib/auth.ts` | Single-user gate; replaceable with Clerk on public flip | I/O |
-| `src/app/api/capture/route.ts` | Receives bookmarklet/extension POST → creates Application | Thin endpoint |
-| `src/app/api/gmail/poll/route.ts` | Triggered by cron OR manual button → orchestrates ingestion | Orchestrator |
+| `core/db/client.ts` | Prisma singleton with `@prisma/adapter-pg` | Globalized for hot reload; `pg.Pool` with `max: 10` |
+| `core/db/tenant.ts` | `tenantDb(userId)` wrapper auto-injecting `userId` filter | **All Prisma queries go through this** |
+| `core/db/rls.ts` | Sets `app.user_id` via `SET LOCAL` per transaction | Belt-and-suspenders to `tenantDb` |
+| `core/logger/index.ts` | pino instance + AsyncLocalStorage request context | Every log line carries `requestId` + `userId` |
+| `core/errors/index.ts` | `AppError` union taxonomy + `Result` re-export | `_tag`-discriminated, exhaustively checked |
+| `core/types/ids.ts` | Branded ID types (`UserId`, `ApplicationId`, ...) | Compile-time tenant safety |
+| `core/auth/session.ts` | `requireUser()`, `verifySession()` | Replace with Clerk on public flip |
+| `core/env.ts` | Zod-validated `process.env` | Parsed once at module load |
 
-**Convention**: I/O modules wrap external state and surface narrow interfaces. Pure modules take inputs and return outputs without side effects. The boundary is `src/lib/db.ts` — anything below it (Prisma calls) is I/O; anything above it should be pure where possible.
+### `src/features/` — feature slices
+
+Each slice has a fixed quartet:
+
+| File | Responsibility | Returns |
+|---|---|---|
+| `<slice>/actions.ts` | Server Actions: parse → authorize → call service | `{ ok: true, data } \| { ok: false, errors }` |
+| `<slice>/service.ts` | Business logic | `Result<T, AppError>` |
+| `<slice>/queries.ts` | Prisma reads (via `tenantDb`) | Typed rows |
+| `<slice>/schema.ts` | Zod input/output schemas | — |
+| `<slice>/components/` | UI used only by this slice | — |
+
+Slices known so far: `applications`, `capture`, `classifier`, `matcher`, `inbox`, `auth`.
+
+### `src/app/` — Next.js App Router (thin)
+
+Each `page.tsx` and `route.ts` is intentionally THIN — five lines of "validate, delegate, return". Real work lives in slices.
+
+### Convention
+
+- **I/O modules** (`core/db/`, `core/logger/`, anything in `features/<slice>/queries.ts`) wrap external state and surface narrow interfaces.
+- **Pure-ish modules** (`features/<slice>/service.ts`) take inputs and return `Result`. They may call `core/db/` but shouldn't otherwise touch I/O directly — passing `tenantDb` as the dependency keeps services testable.
+- The boundary is the `tenantDb` wrapper. Anything below it (raw Prisma) is I/O; anything above it should be pure where possible.
 
 ## Cron strategy
 
@@ -122,13 +168,21 @@ Gmail Push API uses Cloud Pub/Sub. That's:
 
 ## Security model
 
+See [PRINCIPLES.md §"Security baseline"](../PRINCIPLES.md) for the full ruleset. Highlights:
+
+- **Multi-tenant isolation in the type system**, not in discipline. Every Prisma query goes through `tenantDb(userId)` (auto-injects `userId` filter). Direct `prisma.application.*` outside `core/db/` is banned by ESLint. Postgres RLS is the belt-and-suspenders safety net.
+- **Auth checks live in the Data Access Layer**, not middleware. Every Server Action begins with `await requireUser()`. Middleware is for redirects + rate-limiting only (post-CVE-2025-29927 lesson).
 - **Gmail token**: stored encrypted in `User.gmail_refresh_token_encrypted` using AES-256-GCM with `ENCRYPTION_KEY` from env. Never logged, never sent to LLM.
-- **Anthropic API key**: server-side only. Never reaches the browser.
-- **Single-user gate**: `src/lib/auth.ts` reads `APP_PASSWORD` from env; middleware redirects unauthenticated requests to `/login`. Trivial to swap for Clerk later.
-- **CORS**: `/api/capture` accepts requests from `chrome-extension://*` (extension) and the bookmarklet's host page (any origin). Body is validated by Zod; reject malformed payloads.
+- **Anthropic API key**: server-side only. Never reaches the browser. pino redact paths configured.
+- **Single-user gate (v1)**: `src/core/auth/session.ts` reads `APP_PASSWORD` from env; middleware redirects unauthenticated requests to `/login`. Trivial to swap for Clerk later.
+- **Bookmarklet / extension auth**: `Authorization: Bearer <api-token>` (NOT cookies — enables `Access-Control-Allow-Origin: *` safely). Tokens issued from settings, stored hashed.
+- **CORS**: `/api/capture` accepts cross-origin requests with bearer auth. Body validated by Zod (`safeParse`); rejects malformed payloads with structured error.
+- **CSRF**: Server Actions get free protection from Origin/Host check. Configured via `experimental.serverActions.allowedOrigins` in `next.config.ts`.
 
 ## See also
 
+- [PRINCIPLES.md](../PRINCIPLES.md) — the principal-SWE rulebook (read first)
 - [data-model.md](./data-model.md) — entity relationships
-- [decisions/](./decisions/) — why each architectural decision was made
+- [decisions/0010-architecture-vertical-slice.md](./decisions/0010-architecture-vertical-slice.md) — VSA stance
+- [decisions/](./decisions/) — all ADRs
 - [milestones/](./milestones/) — what ships in each milestone

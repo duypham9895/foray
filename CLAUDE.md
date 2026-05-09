@@ -2,7 +2,12 @@
 
 These rules apply to all code changes in this repository. They override default agent behavior. AI agents (Claude Code, Cursor, etc.): re-read this at session start.
 
-This file is the project rulebook. The agent contract (where things live, how to extend) is in [AGENTS.md](./AGENTS.md). UI principles are in [DESIGN.md](./DESIGN.md). Read both alongside this.
+**Document map** — read all of these before writing code:
+
+- **[PRINCIPLES.md](./PRINCIPLES.md)** — *strategic*. The principal-SWE rulebook: architecture style (Vertical Slice), TypeScript discipline, error handling philosophy, multi-tenant safety, code review checklist, refactoring discipline. **Read first.**
+- **CLAUDE.md** (this file) — *tactical*. Karpathy 4 rules, testing rules, domain language, naming, commits, privacy, skills priority.
+- **[AGENTS.md](./AGENTS.md)** — *contract*. Where things live, how to extend, critical commands, Prisma 7 reminders.
+- **[DESIGN.md](./DESIGN.md)** — *aesthetic*. UI/UX principles ("campaign room, not robotic dashboard"), color palette, tone of voice.
 
 ---
 
@@ -153,7 +158,9 @@ This list will grow. When you add a skill, add it here.
 
 ## 8. When in doubt
 
+- Read [PRINCIPLES.md](./PRINCIPLES.md) for "how should this be shaped" (architecture, error handling, security)
 - Read [AGENTS.md](./AGENTS.md) for "where things live"
 - Read the relevant ADR for "why we chose this"
 - Read [docs/data-model.md](./docs/data-model.md) for "how the schema works"
+- Run the **Code Review Checklist** in PRINCIPLES.md §"Code review checklist" before declaring a change complete
 - Ask the user. Wrong code is more expensive than a clarifying question.

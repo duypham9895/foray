@@ -16,47 +16,67 @@ A personal job-application tracker that ingests Gmail, classifies emails, and gi
 
 ## Read these before writing any code
 
-1. **[CLAUDE.md](./CLAUDE.md)** — project rules (Karpathy guidelines, testing, naming, commit style). Non-negotiable.
-2. **[docs/architecture.md](./docs/architecture.md)** — system diagram and data flow.
-3. **[docs/data-model.md](./docs/data-model.md)** — entity relationships and the `canonical_status` vs `current_stage` semantics. The data model is load-bearing; misunderstanding it will cause cascading bugs.
-4. **The relevant ADR** in [docs/decisions/](./docs/decisions/) — every architectural decision in this codebase has an ADR. Before changing one, read the ADR that established it.
-5. **The current milestone doc** in [docs/milestones/](./docs/milestones/) — defines what's in scope for the current sprint.
+1. **[PRINCIPLES.md](./PRINCIPLES.md)** — *strategic* rulebook. Architecture (Vertical Slice), TypeScript discipline, error handling (`Result<T, AppError>`), multi-tenant safety (`tenantDb`), code review checklist. **The most important file in the repo.** Re-read at session start.
+2. **[CLAUDE.md](./CLAUDE.md)** — *tactical* rules (Karpathy guidelines, testing, naming, commit style). Non-negotiable.
+3. **[docs/architecture.md](./docs/architecture.md)** — system diagram and data flow.
+4. **[docs/data-model.md](./docs/data-model.md)** — entity relationships and the `canonical_status` vs `current_stage` semantics. The data model is load-bearing; misunderstanding it will cause cascading bugs.
+5. **The relevant ADR** in [docs/decisions/](./docs/decisions/) — every architectural decision has an ADR. Before changing one, read the ADR that established it.
+6. **The current milestone doc** in [docs/milestones/](./docs/milestones/) — defines what's in scope for the current sprint.
 
-## File layout
+## File layout (Vertical Slice Architecture — see ADR-0010 + PRINCIPLES.md §Architecture)
 
 ```
 foray/
 ├── README.md, AGENTS.md, CLAUDE.md, SETUP.md, DESIGN.md   ← root docs (read these)
+├── PRINCIPLES.md                                          ← ⭐ the rulebook
 ├── package.json, tsconfig.json, next.config.ts            ← config (don't touch unless needed)
 ├── eslint.config.mjs, postcss.config.mjs                  ← lint/style
+├── .dependency-cruiser.cjs                                ← module boundary rules (CI-enforced)
+├── prisma.config.ts                                       ← Prisma 7 config (URL, seed)
 ├── Dockerfile, Dockerfile.dev                             ← container build
 ├── docker-compose.yml, docker-compose.dev.yml             ← service orchestration
-├── .dockerignore, .env.example                            ← env contract
 │
 ├── prisma/
 │   ├── schema.prisma                                      ← database schema (source of truth)
 │   └── migrations/                                        ← Prisma migrations (auto-generated)
 │
 ├── src/
-│   ├── app/                                               ← Next.js App Router
+│   ├── app/                                               ← Next.js App Router (THIN — delegate to slices)
 │   │   ├── layout.tsx, page.tsx                           ← root + Today dashboard
-│   │   ├── applications/                                  ← list, detail, new
-│   │   ├── inbox/                                         ← email review queue
-│   │   ├── settings/                                      ← Gmail OAuth status, preferences
+│   │   ├── applications/                                  ← pages (list, detail, new)
+│   │   ├── inbox/                                         ← page (review queue)
+│   │   ├── settings/                                      ← page
 │   │   └── api/
-│   │       ├── capture/route.ts                           ← bookmarklet/extension POST endpoint
-│   │       ├── gmail/                                     ← OAuth callback + polling cron
-│   │       └── classify/route.ts                          ← manual classification override
-│   ├── components/ui/                                     ← shadcn/ui primitives
+│   │       ├── capture/route.ts                           ← bookmarklet/extension POST (Route Handler)
+│   │       ├── gmail/                                     ← OAuth callback + cron poll
+│   │       └── cron/                                      ← scheduled triggers
+│   │
+│   ├── features/                                          ← ⭐ Vertical slices. One folder per capability.
+│   │   ├── applications/
+│   │   │   ├── actions.ts                                 ← Server Actions (validate → authorize → service)
+│   │   │   ├── service.ts                                 ← business logic, returns Result<T, AppError>
+│   │   │   ├── queries.ts                                 ← Prisma reads via tenantDb
+│   │   │   ├── schema.ts                                  ← Zod input/output schemas
+│   │   │   └── components/                                ← UI used ONLY by this slice
+│   │   ├── capture/                                       ← bookmarklet/extension capture
+│   │   ├── classifier/                                    ← rules + LLM hybrid
+│   │   ├── matcher/                                       ← email → application matching
+│   │   ├── inbox/                                         ← Gmail sync + review queue
+│   │   └── auth/                                          ← single-user gate (Clerk-replaceable)
+│   │
+│   ├── core/                                              ← Cross-cutting (KEEP SMALL — see PRINCIPLES.md)
+│   │   ├── db/                                            ← Prisma client singleton + tenantDb wrapper
+│   │   ├── logger/                                        ← pino + request context (AsyncLocalStorage)
+│   │   ├── errors/                                        ← AppError taxonomy + Result re-export
+│   │   ├── types/                                         ← branded IDs (UserId, ApplicationId)
+│   │   └── auth/                                          ← session helpers (requireUser)
+│   │
+│   ├── ui/                                                ← shared design-system primitives (Button, Input, Card)
+│   │
 │   ├── generated/                                         ← ⚠️ generated by `pnpm prisma generate`, gitignored
 │   │   └── prisma/                                        ←   import: `@/generated/prisma/client`
-│   ├── lib/
-│   │   ├── db.ts                                          ← Prisma singleton (do NOT instantiate elsewhere)
-│   │   ├── gmail.ts                                       ← Gmail API wrapper
-│   │   ├── classifier.ts                                  ← rules + LLM hybrid classifier
-│   │   ├── matcher.ts                                     ← email → application matching
-│   │   └── auth.ts                                        ← single-user gate (replace with Clerk on public flip)
-│   └── types/                                             ← shared types
+│   │
+│   └── test/                                              ← factories (fishery), DB helpers, fixtures
 │
 ├── extension/                                             ← Chrome MV3 extension (Full milestone)
 ├── bookmarklet/                                           ← bookmarklet source (Standard milestone)
@@ -70,10 +90,18 @@ foray/
 │   └── seed.ts                                            ← demo data for `pnpm seed`
 │
 └── tests/
-    ├── unit/                                              ← Vitest unit tests (colocated preferred)
-    ├── integration/                                       ← Vitest integration (DB-touching)
+    ├── unit/                                              ← Vitest unit (colocated preferred: src/**/*.test.ts)
+    ├── integration/                                       ← Vitest + real Postgres
     └── e2e/                                               ← Playwright (added at Standard)
 ```
+
+## Module boundary rules (enforced by `dependency-cruiser` in CI)
+
+1. **No circular dependencies.**
+2. **Slice isolation.** `features/applications/**` cannot import from `features/classifier/**`. Cross-slice sharing goes in `core/`.
+3. **`core/` is a leaf.** Anyone may import from `core/`; `core/**` cannot import from `features/**` or `app/**`.
+4. **`app/` is the only thing that imports from `next/*` page-level APIs.** (`notFound()`, `redirect()`, etc.)
+5. **No `prisma` imports outside `src/core/db/`.** Forces every query through `tenantDb`. *This rule prevents multi-tenant leaks.*
 
 ## Conventions
 
@@ -81,15 +109,25 @@ foray/
 
 | You're adding... | It goes in... |
 |---|---|
-| A new entity (e.g., `Note`, `Tag`) | `prisma/schema.prisma` → migrate → add to `src/lib/db.ts` types |
-| A new API route | `src/app/api/<resource>/route.ts` (Next.js conventions) |
-| A new page | `src/app/<route>/page.tsx` |
-| A shared component | `src/components/<name>.tsx` (UI primitives in `src/components/ui/`) |
-| A util function used in 2+ places | `src/lib/<topic>.ts` |
+| A new feature (capability) | New folder `src/features/<feature>/` with `actions.ts`, `service.ts`, `queries.ts`, `schema.ts`, `components/` |
+| A Server Action | `src/features/<feature>/actions.ts` |
+| Business logic | `src/features/<feature>/service.ts` (returns `Result<T, AppError>`) |
+| A Prisma read | `src/features/<feature>/queries.ts`, **always** via `tenantDb(userId)` |
+| A Zod schema (slice-specific) | `src/features/<feature>/schema.ts` |
+| A Zod schema (cross-cutting) | `src/core/schemas/<topic>.ts` |
+| A new entity (e.g., `Note`, `Tag`) | `prisma/schema.prisma` → migrate → use via `tenantDb` |
+| A new API route (cross-origin endpoint) | `src/app/api/<resource>/route.ts` (Route Handler) |
+| A new page | `src/app/<route>/page.tsx` (delegates to slice) |
+| A UI component used only by one slice | `src/features/<feature>/components/<name>.tsx` |
+| A shared design-system primitive | `src/ui/<name>.tsx` |
+| A util function used by 2+ slices | `src/core/<topic>/index.ts` (genuinely cross-cutting) |
 | A util function used in 1 place | Colocate inline; only extract when reused |
-| A test for `src/lib/foo.ts` | `src/lib/foo.test.ts` (colocated) |
-| A test that crosses modules | `tests/integration/<flow>.test.ts` |
-| A new env var | Add to `.env.example` with a comment + read via Zod schema in `src/lib/env.ts` |
+| A test for `src/features/foo/service.ts` | `src/features/foo/service.test.ts` (colocated) |
+| A test that crosses slices | `tests/integration/<flow>.test.ts` (real Postgres) |
+| A factory for testing | `src/test/factories.ts` (fishery) |
+| A new env var | Add to `.env.example` with comment + Zod-validate in `src/core/env.ts` |
+| A new error variant | Add to `AppError` union in `src/core/errors/index.ts` |
+| A new branded ID type | Add to `src/core/types/ids.ts` |
 | A new architectural decision | New ADR in `docs/decisions/<NNNN>-<title>.md` |
 | A milestone deliverable update | Edit the relevant file in `docs/milestones/` |
 
