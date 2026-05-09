@@ -17,7 +17,6 @@
 import 'server-only'
 
 import { withRls } from '@/core/db/with-rls'
-import { tenantDb } from '@/core/db/tenant'
 import { prisma } from '@/core/db/client'
 import { ok, type Result, type AppError } from '@/core/errors'
 import { logger } from '@/core/logger'
@@ -68,37 +67,55 @@ export async function actOnEmail(
   }
 
   try {
-    // First-50 grace (AUTO-03): count emails for this user
-    const emailCount = await tenantDb(userId).email.count()
-    const isFirst50 = emailCount < 50
+    // Gate reads must use withRls so RLS policies fire (tenantDb alone
+    // does not set the app.user_id GUC, causing RLS to deny all rows).
+    const gateResult = await withRls(userId, async (tx) => {
+      // First-50 grace (AUTO-03): count emails for this user
+      const emailCount = await tx.email.count({ where: { userId: Number(userId) } })
+      const isFirst50 = emailCount < 50
 
-    // Check reviewedByUser — undo idempotency (AUTO-04)
-    const email = await tenantDb(userId).email.findUnique({
-      where: { id: emailId },
-      select: { reviewedByUser: true },
+      // Check reviewedByUser — undo idempotency (AUTO-04)
+      const email = await tx.email.findUnique({
+        where: { id: emailId },
+        select: { reviewedByUser: true },
+      })
+
+      // Auto-update gate: confidence >= threshold AND matched AND not regression AND not first-50
+      const newStatus = labelToStatus(classification.label)
+      const canAutoUpdate =
+        !isFirst50 &&
+        match.applicationId !== null &&
+        newStatus !== null &&
+        meetsThreshold(classification.label, classification.confidence)
+
+      let appCanonicalStatus: CanonicalStatus | null = null
+      if (canAutoUpdate && match.applicationId && newStatus) {
+        const app = await tx.application.findUnique({
+          where: { id: Number(match.applicationId) },
+          select: { canonicalStatus: true },
+        })
+        appCanonicalStatus = app?.canonicalStatus ?? null
+      }
+
+      return { isFirst50, email, canAutoUpdate, newStatus, appCanonicalStatus }
     })
+
+    if (gateResult.isErr()) {
+      log.error({ err: gateResult.error }, 'gate read failed')
+      return ok({ action: 'needs_review', emailId })
+    }
+
+    const { isFirst50, email, canAutoUpdate, newStatus, appCanonicalStatus } = gateResult.value
+
     if (email?.reviewedByUser) {
       log.debug('email already reviewed by user (undo) — skipping act')
       return ok({ action: 'skipped', emailId })
     }
 
-    // Auto-update gate: confidence >= threshold AND matched AND not regression AND not first-50
-    const newStatus = labelToStatus(classification.label)
-    const canAutoUpdate =
-      !isFirst50 &&
-      match.applicationId !== null &&
-      newStatus !== null &&
-      meetsThreshold(classification.label, classification.confidence)
-
     if (canAutoUpdate && match.applicationId && newStatus) {
       // Check for status regression (e.g., interviewing -> rejected needs human)
-      const app = await tenantDb(userId).application.findUnique({
-        where: { id: Number(match.applicationId) },
-        select: { canonicalStatus: true },
-      })
-
-      if (app && isStatusRegression(app.canonicalStatus, newStatus)) {
-        log.info({ from: app.canonicalStatus, to: newStatus }, 'status regression detected — routing to review')
+      if (appCanonicalStatus && isStatusRegression(appCanonicalStatus, newStatus)) {
+        log.info({ from: appCanonicalStatus, to: newStatus }, 'status regression detected — routing to review')
         await updateProcessingStatus(userId, emailId, 'needs_review')
         return ok({ action: 'needs_review', emailId })
       }
