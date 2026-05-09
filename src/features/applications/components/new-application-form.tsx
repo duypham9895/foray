@@ -13,10 +13,32 @@
 // over combobox for Lean).
 
 import { useActionState, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 import { Button } from '@/ui/button'
 
 import { createApplicationAction, type ActionState } from '../actions'
+
+interface PrefillData {
+  companyName?: string
+  companyDomain?: string
+  roleTitle?: string
+  roleUrl?: string
+  notes?: string
+}
+
+function decodePrefill(searchParams: URLSearchParams): PrefillData {
+  const encoded = searchParams.get('prefilled')
+  if (!encoded) return {}
+  try {
+    // base64url → standard base64 for atob
+    const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+    const json = atob(b64)
+    return JSON.parse(json) as PrefillData
+  } catch {
+    return {}
+  }
+}
 
 const initial: ActionState = { ok: true }
 
@@ -32,6 +54,8 @@ export function NewApplicationForm({
 }: {
   companies: ReadonlyArray<{ id: number; name: string }>
 }) {
+  const searchParams = useSearchParams()
+  const prefill = decodePrefill(searchParams)
   const [state, formAction, pending] = useActionState(createApplicationAction, initial)
   const [showSalary, setShowSalary] = useState(false)
 
@@ -58,6 +82,7 @@ export function NewApplicationForm({
           list="company-names"
           required
           autoComplete="off"
+          defaultValue={prefill.companyName ?? ''}
           aria-invalid={!!fieldError(state, 'companyName')}
           className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
         />
@@ -81,6 +106,7 @@ export function NewApplicationForm({
           id="companyDomain"
           name="companyDomain"
           placeholder="stripe.com"
+          defaultValue={prefill.companyDomain ?? ''}
           aria-invalid={!!fieldError(state, 'companyDomain')}
           className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
         />
@@ -100,6 +126,7 @@ export function NewApplicationForm({
           name="roleTitle"
           required
           maxLength={160}
+          defaultValue={prefill.roleTitle ?? ''}
           aria-invalid={!!fieldError(state, 'roleTitle')}
           className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
         />
@@ -118,6 +145,7 @@ export function NewApplicationForm({
           id="roleUrl"
           name="roleUrl"
           type="url"
+          defaultValue={prefill.roleUrl ?? ''}
           aria-invalid={!!fieldError(state, 'roleUrl')}
           className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
         />
@@ -257,6 +285,7 @@ export function NewApplicationForm({
           rows={3}
           maxLength={2000}
           placeholder="Add a note about this foray…"
+          defaultValue={prefill.notes ?? ''}
           className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
         />
         {fieldError(state, 'notes') ? (
