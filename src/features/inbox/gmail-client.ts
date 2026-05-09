@@ -9,7 +9,6 @@ import type { Result } from 'neverthrow'
 import { decryptToken } from '@/core/crypto/encryption'
 import { errors, ok, err, type AppError } from '@/core/errors'
 import { env } from '@/core/env'
-import { logger } from '@/core/logger'
 import type { UserId } from '@/core/types/ids'
 import { tenantDb } from '@/core/db/tenant'
 
