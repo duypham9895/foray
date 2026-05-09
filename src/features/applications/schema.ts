@@ -46,6 +46,9 @@ export const classifiedByEnum = z.enum(['rules', 'llm', 'manual'])
 const atsRejectionMessage = (domain: string) =>
   `That looks like an ATS domain (${domain}). Use the company's actual domain (e.g., stripe.com) — ATS platforms aren't the company you're applying to.`
 
+const atsUrlRejectionMessage = (url: string) =>
+  `That looks like an ATS URL (${url}). Visit the ATS directly and log the application — ATS links aren't the company's careers page.`
+
 // Company input ----------------------------------------------------------
 
 export const companyInputSchema = z
@@ -94,6 +97,13 @@ export const createApplicationSchema = z
         code: 'custom',
         path: ['companyDomain'],
         message: atsRejectionMessage(val.companyDomain),
+      })
+    }
+    if (val.roleUrl && val.roleUrl !== '' && isAtsDomain(val.roleUrl)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['roleUrl'],
+        message: atsUrlRejectionMessage(val.roleUrl),
       })
     }
     if (
