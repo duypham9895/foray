@@ -45,14 +45,17 @@ export const HAIKU_OUTPUT_USD_PER_MTOK = 4.0 // $4.00 per million output tokens
  * Cost-log path. Defaults to `<cwd>/data/classifier-log.jsonl`. Tests
  * override via `CLASSIFIER_LOG_PATH` env var — NOT documented in
  * .env.example because it is not user-configurable in production.
+ *
+ * Resolved on every call (not at module load) so tests that mutate
+ * `CLASSIFIER_LOG_PATH` per-test pick up the new value. A module-load-time
+ * cache would diverge from the env on the very first call after a test
+ * unset.
  */
-export const LOG_PATH: string =
-  process.env['CLASSIFIER_LOG_PATH'] ?? path.join(process.cwd(), 'data', 'classifier-log.jsonl')
-
-// resolve at call time so tests that switch CLASSIFIER_LOG_PATH per-test
-// pick up the new value (process.env mutations after module load).
 function currentLogPath(): string {
-  return process.env['CLASSIFIER_LOG_PATH'] ?? LOG_PATH
+  return (
+    process.env['CLASSIFIER_LOG_PATH'] ??
+    path.join(process.cwd(), 'data', 'classifier-log.jsonl')
+  )
 }
 
 // ---------------------------------------------------------------------------
