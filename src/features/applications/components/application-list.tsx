@@ -94,21 +94,19 @@ export function ApplicationList({
 
   return (
     <div className="space-y-6">
-      {/* Status filter chip strip — multi-select toggle */}
+      {/* Status filter chip strip — multi-select toggle. The archived total
+          spans both terminal statuses (rejected + withdrawn), so it renders as
+          a sibling label rather than a per-chip suffix (was previously pinned
+          to the rejected chip — see WR-04). */}
       <div className="flex flex-wrap items-center gap-2">
         {ALL_STATUSES.map((status) => {
           const active = activeStatuses.includes(status)
           const count = counts[status]
           const href = `/applications${toggleStatusInUrl(currentParams, status)}`
-          const archivedSuffix =
-            status === 'rejected' && counts.archived > 0
-              ? ` (archived ${counts.archived})`
-              : ''
           return (
             <Link key={status} href={href} data-active={active}>
               <Badge variant={active ? 'default' : 'secondary'}>
                 {STATUS_LABELS[status]} {count}
-                {archivedSuffix}
               </Badge>
             </Link>
           )
@@ -116,6 +114,9 @@ export function ApplicationList({
         <Link href="/applications" className="text-sm text-stone-500 hover:text-stone-700">
           Reset
         </Link>
+        {counts.archived > 0 ? (
+          <span className="text-sm text-stone-500">· {counts.archived} archived</span>
+        ) : null}
       </div>
 
       {/* Sort toggle */}
