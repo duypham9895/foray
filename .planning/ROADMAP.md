@@ -64,11 +64,11 @@ One screen tells the owner what's actually happening today — what's stale, wha
   5. `applyAutoStatusChange` and `undoStatusChange` services exist as `Result`-returning functions in `applications/service.ts`, ready for Phase 4 to call; `Event.data` is parsed via Zod schema per `EventType` on read
 
 **Plans**: 5 plans
-- [ ] 02-01-PLAN.md — Foundation: ATS-domain helper + Zod schemas (application, company, stage, notes, per-EventType data) [Wave 1]
-- [ ] 02-02-PLAN.md — Service layer: createApplication + manual/auto/undo status changes + queries (status-transitions helper, regression block) [Wave 2]
-- [ ] 02-03-PLAN.md — Stages + notes services + cross-tenant RLS isolation tests (closes Phase 1 it.todos) [Wave 3]
-- [ ] 02-04-PLAN.md — UI: shadcn primitives, 6 Server Actions, 7 components, 3 pages, browser-verify checkpoint [Wave 4]
-- [ ] 02-05-PLAN.md — Close-out: ADR-0012 (regression block + auto-update visual treatment) + UAT walkthrough [Wave 5]
+- [x] 02-01-PLAN.md — Foundation: ATS-domain helper + Zod schemas (application, company, stage, notes, per-EventType data) [Wave 1]
+- [x] 02-02-PLAN.md — Service layer: createApplication + manual/auto/undo status changes + queries (status-transitions helper, regression block) [Wave 2]
+- [x] 02-03-PLAN.md — Stages + notes services + cross-tenant RLS isolation tests (closes Phase 1 it.todos) [Wave 3]
+- [x] 02-04-PLAN.md — UI: shadcn primitives, 6 Server Actions, 7 components, 3 pages, browser-verify checkpoint [Wave 4]
+- [x] 02-05-PLAN.md — Close-out: ADR-0012 (regression block + auto-update visual treatment) + UAT walkthrough [Wave 5]
 **UI hint**: yes
 
 ---
@@ -88,7 +88,12 @@ One screen tells the owner what's actually happening today — what's stale, wha
   4. `matcher/service.matchEmail({userId, gmailThreadId, fromDomain})` returns `Result<{applicationId: ApplicationId | null}, AppError>` via tiebreak: thread continuity → `Company.domain` exact match (skipping ATS domains) → unmatched; zero direct `prisma.*` access (all via `tenantDb` / `withRls`, ESLint-verified)
   5. Classifier-fixtures suite (`tests/integration/classifier-fixtures/`) contains ≥1 real email per label and ≥1 real Greenhouse/Lever/Workday sample; matcher tests cover all four tiebreak paths (thread / domain / ATS-blocked / unmatched); ADR-0012 candidate ("Asymmetric per-label thresholds + status-regression block") is committed
 
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 03-01-PLAN.md — Foundation: error taxonomy verify + ANTHROPIC_API_KEY required + rules.ts tier table + thresholds.ts (asymmetric per-label) + budget.ts (pre-call guard, FAIL CLOSED) [Wave 1]
+- [x] 03-02-PLAN.md — Classifier service: llm.ts Anthropic SDK wrapper (Haiku 4.5, structured tool output, maxRetries:0) + classifyEmail composition (rules-first → budget gate → LLM → cost log) [Wave 2]
+- [x] 03-03-PLAN.md — Matcher slice: 4-step tiebreak (thread → ATS-skip → domain → unmatched); read-only via tenantDb; integration tests covering all 4 paths + RLS isolation [Wave 1]
+- [x] 03-04-PLAN.md — Classifier-fixtures suite: ≥8 anonymized fixtures across 6 subdirs + harness running classifyByRules per fixture (rule-layer regression fence) [Wave 3]
+- [x] 03-05-PLAN.md — Close-out: ADR-0012 §C amendment (asymmetric thresholds + budget guard rationale) + 03-UAT.md + final pre-commit gate [Wave 4]
 
 ---
 
@@ -107,7 +112,13 @@ One screen tells the owner what's actually happening today — what's stale, wha
   4. Auto-applied changes write `Event(type='auto_status_changed', undoable=true)` permanently in the timeline; undo writes `email.reviewedByUser=true` so the next cron tick cannot re-act on the same email; `pg_try_advisory_lock(hashtext('act:'||emailId))` serializes act-stage races
   5. `src/instrumentation.ts` registers a single 15-minute `node-cron` job guarded by `process.env.NEXT_RUNTIME === 'nodejs'` (skip on Edge) + `globalThis.__forayCron?.stop()` (hot-reload safety) + `pg_try_advisory_lock('poll-gmail')` (overlap prevention) + `NODE_ENV !== 'test'` (test-process safety); the cron calls `pollOnce` directly in-process, no HTTP self-call
 
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 04-01-PLAN.md — Schema migration: ProcessingStatus enum + processing_status on Email + gmailHistoryId on User [Wave 1]
+- [ ] 04-02-PLAN.md — Gmail OAuth + client: /api/gmail/auth + /api/gmail/callback + gmail-client.ts (OAuth2, Gmail API, email metadata extraction) [Wave 2]
+- [ ] 04-03-PLAN.md — Pipeline orchestrator: ingest.ts (history.list + fallback) + act.ts (4 gates: threshold, match, regression, first-50) + service.ts (pollOnce) [Wave 2]
+- [ ] 04-04-PLAN.md — Settings page + cron: /settings UI (Connect/Disconnect/Sync-now + token-health banner) + instrumentation.ts (node-cron with 4 guards) [Wave 3]
+- [ ] 04-05-PLAN.md — Integration tests: OAuth round-trip + act-stage gates + pipeline idempotency + cron guard logic [Wave 4]
+
 **UI hint**: yes
 
 ---
@@ -152,11 +163,11 @@ These designed-once-touched-many concerns need a coherent decision before the re
 |-------|----------------|--------|-----------|
 | 1. Foundation + Auth | 0/4 | Planned (not started) | - |
 | 2. Applications Slice | 0/5 | Planned (not started) | - |
-| 3. Classifier + Matcher | 0/0 | Not started | - |
-| 4. Gmail Ingestion + Pipeline | 0/0 | Not started | - |
+| 3. Classifier + Matcher | 0/5 | Planned (not started) | - |
+| 4. Gmail Ingestion + Pipeline | 0/5 | Planned (decomposed) | - |
 | 5. Review Queue + Acceptance | 0/0 | Not started | - |
 
-`roadmap_complete: false` — phases 2-5 pending decomposition into plans via `/gsd-plan-phase`.
+`roadmap_complete: false` — phases 1-5 pending execution.
 
 ---
 
@@ -186,3 +197,5 @@ These designed-once-touched-many concerns need a coherent decision before the re
 *Roadmap created: 2026-05-09 by `gsd-roadmapper` from research synthesis (4-dimension parallel research, HIGH confidence)*
 *Phase 1 decomposed into 4 plans: 2026-05-09 by `/gsd-plan-phase 1`*
 *Phase 2 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 2`*
+*Phase 3 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 3`*
+*Phase 4 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 4`*
