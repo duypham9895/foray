@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# foray — Development image
+# Used by Path B (full Docker dev). Source mounted via volume in docker-compose.dev.yml
+# for hot reload. NOT used in production — see Dockerfile for that.
+# =============================================================================
+
+FROM node:20-alpine
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Cache deps layer
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Source files come in via volume mount at runtime; copy as fallback for first build
+COPY . .
+
+# Generate Prisma client (regenerated on schema change via volume mount)
+RUN pnpm prisma generate || true
+
+EXPOSE 3000
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+CMD ["pnpm", "dev"]

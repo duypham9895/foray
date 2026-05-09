@@ -1,0 +1,70 @@
+# =============================================================================
+# foray — Base compose (production-shaped)
+# =============================================================================
+# Usage:
+#   Path A (native dev):  docker compose up -d db
+#   Path B (full Docker dev):  docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   Production-like:  docker compose up
+#
+# Services:
+#   - app: Next.js production build (use override for dev)
+#   - db: Postgres 16
+#   - adminer: web-based DB inspector (only with --profile debug)
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foray-app
+    ports:
+      - "3000:3000"
+    environment:
+      # Override DATABASE_URL to use compose service name 'db' instead of localhost
+      DATABASE_URL: postgresql://${POSTGRES_USER:-foray}:${POSTGRES_PASSWORD:-foray}@db:5432/${POSTGRES_DB:-foray}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/gmail/callback}
+      APP_PASSWORD: ${APP_PASSWORD}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      CLASSIFIER_AUTO_THRESHOLD: ${CLASSIFIER_AUTO_THRESHOLD:-0.85}
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: foray-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-foray}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-foray}
+      POSTGRES_DB: ${POSTGRES_DB:-foray}
+    volumes:
+      - foray_db:/var/lib/postgresql/data
+    ports:
+      # Expose on host for Path A (native dev) Prisma access
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-foray}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: foray-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    profiles: ["debug"]
+    restart: unless-stopped
+
+volumes:
+  foray_db:
+    name: foray_db

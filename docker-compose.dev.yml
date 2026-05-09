@@ -1,0 +1,36 @@
+# =============================================================================
+# foray — Development override (Path B: full Docker dev)
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Behavior:
+#   - app uses Dockerfile.dev (lighter, runs `pnpm dev`)
+#   - source mounted via volumes for hot reload
+#   - NODE_ENV=development
+#   - WATCHPACK_POLLING for Mac-friendly file watching
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./public:/app/public
+      - ./scripts:/app/scripts
+      - ./tests:/app/tests
+      - ./next.config.ts:/app/next.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./eslint.config.mjs:/app/eslint.config.mjs
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./package.json:/app/package.json
+      # Anonymous volume to keep node_modules from being clobbered by host
+      - /app/node_modules
+      - /app/.next
+    command: pnpm dev

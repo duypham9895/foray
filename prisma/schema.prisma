@@ -1,0 +1,333 @@
+// =============================================================================
+// foray — Database Schema
+// =============================================================================
+// See docs/data-model.md for entity explanations and the canonical/current
+// stage rationale (ADR-0005). Multi-tenant-ready: every user-owned table has
+// userId from day one (ADR-0002).
+// =============================================================================
+
+generator client {
+  // Prisma 7+ generator. Outputs a self-contained client to src/generated/prisma.
+  // Import via: `import { PrismaClient } from '@/generated/prisma/client'`
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7+: connection URL is configured in prisma.config.ts (for migrate)
+  // and via the @prisma/adapter-pg adapter at runtime. See ADR-0009.
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum CanonicalStatus {
+  applied
+  screening
+  interviewing
+  offer
+  rejected
+  withdrawn
+}
+
+enum ApplicationSource {
+  linkedin
+  direct
+  referral
+  recruiter
+  other
+}
+
+enum EmailClassification {
+  rejection
+  interview_invite
+  recruiter_outreach
+  noise
+  unmatched
+}
+
+enum ClassifiedBy {
+  rules
+  llm
+  manual
+}
+
+enum EventType {
+  created
+  status_changed
+  auto_status_changed
+  status_undone
+  stage_added
+  stage_completed
+  email_received
+  note_added
+  manual_classification
+  document_uploaded
+  recruiter_linked
+  archived
+  unarchived
+}
+
+enum EventSource {
+  manual
+  gmail
+  bookmarklet
+  extension
+  cron
+  system
+}
+
+enum StageOutcome {
+  passed
+  failed
+  no_response
+}
+
+enum DocumentKind {
+  resume
+  cover_letter
+  jd_pdf
+  take_home
+  other
+}
+
+// =============================================================================
+// Entities
+// =============================================================================
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+
+  gmailRefreshTokenEncrypted String?   @map("gmail_refresh_token_encrypted")
+  gmailLastSyncAt            DateTime? @map("gmail_last_sync_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  companies    Company[]
+  applications Application[]
+  events       Event[]
+  emails       Email[]
+  recruiters   Recruiter[]
+
+  @@map("users")
+}
+
+model Company {
+  id       Int    @id @default(autoincrement())
+  userId   Int    @map("user_id")
+  name     String
+  domain   String?
+  website  String?
+  industry String?
+  size     String?
+  notes    String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+  recruiters   Recruiter[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([domain])
+  @@map("companies")
+}
+
+model Application {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @map("user_id")
+  companyId       Int     @map("company_id")
+  roleTitle       String  @map("role_title")
+  roleUrl         String? @map("role_url")
+  jobDescription  String? @map("job_description") @db.Text
+  location        String?
+  salaryMin       Int?    @map("salary_min")
+  salaryMax       Int?    @map("salary_max")
+  salaryCurrency  String? @map("salary_currency")
+
+  source     ApplicationSource @default(other)
+  referredBy String?           @map("referred_by")
+
+  appliedAt DateTime @default(now()) @map("applied_at")
+
+  // Hybrid status model — see ADR-0005
+  canonicalStatus CanonicalStatus @default(applied) @map("canonical_status")
+  currentStage    String?         @map("current_stage")
+
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
+
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  priority       Int      @default(2)
+  tags           String[] @default([])
+  notes          String?  @db.Text
+
+  followUpAt DateTime? @map("follow_up_at") // Full milestone
+
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company                @relation(fields: [companyId], references: [id])
+  stages    Stage[]
+  events    Event[]
+  emails    Email[]
+  documents Document[]
+  recruiters ApplicationRecruiter[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([canonicalStatus])
+  @@index([lastActivityAt])
+  @@index([archivedAt])
+  @@index([followUpAt])
+  @@map("applications")
+}
+
+model Stage {
+  id            Int      @id @default(autoincrement())
+  applicationId Int      @map("application_id")
+  name          String   // free-form: "Recruiter call", "Tech round 2", "Bar raiser"
+  order         Int
+  scheduledAt   DateTime? @map("scheduled_at")
+  completedAt   DateTime? @map("completed_at")
+  outcome       StageOutcome?
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+  @@map("stages")
+}
+
+model Event {
+  id            Int         @id @default(autoincrement())
+  applicationId Int?        @map("application_id")
+  userId        Int         @map("user_id")
+  type          EventType
+  source        EventSource
+  data          Json        @default("{}")
+
+  // Undo support (ADR-0006) — only auto_status_changed events are undoable
+  undoable  Boolean   @default(false)
+  undoneAt  DateTime? @map("undone_at")
+
+  occurredAt DateTime @default(now()) @map("occurred_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([userId])
+  @@index([occurredAt])
+  @@index([type])
+  @@map("events")
+}
+
+model Email {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @map("user_id")
+  applicationId   Int?    @map("application_id")
+  gmailMessageId  String  @unique @map("gmail_message_id")
+  gmailThreadId   String  @map("gmail_thread_id")
+  from            String
+  fromDomain      String  @map("from_domain")
+  subject         String
+  bodyExcerpt     String  @map("body_excerpt") @db.Text // ≤500 chars per privacy rule
+
+  receivedAt DateTime @map("received_at")
+
+  classification   EmailClassification?
+  confidence       Float?
+  classifiedBy     ClassifiedBy?       @map("classified_by")
+  reviewedByUser   Boolean             @default(false) @map("reviewed_by_user")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id])
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([gmailThreadId])
+  @@index([fromDomain])
+  @@index([classification])
+  @@index([reviewedByUser])
+  @@index([receivedAt])
+  @@map("emails")
+}
+
+// -----------------------------------------------------------------------------
+// Full-milestone entities (defined upfront; UI lands at Full)
+// -----------------------------------------------------------------------------
+
+model Recruiter {
+  id          Int     @id @default(autoincrement())
+  userId      Int     @map("user_id")
+  companyId   Int?    @map("company_id")
+  name        String
+  email       String?
+  linkedinUrl String? @map("linkedin_url")
+  phone       String?
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      Company?               @relation(fields: [companyId], references: [id])
+  applications ApplicationRecruiter[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([email])
+  @@map("recruiters")
+}
+
+model ApplicationRecruiter {
+  applicationId Int @map("application_id")
+  recruiterId   Int @map("recruiter_id")
+  role          String? // "Recruiter", "Hiring Manager", "Founder"
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  recruiter   Recruiter   @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  @@id([applicationId, recruiterId])
+  @@map("application_recruiters")
+}
+
+model Document {
+  id            Int          @id @default(autoincrement())
+  applicationId Int          @map("application_id")
+  kind          DocumentKind
+  filename      String
+  mimeType      String       @map("mime_type")
+  storagePath   String       @map("storage_path")
+  sizeBytes    Int           @map("size_bytes")
+  version       Int          @default(1)
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([kind])
+  @@map("documents")
+}
