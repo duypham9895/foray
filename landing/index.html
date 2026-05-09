@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>foray — A campaign room for your job hunt</title>
+  <meta name="description" content="foray is a local-first job-application tracker that watches your Gmail, classifies emails, and gives you a daily campaign-room dashboard. Self-hosted, no subscription.">
+  <meta property="og:title" content="foray — A campaign room for your job hunt">
+  <meta property="og:description" content="Your Gmail knows when you get rejected. Your spreadsheet doesn't. foray bridges that gap.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://duypham9895.github.io/foray">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Prevent flash of wrong theme -->
+  <script>
+    (function() {
+      var saved = localStorage.getItem('theme');
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  <style>
+    /* ── Design System Tokens ── */
+    :root {
+      --bg: #faf9f7;
+      --bg-alt: #f3f1ed;
+      --surface: #ffffff;
+      --border: #e8e5de;
+      --fg: #1a1814;
+      --fg-secondary: #5c564a;
+      --muted: #a39e94;
+      --accent: #d97706;
+      --accent-hover: #b45309;
+      --accent-light: #fef7ea;
+      --accent-glow: rgba(217, 119, 6, 0.12);
+      --code-bg: #1a1814;
+      --code-fg: #f3f1ed;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.06);
+      --shadow-sm: 0 1px 3px rgba(26, 24, 20, 0.04), 0 1px 2px rgba(26, 24, 20, 0.03);
+      --shadow-md: 0 4px 12px rgba(26, 24, 20, 0.06), 0 2px 4px rgba(26, 24, 20, 0.04);
+      --shadow-lg: 0 12px 32px rgba(26, 24, 20, 0.08), 0 4px 8px rgba(26, 24, 20, 0.04);
+      --shadow-accent: 0 4px 16px rgba(217, 119, 6, 0.2), 0 2px 4px rgba(217, 119, 6, 0.1);
+    }
+
+    /* Dark mode — via data-theme attribute or system preference */
+    :root[data-theme="dark"] {
+      --bg: #1a1814;
+      --bg-alt: #252220;
+      --surface: #2a2520;
+      --border: #342f2a;
+      --fg: #f3f1ed;
+      --fg-secondary: #a39e94;
+      --muted: #6b6660;
+      --accent: #f59e0b;
+      --accent-hover: #fbbf24;
+      --accent-light: rgba(245, 158, 11, 0.12);
+      --accent-glow: rgba(245, 158, 11, 0.15);
+      --code-bg: #1a1814;
+      --code-fg: #f3f1ed;
+      --success-bg: rgba(22, 163, 74, 0.1);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+      --shadow-accent: 0 4px 16px rgba(245, 158, 11, 0.25), 0 2px 4px rgba(245, 158, 11, 0.15);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #1a1814;
+        --bg-alt: #252220;
+        --surface: #2a2520;
+        --border: #342f2a;
+        --fg: #f3f1ed;
+        --fg-secondary: #a39e94;
+        --muted: #6b6660;
+        --accent: #f59e0b;
+        --accent-hover: #fbbf24;
+        --accent-light: rgba(245, 158, 11, 0.12);
+        --accent-glow: rgba(245, 158, 11, 0.15);
+        --code-bg: #1a1814;
+        --code-fg: #f3f1ed;
+        --success-bg: rgba(22, 163, 74, 0.1);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+        --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+        --shadow-accent: 0 4px 16px rgba(245, 158, 11, 0.25), 0 2px 4px rgba(245, 158, 11, 0.15);
+      }
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+
+    /* ── Base ── */
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--fg); text-decoration: none; }
+    a:hover { color: var(--accent); }
+    code { font-family: 'Geist Mono', 'SF Mono', monospace; font-size: 0.85em; background: var(--accent-light); padding: 2px 6px; border-radius: 4px; }
+
+    /* ── Layout ── */
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    .container-wide { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Typography ── */
+    .label {
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    h1 { font-weight: 800; line-height: 1.1; letter-spacing: -2px; }
+    h2 { font-weight: 700; line-height: 1.3; letter-spacing: -0.5px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+      padding: 16px 0;
+    }
+    nav .container-wide { display: flex; justify-content: space-between; align-items: center; }
+    .nav-logo { font-size: 1.25rem; font-weight: 800; letter-spacing: -1px; }
+    .nav-links { display: flex; gap: 28px; align-items: center; font-size: 0.875rem; }
+    .nav-links a { color: var(--fg-secondary); transition: color 0.15s; }
+    .nav-links a:hover { color: var(--fg); }
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.8125rem;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .nav-cta:hover { background: var(--accent-hover); box-shadow: var(--shadow-accent); color: #fff !important; }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--fg-secondary);
+      font-size: 1rem;
+      line-height: 1;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+    }
+    .theme-toggle:hover { border-color: var(--fg-secondary); color: var(--fg); }
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+    :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .theme-toggle .icon-sun { display: block; }
+      :root:not([data-theme="light"]) .theme-toggle .icon-moon { display: none; }
+    }
+
+    /* ── Hero — Warm gradient, full-width ── */
+    .hero {
+      background: linear-gradient(175deg, var(--accent-light) 0%, var(--bg) 55%);
+      padding: 140px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -180px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -80px;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    .hero .container { position: relative; z-index: 1; }
+    .hero h1 { font-size: 3.5rem; margin-bottom: 20px; }
+    .hero-tagline { font-size: 1.25rem; color: var(--fg-secondary); max-width: 560px; margin-bottom: 36px; line-height: 1.6; }
+    .hero-bullets { display: flex; flex-direction: column; gap: 10px; margin-bottom: 36px; }
+    .hero-bullet { display: flex; align-items: baseline; gap: 10px; font-size: 0.9375rem; }
+    .hero-bullet strong { color: var(--accent); font-weight: 600; }
+    .hero-bullet span { color: var(--muted); }
+    .hero-actions { display: flex; gap: 14px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-accent); }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; box-shadow: 0 6px 24px rgba(217, 119, 6, 0.3); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--fg-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--fg); }
+
+    /* ── Sections with alternating backgrounds ── */
+    .section { padding: 80px 0; }
+    .section-alt { background: var(--bg-alt); padding: 80px 0; }
+
+    /* ── Story ── */
+    .story-quote {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 24px;
+      line-height: 1.3;
+      max-width: 600px;
+    }
+    .story-body p { color: var(--fg-secondary); margin-bottom: 16px; font-size: 1.0625rem; line-height: 1.8; }
+    .story-body p:last-child { margin-bottom: 0; font-weight: 600; color: var(--fg); font-size: 1.125rem; }
+
+    /* ── Problem Comparison ── */
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    .comparison-card { padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .comparison-card.without { background: var(--surface); }
+    .comparison-card.with { background: var(--success-bg); border-color: color-mix(in srgb, var(--success) 20%, var(--border)); }
+    .comparison-label { font-family: 'Geist Mono', monospace; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .comparison-card.without .comparison-label { color: var(--muted); }
+    .comparison-card.with .comparison-label { color: var(--success); }
+    .comparison-line { font-size: 0.9375rem; line-height: 2; color: var(--fg-secondary); }
+    .comparison-line.struck { text-decoration: line-through; color: var(--muted); }
+    .comparison-line.accent { color: var(--accent); font-weight: 600; }
+
+    /* ── Pipeline ── */
+    .pipeline { display: flex; align-items: flex-start; gap: 16px; margin: 28px 0; }
+    .pipeline-stage { flex: 1; text-align: center; }
+    .pipeline-box {
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .pipeline-stage:hover .pipeline-box { border-color: var(--accent); box-shadow: var(--shadow-accent); transform: translateY(-2px); }
+    .pipeline-desc { font-size: 0.8125rem; color: var(--muted); line-height: 1.5; }
+    .pipeline-arrow { color: var(--accent); padding-top: 14px; font-size: 1.25rem; font-weight: 300; }
+    .insight-box {
+      margin-top: 28px;
+      padding: 20px 24px;
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      font-size: 0.9375rem;
+      color: var(--fg-secondary);
+      line-height: 1.7;
+    }
+    .insight-box strong { color: var(--fg); }
+
+    /* ── Terminal Demo ── */
+    .terminal {
+      background: #1a1814;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 28px 0;
+      border: 1px solid #2e2b26;
+      box-shadow: var(--shadow-lg);
+    }
+    .terminal-header {
+      padding: 12px 16px;
+      background: #242220;
+      border-bottom: 1px solid #2e2b26;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .terminal-dot.r { background: #ef4444; }
+    .terminal-dot.y { background: #eab308; }
+    .terminal-dot.g { background: #22c55e; }
+    .terminal-title { font-family: 'Geist Mono', monospace; font-size: 0.75rem; color: #6b6660; margin-left: 8px; }
+    .terminal-body { padding: 20px; font-family: 'Geist Mono', monospace; font-size: 0.8125rem; line-height: 1.9; color: #a39e94; }
+    .terminal-body .prompt { color: #6b6660; }
+    .terminal-body .cmd { color: #f3f1ed; }
+    .terminal-body .output { color: #7a756d; }
+    .terminal-body .success { color: #4ade80; }
+    .terminal-body .warn { color: #fbbf24; }
+    .terminal-body .accent { color: var(--accent); }
+
+    /* ── Features ── */
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    .feature-card {
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent); box-shadow: var(--shadow-accent); transform: translateY(-2px); }
+    .feature-card h3 { font-size: 1.0625rem; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.875rem; color: var(--fg-secondary); line-height: 1.6; }
+    .feature-card.full-width { grid-column: 1 / -1; }
+
+    /* ── Tech Stack ── */
+    .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 28px 0; }
+    .tech-card {
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .tech-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
+    .tech-label { font-family: 'Geist Mono', monospace; font-size: 0.6875rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tech-value { font-size: 0.9375rem; font-weight: 600; }
+    .decisions { font-size: 0.9375rem; color: var(--fg-secondary); line-height: 1.8; margin-top: 20px; }
+    .decisions strong { color: var(--fg); }
+
+    /* ── Roadmap ── */
+    .roadmap-cards { display: flex; gap: 16px; margin-top: 24px; }
+    .roadmap-card {
+      flex: 1;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .roadmap-card:hover { box-shadow: var(--shadow-md); }
+    .roadmap-card.current { border-color: var(--accent); box-shadow: var(--shadow-accent); }
+    .roadmap-card.current::after {
+      content: 'current';
+      position: absolute;
+      top: -10px;
+      right: 16px;
+      background: var(--accent);
+      color: #0c0a09;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 10px;
+      border-radius: 4px;
+    }
+    .roadmap-card-title { font-weight: 700; margin-bottom: 6px; font-size: 1.0625rem; }
+    .roadmap-card-title .version { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+    .roadmap-card p { font-size: 0.8125rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── Code Block ── */
+    .code-block {
+      background: #1a1814;
+      color: #f3f1ed;
+      padding: 24px;
+      border-radius: 12px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.8125rem;
+      line-height: 1.9;
+      overflow-x: auto;
+      border: 1px solid #2e2b26;
+      box-shadow: var(--shadow-lg);
+    }
+    .code-block .prompt { color: #6b6660; }
+    .code-block .comment { color: #6b6660; }
+    .prereq { font-size: 0.875rem; color: var(--muted); margin-bottom: 16px; }
+
+    /* ── CTA Banner ── */
+    .cta-banner {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      padding: 64px 0;
+      text-align: center;
+    }
+    .cta-banner h2 { font-size: 2rem; margin-bottom: 12px; letter-spacing: -1px; }
+    .cta-banner p { color: #a39e94; margin-bottom: 28px; font-size: 1.0625rem; }
+    .cta-banner .btn-primary { font-size: 1rem; padding: 14px 36px; box-shadow: 0 6px 24px rgba(217, 119, 6, 0.3); }
+    .cta-banner .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(217, 119, 6, 0.4); }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid var(--border); padding: 24px 0; }
+    footer .container-wide { display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--muted); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      .hero-tagline { font-size: 1.0625rem; }
+      .hero-actions { flex-direction: column; }
+      .btn { justify-content: center; }
+      .nav-links { display: none; }
+      .comparison { grid-template-columns: 1fr; }
+      .pipeline { flex-direction: column; gap: 8px; }
+      .pipeline-arrow { transform: rotate(90deg); padding: 0; text-align: center; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .tech-grid { grid-template-columns: 1fr 1fr; }
+      .roadmap-cards { flex-direction: column; }
+      .section, .section-alt { padding: 56px 0; }
+      .story-quote { font-size: 1.375rem; }
+      footer .container-wide { flex-direction: column; gap: 4px; text-align: center; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 2rem; }
+      .tech-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="container-wide">
+      <a href="#" class="nav-logo">foray</a>
+      <div class="nav-links">
+        <a href="#story">Story</a>
+        <a href="#features">Features</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="https://github.com/duypham9895/foray" class="nav-cta" target="_blank" rel="noopener">GitHub &rarr;</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero — Dark, atmospheric -->
+  <section class="hero">
+    <div class="container">
+      <h1>foray</h1>
+      <p class="hero-tagline">Your Gmail knows when you get rejected. Your spreadsheet doesn't. foray bridges that gap.</p>
+      <div class="hero-bullets">
+        <div class="hero-bullet">
+          <strong>Local-first</strong>
+          <span>— your data never leaves your machine</span>
+        </div>
+        <div class="hero-bullet">
+          <strong>Gmail auto-classification</strong>
+          <span>— rejections, interviews, recruiter outreach detected automatically</span>
+        </div>
+        <div class="hero-bullet">
+          <strong>Self-hosted, no subscription</strong>
+          <span>— runs on your laptop, open source</span>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <a href="https://github.com/duypham9895/foray" class="btn btn-primary" target="_blank" rel="noopener">View on GitHub &rarr;</a>
+        <a href="#get-started" class="btn btn-ghost">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Story -->
+  <section class="section" id="story">
+    <div class="container">
+      <div class="label">Why This Exists</div>
+      <h2 class="story-quote">I was tracking 40 applications in a spreadsheet. It was lying to me.</h2>
+      <div class="story-body">
+        <p>Every cell said "Applied" or "Interviewing." But half of them had been silently rejected — the emails were buried in a Gmail inbox I was too exhausted to check properly. The other half had recruiter emails I'd missed because they landed in Promotions.</p>
+        <p>I didn't need a prettier spreadsheet. I needed something that watches my inbox and tells me what's actually happening — without me maintaining it.</p>
+        <p>That's foray.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem — Alt background -->
+  <section class="section-alt" id="problem">
+    <div class="container">
+      <div class="label">The Problem</div>
+      <h2>Your spreadsheet doesn't read your email.</h2>
+      <div class="comparison">
+        <div class="comparison-card without">
+          <div class="comparison-label">Without foray</div>
+          <div class="comparison-line">Monday: Apply to Stripe</div>
+          <div class="comparison-line">Wednesday: Stripe ATS sends rejection</div>
+          <div class="comparison-line struck">Your spreadsheet still says "Applied"</div>
+          <div class="comparison-line struck">Also missed a recruiter email from Vercel</div>
+        </div>
+        <div class="comparison-card with">
+          <div class="comparison-label">With foray</div>
+          <div class="comparison-line">Monday: Capture Stripe application</div>
+          <div class="comparison-line">Wednesday: foray detects rejection, status auto-updates</div>
+          <div class="comparison-line accent">Review queue shows Vercel recruiter email</div>
+          <div class="comparison-line">Dashboard shows 2 stale forays needing follow-up</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pipeline -->
+  <section class="section" id="pipeline">
+    <div class="container">
+      <div class="label">How It Works</div>
+      <h2>Four-stage email pipeline. Rules-first, LLM as fallback.</h2>
+      <div class="pipeline">
+        <div class="pipeline-stage">
+          <div class="pipeline-box">ingest</div>
+          <div class="pipeline-desc">Fetch from Gmail<br>every 15 min</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <div class="pipeline-box">match</div>
+          <div class="pipeline-desc">Link email to<br>application</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <div class="pipeline-box">classify</div>
+          <div class="pipeline-desc">Regex rules first,<br>LLM fallback</div>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <div class="pipeline-box">act</div>
+          <div class="pipeline-desc">Auto-update status<br>or review queue</div>
+        </div>
+      </div>
+      <div class="insight-box">
+        <strong>The key insight:</strong> most rejection and interview emails follow predictable templates. Regex catches 80%+ of them with zero API cost. Only ambiguous emails go to Claude Haiku — keeping LLM spend under $0.50/day. High-confidence classifications auto-update status. Low-confidence ones land in a review queue, typically 0&ndash;3 items per day.
+      </div>
+    </div>
+  </section>
+
+  <!-- Terminal Demo — Alt background -->
+  <section class="section-alt">
+    <div class="container">
+      <div class="label">Under the Hood</div>
+      <h2>What foray does when an email arrives</h2>
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">classifier pipeline</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">$</span> <span class="cmd">ingest</span> <span class="output">— fetch new email from Gmail</span></div>
+          <div><span class="output">  gmail_message_id: 18e4a2b3c7f9d012</span></div>
+          <div><span class="output">  subject: "Thank you for your interest in Stripe"</span></div>
+          <div><span class="output">  from: noreply@stripe.com</span></div>
+          <div>&nbsp;</div>
+          <div><span class="prompt">$</span> <span class="cmd">match</span> <span class="output">— find linked application</span></div>
+          <div><span class="output">  matched: Stripe / Senior PM (application #12)</span></div>
+          <div>&nbsp;</div>
+          <div><span class="prompt">$</span> <span class="cmd">classify</span> <span class="output">— rules-first, LLM fallback</span></div>
+          <div><span class="output">  rule_id: rejection_template_v3</span></div>
+          <div><span class="warn">  label: rejection</span></div>
+          <div><span class="warn">  confidence: 0.94</span></div>
+          <div><span class="output">  classified_by: rules</span></div>
+          <div>&nbsp;</div>
+          <div><span class="prompt">$</span> <span class="cmd">act</span> <span class="output">— apply status change</span></div>
+          <div><span class="success">  canonical_status: interviewing → rejected</span></div>
+          <div><span class="accent">  event: auto_status_changed (undoable=true)</span></div>
+          <div><span class="output">  ✓ done. undo available for 10s.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="label">Features</div>
+      <h2>What you get</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Capture in seconds</h3>
+          <p>Manual form with company autocomplete, role title, URL, JD paste, salary range. One transaction creates the application and its first event.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Your inbox, triaged</h3>
+          <p>Gmail polling every 15 minutes. Each email classified as rejection, interview invite, recruiter outreach, noise, or unmatched.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Status updates itself</h3>
+          <p>High-confidence classifications auto-update application status. Every change is undoable. Status regressions always need human confirmation.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Review queue</h3>
+          <p>Low-confidence emails surface in a focused queue. Typically 0&ndash;3 items per day. First 50 emails always go to review for ground truth.</p>
+        </div>
+        <div class="feature-card full-width">
+          <h3>Campaign room view</h3>
+          <p>Application list filterable by canonical status. Detail view with chronological timeline — stages, events, linked emails. Not a spreadsheet. A room you walk into every morning to see what's moving.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture — Alt background -->
+  <section class="section-alt" id="architecture">
+    <div class="container">
+      <div class="label">For Developers</div>
+      <h2>Read the source, not just the README</h2>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-label">Runtime</div>
+          <div class="tech-value">Next.js 16<br>+ TypeScript 5</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label">Database</div>
+          <div class="tech-value">PostgreSQL 16<br>+ Prisma 7</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label">LLM</div>
+          <div class="tech-value">Claude Haiku<br>(fallback only)</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label">Architecture</div>
+          <div class="tech-value">Vertical Slice<br>(VSA)</div>
+        </div>
+      </div>
+      <p class="decisions">
+        <strong>Key decisions:</strong> Vertical Slice Architecture — feature-first, not layer-first. <code>tenantDb(userId)</code> wrapper for multi-tenant safety; every query auto-injects userId. Branded types for IDs so the compiler catches tenant mixups. <code>Result&lt;T, AppError&gt;</code> via neverthrow instead of throwing. Rules-first classifier keeps LLM costs near zero. Local-first by design — Docker Postgres, no cloud dependency.
+      </p>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section class="section" id="roadmap">
+    <div class="container">
+      <div class="label">Roadmap</div>
+      <h2>Three milestones</h2>
+      <div class="roadmap-cards">
+        <div class="roadmap-card current">
+          <div class="roadmap-card-title">Lean <span class="version">v0.1</span></div>
+          <p>Manual capture + Gmail polling + classifier + review queue + application views</p>
+        </div>
+        <div class="roadmap-card">
+          <div class="roadmap-card-title">Standard</div>
+          <p>+ Bookmarklet + Today dashboard + tags + cross-record search</p>
+        </div>
+        <div class="roadmap-card">
+          <div class="roadmap-card-title">Full</div>
+          <p>+ Chrome extension + document storage + calendar sync + analytics</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started — Alt background -->
+  <section class="section-alt" id="get-started">
+    <div class="container">
+      <div class="label">Get Started</div>
+      <h2>Run it locally in 3 commands</h2>
+      <p class="prereq">Requires Node.js 20+ and Docker. Runs on your laptop — no cloud setup needed.</p>
+      <div class="code-block">
+        <div><span class="prompt">$</span> pnpm install</div>
+        <div><span class="prompt">$</span> docker compose up -d db</div>
+        <div><span class="prompt">$</span> pnpm dev</div>
+        <div><span class="comment"># → http://localhost:3000</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Stop maintaining spreadsheets.</h2>
+      <p>Let your inbox do the work.</p>
+      <a href="https://github.com/duypham9895/foray" class="btn btn-primary" target="_blank" rel="noopener">View on GitHub &rarr;</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container-wide">
+      <span>Built by Duy Pham with Claude Code</span>
+      <span>Personal use. Not licensed for redistribution.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Theme toggle
+    (function() {
+      var toggle = document.getElementById('theme-toggle');
+      var root = document.documentElement;
+
+      function getEffectiveTheme() {
+        var saved = root.getAttribute('data-theme');
+        if (saved) return saved;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      toggle.addEventListener('click', function() {
+        var current = getEffectiveTheme();
+        var next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    })();
+  </script>
+
+</body>
+</html>
