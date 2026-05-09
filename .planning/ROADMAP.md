@@ -38,7 +38,12 @@ One screen tells the owner what's actually happening today — what's stale, wha
   4. RLS policies are active (`relrowsecurity = true` AND `relforcerowsecurity = true`) on every tenant-scoped table; the test DB connection uses a non-superuser `foray_app` role and an escape-attempt query (`SELECT * FROM applications WHERE user_id = <other>`) returns zero rows
   5. ADR-0011 candidate ("RLS via `withRls()` helper, not Prisma client extension, until SaaS flip") is committed to `docs/decisions/`
 
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 01-01-PLAN.md — Foundation primitives (env + crypto + withRls + dep-cruiser exception) [Wave 1]
+- [ ] 01-02-PLAN.md — Auth slice (iron-session + login page + Server Action + middleware) [Wave 1]
+- [ ] 01-03-PLAN.md — RLS migration + tenantDb mutation matrix + Testcontainers + escape tests [Wave 2]
+- [ ] 01-04-PLAN.md — ADR-0011 + PROJECT.md doc fix + FND-04 sentinel pre-commit gate [Wave 2]
+
 **UI hint**: yes
 
 ---
@@ -140,13 +145,13 @@ These designed-once-touched-many concerns need a coherent decision before the re
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Auth | 0/0 | Not started | - |
+| 1. Foundation + Auth | 0/4 | Planned (not started) | - |
 | 2. Applications Slice | 0/0 | Not started | - |
 | 3. Classifier + Matcher | 0/0 | Not started | - |
 | 4. Gmail Ingestion + Pipeline | 0/0 | Not started | - |
 | 5. Review Queue + Acceptance | 0/0 | Not started | - |
 
-`roadmap_complete: false` — phases pending decomposition into plans via `/gsd-plan-phase`.
+`roadmap_complete: false` — phases 2-5 pending decomposition into plans via `/gsd-plan-phase`.
 
 ---
 
@@ -174,3 +179,4 @@ These designed-once-touched-many concerns need a coherent decision before the re
 ---
 
 *Roadmap created: 2026-05-09 by `gsd-roadmapper` from research synthesis (4-dimension parallel research, HIGH confidence)*
+*Phase 1 decomposed into 4 plans: 2026-05-09 by `/gsd-plan-phase 1`*
