@@ -237,6 +237,6 @@ export function tenantDb(userId: UserId) {
       },
     },
 
-    // TODO(full-milestone): add wrappers for recruiter, applicationRecruiter, document.
+    // TODO(duy, 2026-05-09): add tenantDb wrappers for recruiter, applicationRecruiter, document (Full milestone)
   }
 }
