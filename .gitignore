@@ -45,6 +45,7 @@ next-env.d.ts
 /data/
 classifier-log.jsonl
 foray-sync.log
+public/foray-bookmarklet-url.json
 
 # Prisma — generated client (regenerated on `pnpm prisma generate`)
 /src/generated/
