@@ -1,7 +1,7 @@
 import 'server-only'
 
 import type { Prisma } from '@/generated/prisma/client'
-import { fromPromise, type Result, type ResultAsync } from '@/core/errors'
+import { fromPromise, type ResultAsync } from '@/core/errors'
 import { errors, type AppError } from '@/core/errors'
 import type { UserId } from '@/core/types/ids'
 

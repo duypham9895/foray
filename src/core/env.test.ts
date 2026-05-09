@@ -57,6 +57,7 @@ describe('env schema', () => {
   })
 
   it('Test 2: rejects when APP_SESSION_SECRET is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { APP_SESSION_SECRET: _, ...withoutSecret } = baseEnv
     const result = envSchema.safeParse(withoutSecret)
     expect(result.success).toBe(false)
