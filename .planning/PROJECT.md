@@ -96,7 +96,7 @@
 ## Context
 
 **Stack & scaffold (already in place from v0.1.0):**
-- Next.js 15 App Router + React 19 + TypeScript (strict)
+- Next.js 16 App Router + React 19 + TypeScript (strict)
 - Prisma 7 + PostgreSQL (Docker), tenant-scoped via `tenantDb(userId)` wrapper
 - Zod-validated `env.ts`, branded ID types (`UserId`, `ApplicationId`, `EmailId`)
 - `AppError` + `neverthrow` `Result<T, E>` for fallible operations
@@ -118,7 +118,7 @@
 
 ## Constraints
 
-- **Tech stack**: Next.js 15 + Prisma 7 + Postgres in Docker — no cloud DB, no Vercel deploy in Lean (local-first per ADR-0003)
+- **Tech stack**: Next.js 16 + Prisma 7 + Postgres in Docker — no cloud DB, no Vercel deploy in Lean (local-first per ADR-0003)
 - **Timeline**: Lean = ~1 week of focused effort; ship Friday or cut scope, never extend
 - **Budget**: LLM cost cap $0.50/day — alert if exceeded; classifier defaults to rules-first to keep this honest
 - **Privacy**: Email **bodies are not stored indefinitely** — metadata + ≤500 char excerpt only; full body fetched from Gmail API on demand for review queue display
