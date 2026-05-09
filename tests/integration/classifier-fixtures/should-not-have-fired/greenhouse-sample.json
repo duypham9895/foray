@@ -1,0 +1,8 @@
+{
+  "subject": "We've received your application to Acme Corp",
+  "bodyExcerpt": "Hi Jane, thank you for applying to the Senior Product Manager position at Acme Corp! We've received your application and our team will review it shortly. You'll hear back from us within 2 weeks. - The Acme Corp Recruiting Team (powered by Greenhouse)",
+  "expectedLabel": "unmatched",
+  "expectedConfidence": 0,
+  "source": "synthetic",
+  "notes": "Greenhouse 'application received' confirmation — contains 'thank you for' but NOT 'thank you for your interest'. Must NOT classify as rejection. Pitfall #4 + #5 fence: if the 0.80 rejection regex broadens to match 'thank you for' alone, this test fires."
+}

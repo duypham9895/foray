@@ -1,0 +1,8 @@
+{
+  "subject": "Senior PM role at Acme Corp",
+  "bodyExcerpt": "Hi Jane, I saw your profile on LinkedIn and wanted to reach out about a role we're hiring for. We're looking for a Senior PM to lead our payments team. Would you be open to a 20-min chat to learn more?",
+  "expectedLabel": "recruiter_outreach",
+  "expectedConfidence": 0.95,
+  "source": "synthetic",
+  "notes": "Classic cold outreach — both 'saw your profile' and 'reach out about a role' fire."
+}

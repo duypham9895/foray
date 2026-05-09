@@ -1,0 +1,8 @@
+{
+  "subject": "This week in product: 5 articles you can't miss",
+  "bodyExcerpt": "Hi Jane, here are this week's top reads from the product community. Five must-read articles on roadmaps, prioritization, and stakeholder alignment. You're receiving this because you subscribed to ProductWeekly. Manage your subscriptions or unsubscribe at any time.",
+  "expectedLabel": "noise",
+  "expectedConfidence": 0.95,
+  "source": "synthetic",
+  "notes": "Newsletter footer triggers the 0.95 noise pattern via 'unsubscribe' and 'manage your subscriptions'."
+}

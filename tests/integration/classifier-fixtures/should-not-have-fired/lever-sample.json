@@ -1,0 +1,8 @@
+{
+  "subject": "Application received: Senior Product Manager at Acme Corp",
+  "bodyExcerpt": "Hi Jane, thanks for applying to the Senior Product Manager opening at Acme Corp. Your application is in review. We'll be in touch soon. Powered by Lever.",
+  "expectedLabel": "unmatched",
+  "expectedConfidence": 0,
+  "source": "synthetic",
+  "notes": "Lever-shaped acknowledgment — 'thanks for applying' must not trigger the rejection 0.80 tier. Verifies rule precision: only 'thank you for your interest' is the rejection signal, not the broader 'thanks for applying' phrasing."
+}

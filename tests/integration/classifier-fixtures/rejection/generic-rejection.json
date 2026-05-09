@@ -1,0 +1,8 @@
+{
+  "subject": "Re: Senior Product Manager application",
+  "bodyExcerpt": "Hi Jane, thank you for your interest in the Senior Product Manager role at Acme Corp. We received many strong applications and unfortunately your profile is not selected for this particular position. We wish you the best in your search.",
+  "expectedLabel": "rejection",
+  "expectedConfidence": 0.8,
+  "source": "synthetic",
+  "notes": "Generic 0.80 rejection — combines 'thank you for your interest' with 'not selected'. After the W3 regex tuning (Plan 03-04), the 0.80 tier requires both signals to fire (Pitfall #4 — single 'thank you for your interest' alone is too loose; Workday/Greenhouse acknowledgments use that phrase without rejecting)."
+}

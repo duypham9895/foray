@@ -1,0 +1,8 @@
+{
+  "subject": "Calendar invite: Acme Corp - Engineering Round",
+  "bodyExcerpt": "You've been invited to a meeting. Acme Corp Engineering Round. Tuesday at 2pm PT. Please accept or propose a different time. Booking link: example.com/book",
+  "expectedLabel": "interview_invite",
+  "expectedConfidence": 0.8,
+  "source": "synthetic",
+  "notes": "Calendar-style invite triggers the 0.80 'calendar invite' phrase."
+}

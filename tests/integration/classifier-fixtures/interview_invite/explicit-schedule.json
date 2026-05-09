@@ -1,0 +1,8 @@
+{
+  "subject": "Next steps - Schedule a call?",
+  "bodyExcerpt": "Hi Jane, I really enjoyed our conversation. The team is excited and would like to schedule a 45-minute follow-up with our engineering lead. Could you propose times for next week? I have availability Tuesday and Wednesday afternoon.",
+  "expectedLabel": "interview_invite",
+  "expectedConfidence": 0.95,
+  "source": "synthetic",
+  "notes": "Explicit schedule request — both 'would like to schedule' and 'propose times for' fire; 0.95 tier."
+}

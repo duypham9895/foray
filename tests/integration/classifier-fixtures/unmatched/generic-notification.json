@@ -1,0 +1,8 @@
+{
+  "subject": "Your document has been signed",
+  "bodyExcerpt": "Acme Corp NDA has been completed and is ready for download. View completed document at example.com/docs/123. This message was sent by DocSign on behalf of Acme Corp.",
+  "expectedLabel": "unmatched",
+  "expectedConfidence": 0,
+  "source": "synthetic",
+  "notes": "Generic doc-signing notification — no rule fires; classifier returns unmatched."
+}

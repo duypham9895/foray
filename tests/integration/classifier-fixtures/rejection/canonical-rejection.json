@@ -1,0 +1,8 @@
+{
+  "subject": "Update on your application to Acme Corp",
+  "bodyExcerpt": "Thank you for taking the time to interview with our team. After careful consideration, we have decided not to move forward with your candidacy at this time. We were impressed by your background and encourage you to apply for future openings that match your skills.",
+  "expectedLabel": "rejection",
+  "expectedConfidence": 0.95,
+  "source": "synthetic",
+  "notes": "Canonical 0.95-tier rejection — both 'after careful consideration' (0.80 trigger) and 'we have decided not to move forward' (0.95 trigger) are present; the 0.95 wins."
+}

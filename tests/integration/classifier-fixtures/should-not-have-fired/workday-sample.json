@@ -1,0 +1,8 @@
+{
+  "subject": "Acme Corp - Application Status Update",
+  "bodyExcerpt": "Dear Jane Doe, Your application for Senior Product Manager (Job ID 12345) is currently being reviewed by the hiring team at Acme Corp. You can check your status at any time by logging into your Workday candidate portal. Thank you for your interest in joining Acme Corp.",
+  "expectedLabel": "unmatched",
+  "expectedConfidence": 0,
+  "source": "synthetic",
+  "notes": "Workday status email — contains 'thank you for your interest' but is a STATUS UPDATE, NOT a rejection. Drives the W3 regex tuning in Plan 03-04: the 0.80 rejection tier was loosened to require BOTH 'thank you for your interest' AND a rejection-specific signal ('not selected' / 'unable to offer' / 'not be moving forward' / 'decided to move forward with another'). Pitfall #4 (false-positive rejection destroys trust) is the rationale. Without the tuning, this email would auto-route to the rejection branch at the 0.80 tier even though no rejection has occurred."
+}
