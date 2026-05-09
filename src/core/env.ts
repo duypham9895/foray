@@ -25,8 +25,15 @@ export const envSchema = z.object({
     .string()
     .min(32, 'APP_SESSION_SECRET must be ≥32 chars per iron-session requirement. Run: openssl rand -hex 32'),
 
+  // -- Required for Phase 3 classifier (CLASS-02) ---------------------------
+  ANTHROPIC_API_KEY: z
+    .string()
+    .min(
+      1,
+      'ANTHROPIC_API_KEY is required for classifier (CLASS-02). Get one from https://console.anthropic.com/settings/keys',
+    ),
+
   // -- Optional in v1; required when relevant feature lands -----------------
-  ANTHROPIC_API_KEY:   z.string().optional(),
   GOOGLE_CLIENT_ID:    z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.url().default('http://localhost:3000/api/gmail/callback'),

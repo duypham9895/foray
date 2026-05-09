@@ -19,6 +19,7 @@ const baseEnv = {
   ENCRYPTION_KEY: '0'.repeat(64),
   APP_PASSWORD: 'correct-horse-battery-staple',
   APP_SESSION_SECRET: 'a'.repeat(32),
+  ANTHROPIC_API_KEY: 'sk-ant-test-fixture-key-not-real',
   NODE_ENV: 'test',
 }
 
@@ -76,6 +77,29 @@ describe('env schema', () => {
       // TypeScript-level: result.data.APP_SESSION_SECRET should be `string`
       const secret: string = result.data.APP_SESSION_SECRET
       expect(secret).toHaveLength(32)
+    }
+  })
+
+  it('Test 5: rejects when ANTHROPIC_API_KEY is missing (Phase 3 made it required)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ANTHROPIC_API_KEY: _, ...withoutKey } = baseEnv
+    const result = envSchema.safeParse(withoutKey)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const paths = result.error.issues.map((i) => i.path[0])
+      expect(paths).toContain('ANTHROPIC_API_KEY')
+    }
+  })
+
+  it('Test 5b: rejects when ANTHROPIC_API_KEY is empty string', () => {
+    const result = envSchema.safeParse({
+      ...baseEnv,
+      ANTHROPIC_API_KEY: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path[0] === 'ANTHROPIC_API_KEY')
+      expect(issue).toBeDefined()
     }
   })
 })

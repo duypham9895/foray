@@ -6,3 +6,4 @@ process.env['DATABASE_URL'] ??= 'postgresql://foray:foray@localhost:5432/foray'
 process.env['ENCRYPTION_KEY'] ??= '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
 process.env['APP_PASSWORD'] ??= 'test-password-fixture'  // ≥12 chars
 process.env['APP_SESSION_SECRET'] ??= 'test-session-secret-fixture-32xx' // exactly 32 chars
+process.env['ANTHROPIC_API_KEY'] ??= 'sk-ant-test-fixture-key-not-real'    // required by env.ts (Phase 3)
