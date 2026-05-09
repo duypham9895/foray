@@ -30,6 +30,7 @@ import 'server-only'
 import { ok, err, type Result } from 'neverthrow'
 
 import { errors, type AppError } from '@/core/errors'
+import { logger } from '@/core/logger'
 import type { EmailClassification } from '@/generated/prisma/client'
 
 import { classifyByRules } from './rules'
@@ -91,18 +92,28 @@ export async function classifyEmail(
   if (llm.isErr()) return err(llm.error)
 
   // Step 6: best-effort cost recording.
-  // HACK(duy, 2026-05-09): cost-log write failure is intentionally ignored
-  // here. Classification SUCCEEDED; logging is best-effort. The trade-off:
-  // a write failure means we under-count today's spend (conservative —
-  // tomorrow's budget is unaffected; today's may incorrectly under-count).
-  // Standard milestone: route this to a separate alerting channel.
+  // HACK(duy, 2026-05-09): cost-log write failure does not abort the
+  // classification — the LLM call SUCCEEDED and the caller already paid for
+  // it; failing closed here would punish the user for a disk hiccup. The
+  // trade-off: today's budget under-counts during the un-writable window
+  // (between this append failure and the next checkBudget call when the
+  // file becomes readable again, which fail-closes correctly per T-03-01-02).
+  // We surface the silent loss to the logger so an operator triaging the
+  // cost-log can see why a classified email is missing from data/classifier-
+  // log.jsonl. Standard milestone: route to a dedicated alerting channel.
   const emailHash = hashEmailContent(subject, bodyExcerpt)
-  await appendCostEntry({
+  const append = await appendCostEntry({
     inputTokens: llm.value.inputTokens,
     outputTokens: llm.value.outputTokens,
     model: MODEL,
     emailHash,
   })
+  if (append.isErr()) {
+    logger.error(
+      { op: 'classifier.cost.silent_loss', emailHash, err: append.error },
+      'cost entry not recorded — classification succeeded but today’s budget will under-count',
+    )
+  }
 
   // Step 7.
   return ok({
