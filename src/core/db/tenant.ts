@@ -156,6 +156,7 @@ export function tenantDb(userId: UserId) {
       ) =>
         prisma.company.upsert({
           ...args,
+          where: { ...args.where, userId: numericUserId } as Prisma.CompanyWhereUniqueInput,
           create: { ...args.create, user: { connect: { id: numericUserId } } },
         }),
 
