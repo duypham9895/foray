@@ -177,6 +177,12 @@ export function tenantDb(userId: UserId) {
           },
         }),
 
+      /**
+       * @throws {Error} if the parent application does not belong to this tenant.
+       *   MUST be called inside withRls() — its fromPromise() boundary converts
+       *   the throw to err(errors.db(cause)). Calling outside withRls() propagates
+       *   the throw to the caller uncaught.
+       */
       // Pre-flight parent check: verify the application belongs to this tenant
       // before creating the stage. RLS is the suspenders; this is the belt.
       create: async (args: Prisma.StageCreateArgs) => {
@@ -193,6 +199,12 @@ export function tenantDb(userId: UserId) {
         return prisma.stage.create(args)
       },
 
+      /**
+       * @throws {Error} if the target stage does not belong to this tenant.
+       *   MUST be called inside withRls() — its fromPromise() boundary converts
+       *   the throw to err(errors.db(cause)). Calling outside withRls() propagates
+       *   the throw to the caller uncaught.
+       */
       update: async (args: Prisma.StageUpdateArgs) => {
         // Verify the target stage belongs to this tenant via its application.
         const stage = await prisma.stage.findUnique({
@@ -205,6 +217,12 @@ export function tenantDb(userId: UserId) {
         return prisma.stage.update(args)
       },
 
+      /**
+       * @throws {Error} if the target stage does not belong to this tenant.
+       *   MUST be called inside withRls() — its fromPromise() boundary converts
+       *   the throw to err(errors.db(cause)). Calling outside withRls() propagates
+       *   the throw to the caller uncaught.
+       */
       delete: async (args: Prisma.StageDeleteArgs) => {
         // Verify the target stage belongs to this tenant via its application.
         const stage = await prisma.stage.findUnique({
