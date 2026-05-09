@@ -9,9 +9,11 @@
 //   4. unmatched           — return null
 //
 // Contract notes:
-// - userId arrives ALREADY BRANDED from the caller (Phase 4). We validate it
-//   as a non-empty string here; the brand is preserved at the type-system
-//   boundary inside service.ts.
+// - userId arrives ALREADY BRANDED from the caller (Phase 4). We validate the
+//   string shape (numeric, matching the UserId branded-type contract in
+//   src/core/types/ids.ts) so the slice boundary cannot silently accept a
+//   non-numeric "admin" string and pass it through to the RLS GUC. The brand
+//   is then re-attached via the UserId(...) constructor inside service.ts.
 // - fromDomain is the lowercased apex+TLD. The CALLER (Phase 4) is
 //   responsible for parsing the From header and producing this value. The
 //   service does NOT lowercase, strip protocol, or otherwise normalize.
@@ -22,7 +24,7 @@ import { z } from 'zod'
 import type { ApplicationId } from '@/core/types/ids'
 
 export const matchEmailInputSchema = z.object({
-  userId: z.string().min(1, 'userId required'),
+  userId: z.string().regex(/^\d+$/, 'userId must be numeric'),
   gmailThreadId: z.string().min(1, 'gmailThreadId required'),
   fromDomain: z.string().min(1, 'fromDomain required'),
 })

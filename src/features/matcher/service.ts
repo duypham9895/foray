@@ -27,7 +27,7 @@ import 'server-only'
 import { withRls } from '@/core/db/with-rls'
 import { isAtsDomain } from '@/core/domains/ats-domains'
 import { errors, err, type AppError } from '@/core/errors'
-import { ApplicationId, type UserId } from '@/core/types/ids'
+import { ApplicationId, UserId } from '@/core/types/ids'
 import type { Result } from 'neverthrow'
 
 import {
@@ -54,10 +54,11 @@ export async function matchEmail(
   if (!parsed.success) return err(errors.validation(parsed.error.issues))
 
   // userId arrives already-branded from the caller; the schema validates the
-  // string shape. Restore the brand at the type-system boundary — see
-  // threat T-03-03-04 for the runtime trust contract.
+  // string shape (numeric). Re-attach the brand via the validating constructor
+  // — PRINCIPLES.md §"Branded types for IDs": "Use the constructor at every
+  // boundary that produces an ID." See threat T-03-03-04 for runtime contract.
   const { userId, gmailThreadId, fromDomain } = parsed.data
-  const brandedUserId = userId as UserId
+  const brandedUserId = UserId(userId)
 
   return withRls(brandedUserId, async (tx): Promise<MatchEmailOutput> => {
     // 1. Thread continuity — most-recent linked email on this thread wins.
