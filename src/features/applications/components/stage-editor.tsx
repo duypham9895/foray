@@ -9,7 +9,7 @@
 // state. Per CLAUDE.md §1.2 the per-row sub-forms intentionally duplicate the
 // useActionState scaffolding — extraction would obscure the contract.
 
-import { useActionState, useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import { format } from 'date-fns'
 
 import { Badge } from '@/ui/badge'
@@ -77,6 +77,7 @@ function StageRow({
   stage: Stage
 }) {
   const [editing, setEditing] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
   const [updateState, updateFormAction] = useActionState(
     updateStageAction.bind(null, stage.id, applicationId),
     initial,
@@ -93,7 +94,11 @@ function StageRow({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         {editing ? (
+          // Inline edit per CONTEXT §"Specifics" → "Inline stage edit": blur or
+          // Enter saves; Escape cancels without writing. Mirrors the
+          // notes-editor.tsx requestSubmit() pattern.
           <form
+            ref={formRef}
             action={(fd: FormData) => {
               updateFormAction(fd)
               setEditing(false)
@@ -105,6 +110,10 @@ function StageRow({
               defaultValue={stage.name}
               autoFocus
               required
+              onBlur={() => formRef.current?.requestSubmit()}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setEditing(false)
+              }}
               className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-2 py-1 text-base"
             />
           </form>
