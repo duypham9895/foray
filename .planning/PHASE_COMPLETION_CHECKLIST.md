@@ -108,10 +108,13 @@ created: 2026-05-09
   Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
   ```
 
-## 5. Optional: Update `.planning/ROADMAP.md`
+## 5. Planning Documentation (`.planning/ROADMAP.md`)
 
-- [ ] If ROADMAP.md has phase status checkboxes, update them
-- [ ] If ROADMAP.md references current phase, update that
+- [ ] Update Progress table (lines 162-169):
+  - Mark completed phases: `X/Y | ✅ Complete | YYYY-MM-DD`
+  - Mark in-progress phase: `X/5 | 🔨 In progress | —`
+  - Mark pending phases: `0/Z | ⏳ Pending | —`
+- [ ] Update `roadmap_complete` flag at end of Progress section (false until all 5 phases complete)
 
 ## Verification
 

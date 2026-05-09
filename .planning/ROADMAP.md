@@ -114,7 +114,7 @@ One screen tells the owner what's actually happening today — what's stale, wha
 
 **Plans**: 5 plans
 - [x] 04-01-PLAN.md — Schema migration: ProcessingStatus enum + processing_status on Email + gmailHistoryId on User [Wave 1]
-- [ ] 04-02-PLAN.md — Gmail OAuth + client: /api/gmail/auth + /api/gmail/callback + gmail-client.ts (OAuth2, Gmail API, email metadata extraction) [Wave 2]
+- [x] 04-02-PLAN.md — Gmail OAuth + client: /api/gmail/auth + /api/gmail/callback + gmail-client.ts (OAuth2, Gmail API, email metadata extraction) [Wave 2]
 - [ ] 04-03-PLAN.md — Pipeline orchestrator: ingest.ts (history.list + fallback) + act.ts (4 gates: threshold, match, regression, first-50) + service.ts (pollOnce) [Wave 2]
 - [ ] 04-04-PLAN.md — Settings page + cron: /settings UI (Connect/Disconnect/Sync-now + token-health banner) + instrumentation.ts (node-cron with 4 guards) [Wave 3]
 - [ ] 04-05-PLAN.md — Integration tests: OAuth round-trip + act-stage gates + pipeline idempotency + cron guard logic [Wave 4]
@@ -161,13 +161,13 @@ These designed-once-touched-many concerns need a coherent decision before the re
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Auth | 0/4 | Planned (not started) | - |
-| 2. Applications Slice | 0/5 | Planned (not started) | - |
-| 3. Classifier + Matcher | 0/5 | Planned (not started) | - |
-| 4. Gmail Ingestion + Pipeline | 0/5 | Planned (decomposed) | - |
-| 5. Review Queue + Acceptance | 0/0 | Not started | - |
+| 1. Foundation + Auth | 4/4 | ✅ Complete | 2026-05-09 |
+| 2. Applications Slice | 5/5 | ✅ Complete | 2026-05-09 |
+| 3. Classifier + Matcher | 5/5 | ✅ Complete | 2026-05-09 |
+| 4. Gmail Ingestion + Pipeline | 1/5 | 🔨 In progress | — |
+| 5. Review Queue + Acceptance | 0/5 | ⏳ Pending | — |
 
-`roadmap_complete: false` — phases 1-5 pending execution.
+`roadmap_complete: false` — Phases 1–3 verified; Phase 4 execution in progress.
 
 ---
 

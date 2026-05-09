@@ -100,6 +100,7 @@ When a phase execution is complete and verified, **immediately update these file
 
 2. **Internal tracking** (engineering tracking):
    - `.planning/STATE.md` — Update YAML header (completed_phases, completed_plans, percent), Current Position section, Performance Metrics, Open Todos, Session Continuity table
+   - `.planning/ROADMAP.md` — Update Progress table with phase completion status and dates
    - `landing/index.html` — Update build status indicator in Roadmap section
    - Memory files — Update phase status file and MEMORY.md index with completion date
 
