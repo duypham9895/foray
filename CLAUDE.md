@@ -94,14 +94,20 @@ E2E user flow                          → tests/e2e/<flow>.spec.ts             
 
 When a phase execution is complete and verified, **immediately update these files in order** to maintain data consistency across all docs:
 
-1. **`.planning/STATE.md`** — Update YAML header (completed_phases, completed_plans, percent), Current Position section, Performance Metrics, Open Todos, Session Continuity table
-2. **`landing/index.html`** — Update build status indicator in Roadmap section (e.g., "Phases 1–4 complete. Phase 5 in progress.")
-3. **Memory files** (`.ccs/.../memory/`) — Update phase status file and MEMORY.md index with completion date
-4. **Git commit** — Single commit referencing all updates + artifact count
+1. **External visibility first** (what GitHub visitors see):
+   - `README.md` — Update Lean milestone status in Roadmap table
+   - `docs/milestones/lean.md` — Update status line with phase info
 
-See **`.planning/PHASE_COMPLETION_CHECKLIST.md`** for detailed checklist. This prevents the status inconsistencies that happened in early phases — all stakeholders (you, GitHub visitors, future sessions) must see the same accurate phase progress.
+2. **Internal tracking** (engineering tracking):
+   - `.planning/STATE.md` — Update YAML header (completed_phases, completed_plans, percent), Current Position section, Performance Metrics, Open Todos, Session Continuity table
+   - `landing/index.html` — Update build status indicator in Roadmap section
+   - Memory files — Update phase status file and MEMORY.md index with completion date
 
-**Rule**: No phase is considered "complete" for communication purposes until STATE.md + landing page + memory are all updated in the same commit.
+3. **Git commit** — Single coordinated commit referencing all updates + artifact count
+
+See **`.planning/PHASE_COMPLETION_CHECKLIST.md`** for detailed checklist with exact file locations and format examples. This prevents the status inconsistencies that happened in early phases — all stakeholders (GitHub visitors, code reviewers, future sessions) must see the same accurate phase progress.
+
+**Rule**: No phase is considered "complete" for communication purposes until README.md + landing page + STATE.md + memory are all updated in the same commit.
 
 ---
 

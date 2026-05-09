@@ -9,7 +9,23 @@ created: 2026-05-09
 
 **When a phase is verified and execution complete, update these files in order:**
 
-## 1. Main Status File (`.planning/STATE.md`)
+## 1. Main Documentation Files (external visibility first)
+
+### 1a. README.md (Roadmap table)
+
+- [ ] Update Lean milestone status row in the Roadmap table:
+  - If phases 1+ complete but Lean not finished: `🔨 In progress (Phase X/5)`
+  - Example: `🔨 In progress (Phase 4/5)` when executing Phase 4
+  - When Lean complete: `✅ Complete`
+
+### 1b. docs/milestones/lean.md (Status line)
+
+- [ ] Update status line near top:
+  - When executing: `🔨 In progress — Phases X–Y complete, Phase Z executing`
+  - Example: `🔨 In progress — Phases 1–3 complete, Phase 4 executing`
+  - When complete: `✅ Complete (verified YYYY-MM-DD)`
+
+## 2. Status File (`.planning/STATE.md`)
 
 - [ ] Update YAML header:
   - `last_updated: "YYYY-MM-DDTHH:MM:00.000Z"` (current timestamp)
@@ -37,7 +53,23 @@ created: 2026-05-09
   - Mark as ✅ Complete with verification date
   - Update "Next action" to point to next phase's first plan
 
-## 2. Landing Page (`landing/index.html`)
+## 2. Main Documentation Files
+
+### 2a. README.md (Roadmap table)
+
+- [ ] Update Lean milestone status row:
+  - `**Lean** | 🔨 In progress (Phase X/5) | …` (when phases 1+ complete but not all)
+  - `**Lean** | ✅ Complete | …` (when all 5 phases complete)
+  - Example progression: "Not started" → "In progress (Phase 2/5)" → "In progress (Phase 4/5)" → "Complete"
+
+### 2b. docs/milestones/lean.md (Status line)
+
+- [ ] Update status line at top:
+  - Current: `**Status**: ⏳ Pending Lean`
+  - After Lean phase complete: `**Status**: 🔨 In progress — Phases X–Y complete, Phase Z executing`
+  - When Lean done: `**Status**: ✅ Complete (verified YYYY-MM-DD)`
+
+### 2c. Landing Page (`landing/index.html`)
 
 - [ ] Update build status line in Roadmap section:
   - Change: `Phases X–Y complete. Phase Z currently in progress.`
@@ -54,16 +86,20 @@ created: 2026-05-09
   - Move completed phase memory to top (most relevant)
   - Update description to reflect completion date
 
-## 4. Git Commit
+## 4. Git Commit (coordinate all updates)
 
-- [ ] Create a single commit with all updates:
+- [ ] Create a single commit with **ALL** updated files:
   ```bash
-  git add .planning/STATE.md landing/index.html .ccs/instances/work/projects/.../memory/
+  git add README.md docs/milestones/lean.md .planning/STATE.md landing/index.html .ccs/instances/work/projects/.../memory/
   git commit -m "docs: mark Phase X complete, advance to Phase Y
 
-  Updated:
+  Updated external visibility:
+  - README.md: Lean milestone status updated to reflect phase progress
+  - docs/milestones/lean.md: Status line updated with phase info
+  - landing/index.html: Build status indicator updated
+  
+  Updated internal tracking:
   - STATE.md: Phase X verified, progress metrics, phase status
-  - landing/index.html: build status indicator
   - Memory: phase-X-status.md completion date
 
   Phase X artifacts: (N files - N plans + N summaries + verification + etc.)
