@@ -1,23 +1,30 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2022",
+    "lib": ["ES2022", "dom", "dom.iterable"],
     "allowJs": true,
     "skipLibCheck": true,
+
+    // Strictness — see PRINCIPLES.md §"TypeScript discipline"
     "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // Module resolution
+    "module": "preserve",
     "moduleResolution": "bundler",
-    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    // Output (Next.js + tsx do the emitting)
+    "noEmit": true,
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"]
     }
