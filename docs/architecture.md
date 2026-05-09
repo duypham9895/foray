@@ -29,18 +29,19 @@ System overview, data flow, and module responsibilities.
 │           │                                                     │
 │           ▼                                                     │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐              │
-│  │ src/lib/     │ │ src/lib/     │ │ src/lib/     │              │
-│  │   gmail.ts   │ │  classifier  │ │   matcher    │              │
-│  │ (Gmail API   │ │   (rules +   │ │  (email →    │              │
-│  │   wrapper)   │ │  LLM hybrid) │ │ application) │              │
+│  │ features/    │ │ features/    │ │ features/    │              │
+│  │   inbox/     │ │  classifier/ │ │   matcher/   │              │
+│  │ (Gmail API + │ │   (rules +   │ │  (email →    │              │
+│  │  ingest)     │ │  LLM hybrid) │ │ application) │              │
 │  └──────┬───────┘ └──────┬───────┘ └──────┬───────┘              │
 │         └────────────────┴────────────────┘                     │
 │                          │                                      │
 │                          ▼                                      │
-│                  ┌──────────────┐                                │
-│                  │ Prisma Client│                                │
-│                  │  (db.ts)     │                                │
-│                  └──────┬───────┘                                │
+│                  ┌──────────────────┐                            │
+│                  │  core/db/        │                            │
+│                  │   tenant.ts      │  ← every Prisma call       │
+│                  │  (tenantDb)      │    auto-injects userId     │
+│                  └──────┬───────────┘                            │
 └─────────────────────────┼─────────────────────────────────────────┘
                           │
                           ▼

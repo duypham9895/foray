@@ -149,7 +149,7 @@ foray/
 
 - **Schema URL is in `prisma.config.ts`**, not `schema.prisma` (Prisma 7 breaking change).
 - **PrismaClient imports come from `@/generated/prisma/client`**, not `@prisma/client`. The legacy path is broken under pnpm in Prisma 7.
-- **Runtime requires an adapter**: instantiate as `new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })`. See `scripts/seed.ts` for the canonical pattern; replicate in `src/lib/db.ts` when the Lean milestone needs it.
+- **Runtime requires an adapter**: instantiate as `new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })`. The canonical pattern is already in `src/core/db/client.ts`. Import via `import { prisma } from '@/core/db'` (and prefer `tenantDb(userId)` from the same module for tenant-scoped queries — see PRINCIPLES.md §"Database").
 
 ## Critical commands
 

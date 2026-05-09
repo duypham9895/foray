@@ -80,11 +80,12 @@ If any fail: fix before committing. Do **not** use `--no-verify` to skip hooks. 
 ### 2.4 Test file conventions
 
 ```
-src/lib/foo.ts                → src/lib/foo.test.ts          (colocated unit)
-src/components/X.tsx          → src/components/X.test.tsx     (colocated component)
-src/app/api/capture/route.ts  → tests/integration/capture.test.ts  (integration)
-cross-cutting concerns        → tests/integration/<flow>.test.ts
-E2E user flows                → tests/e2e/<flow>.spec.ts (Playwright)
+src/features/<slice>/service.ts        → src/features/<slice>/service.test.ts  (colocated unit)
+src/core/db/tenant.ts                  → src/core/db/tenant.test.ts            (colocated unit)
+src/features/<slice>/components/X.tsx  → src/features/<slice>/components/X.test.tsx (colocated component)
+src/app/api/capture/route.ts           → tests/integration/capture.test.ts     (integration)
+cross-slice flow                       → tests/integration/<flow>.test.ts
+E2E user flow                          → tests/e2e/<flow>.spec.ts              (Playwright)
 ```
 
 ---

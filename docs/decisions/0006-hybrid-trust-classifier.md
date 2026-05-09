@@ -33,7 +33,7 @@ Email classification is the differentiating feature vs. a spreadsheet. Two quest
 
 ### Negative
 
-- **Maintenance of rule patterns.** Email language drifts; rules need occasional updates. Mitigation: low-friction file (`src/lib/classifier-rules.ts`) with comments + linked sample emails.
+- **Maintenance of rule patterns.** Email language drifts; rules need occasional updates. Mitigation: low-friction file (`src/features/classifier/rules.ts`) with comments + linked sample emails.
 - **LLM cost can creep** if classifier prompt isn't cached or fan-outs occur. Mitigation: 5-minute prompt cache + dedup before LLM call.
 - **Two sources of truth for label assignment** (rules + LLM). Mitigation: classifier returns single `{label, confidence, explainer}` regardless of source; consumers never branch on `classifiedBy`.
 
