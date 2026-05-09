@@ -63,7 +63,12 @@ One screen tells the owner what's actually happening today — what's stale, wha
   4. `/applications/[id]` renders a chronological timeline merging Stages + Events + Emails; status dropdown writes a new Event and updates `lastActivityAt`; Stages and notes are editable inline; auto-update Events are visually distinct (per DESIGN.md) — distinguishable from manual edits at a glance
   5. `applyAutoStatusChange` and `undoStatusChange` services exist as `Result`-returning functions in `applications/service.ts`, ready for Phase 4 to call; `Event.data` is parsed via Zod schema per `EventType` on read
 
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 02-01-PLAN.md — Foundation: ATS-domain helper + Zod schemas (application, company, stage, notes, per-EventType data) [Wave 1]
+- [ ] 02-02-PLAN.md — Service layer: createApplication + manual/auto/undo status changes + queries (status-transitions helper, regression block) [Wave 2]
+- [ ] 02-03-PLAN.md — Stages + notes services + cross-tenant RLS isolation tests (closes Phase 1 it.todos) [Wave 3]
+- [ ] 02-04-PLAN.md — UI: shadcn primitives, 6 Server Actions, 7 components, 3 pages, browser-verify checkpoint [Wave 4]
+- [ ] 02-05-PLAN.md — Close-out: ADR-0012 (regression block + auto-update visual treatment) + UAT walkthrough [Wave 5]
 **UI hint**: yes
 
 ---
@@ -146,7 +151,7 @@ These designed-once-touched-many concerns need a coherent decision before the re
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Auth | 0/4 | Planned (not started) | - |
-| 2. Applications Slice | 0/0 | Not started | - |
+| 2. Applications Slice | 0/5 | Planned (not started) | - |
 | 3. Classifier + Matcher | 0/0 | Not started | - |
 | 4. Gmail Ingestion + Pipeline | 0/0 | Not started | - |
 | 5. Review Queue + Acceptance | 0/0 | Not started | - |
@@ -180,3 +185,4 @@ These designed-once-touched-many concerns need a coherent decision before the re
 
 *Roadmap created: 2026-05-09 by `gsd-roadmapper` from research synthesis (4-dimension parallel research, HIGH confidence)*
 *Phase 1 decomposed into 4 plans: 2026-05-09 by `/gsd-plan-phase 1`*
+*Phase 2 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 2`*
