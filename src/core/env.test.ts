@@ -102,4 +102,64 @@ describe('env schema', () => {
       expect(issue).toBeDefined()
     }
   })
+
+  // DATABASE_URL
+  it('Test 6: rejects when DATABASE_URL is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { DATABASE_URL: _, ...withoutDb } = baseEnv
+    const result = envSchema.safeParse(withoutDb)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const paths = result.error.issues.map((i) => i.path[0])
+      expect(paths).toContain('DATABASE_URL')
+    }
+  })
+
+  it('Test 6b: rejects when DATABASE_URL is not a valid URL', () => {
+    const result = envSchema.safeParse({
+      ...baseEnv,
+      DATABASE_URL: 'not-a-url',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path[0] === 'DATABASE_URL')
+      expect(issue).toBeDefined()
+    }
+  })
+
+  // ENCRYPTION_KEY
+  it('Test 7: rejects when ENCRYPTION_KEY is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ENCRYPTION_KEY: _, ...withoutKey } = baseEnv
+    const result = envSchema.safeParse(withoutKey)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const paths = result.error.issues.map((i) => i.path[0])
+      expect(paths).toContain('ENCRYPTION_KEY')
+    }
+  })
+
+  it('Test 7b: rejects when ENCRYPTION_KEY is not 64 chars', () => {
+    const result = envSchema.safeParse({
+      ...baseEnv,
+      ENCRYPTION_KEY: 'tooshort',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path[0] === 'ENCRYPTION_KEY')
+      expect(issue).toBeDefined()
+    }
+  })
+
+  // APP_PASSWORD missing
+  it('Test 8: rejects when APP_PASSWORD is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { APP_PASSWORD: _, ...withoutPw } = baseEnv
+    const result = envSchema.safeParse(withoutPw)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const paths = result.error.issues.map((i) => i.path[0])
+      expect(paths).toContain('APP_PASSWORD')
+    }
+  })
 })
