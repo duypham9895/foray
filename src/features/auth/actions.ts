@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { loginSchema } from './schema'
 import * as service from './service'
 
-type LoginState =
+export type LoginState =
   | { ok: true }
   | { ok: false; errors: Record<string, string[]> }
 

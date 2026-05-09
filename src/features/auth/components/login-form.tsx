@@ -1,10 +1,6 @@
 'use client'
 import { useActionState } from 'react'
-import { login } from '../actions'
-
-type LoginState =
-  | { ok: true }
-  | { ok: false; errors: Record<string, string[]> }
+import { login, type LoginState } from '../actions'
 
 const initial: LoginState = { ok: false, errors: {} }
 
