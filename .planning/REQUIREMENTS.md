@@ -101,17 +101,47 @@ Explicitly excluded from Lean. Re-evaluated after Lean ships per the milestone s
 
 ## Traceability
 
-Empty until roadmap is created. `gsd-roadmapper` populates this table mapping each REQ-ID to its phase.
+Mapped by `gsd-roadmapper` from `.planning/research/SUMMARY.md` synthesis on 2026-05-09. Every v1 REQ-ID maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| CAPT-01 | Phase 2 — Applications Slice | Pending |
+| CAPT-02 | Phase 2 — Applications Slice | Pending |
+| CAPT-03 | Phase 2 — Applications Slice | Pending |
+| GMAIL-01 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| GMAIL-02 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| GMAIL-03 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| GMAIL-04 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| CLASS-01 | Phase 3 — Classifier + Matcher | Pending |
+| CLASS-02 | Phase 3 — Classifier + Matcher | Pending |
+| CLASS-03 | Phase 3 — Classifier + Matcher | Pending |
+| CLASS-04 | Phase 3 — Classifier + Matcher | Pending |
+| MATCH-01 | Phase 3 — Classifier + Matcher | Pending |
+| MATCH-02 | Phase 3 — Classifier + Matcher | Pending |
+| MATCH-03 | Phase 3 — Classifier + Matcher | Pending |
+| AUTO-01 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| AUTO-02 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| AUTO-03 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| AUTO-04 | Phase 4 — Gmail Ingestion + Pipeline | Pending |
+| REVIEW-01 | Phase 5 — Review Queue + Acceptance | Pending |
+| REVIEW-02 | Phase 5 — Review Queue + Acceptance | Pending |
+| APP-01 | Phase 2 — Applications Slice | Pending |
+| APP-02 | Phase 2 — Applications Slice | Pending |
+| APP-03 | Phase 2 — Applications Slice | Pending |
+| APP-04 | Phase 2 — Applications Slice | Pending |
+| AUTH-01 | Phase 1 — Foundation + Auth | Pending |
+| AUTH-02 | Phase 1 — Foundation + Auth | Pending |
+| AUTH-03 | Phase 1 — Foundation + Auth | Pending |
+| FND-01 | Phase 1 — Foundation + Auth | Pending |
+| FND-02 | Phase 1 — Foundation + Auth | Pending |
+| FND-03 | Phase 5 — Review Queue + Acceptance | Pending |
+| FND-04 | Phase 5 — Review Queue + Acceptance | Pending |
 
 **Coverage:**
-- v1 requirements: **30 total**
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 30 ⚠️ (will resolve when roadmap commits)
+- v1 requirements: **31 total** (header in earlier draft said 30 — actual count is 31; this is the source of truth)
+- Mapped to phases: **31** ✓
+- Unmapped: **0** ✓
 
 ---
 *Requirements defined: 2026-05-09*
-*Last updated: 2026-05-09 after research synthesis (FND-03 re-specced from count to category coverage)*
+*Last updated: 2026-05-09 — traceability table populated by `gsd-roadmapper`; coverage corrected from 30 to 31 (actual count)*
