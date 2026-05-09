@@ -138,7 +138,11 @@ One screen tells the owner what's actually happening today — what's stale, wha
   4. Pre-commit gate green: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build && pnpm depcheck` — no `--no-verify` exceptions; structural CI checks pass: `relforcerowsecurity = true` query in test setup, Server-Action-returns-`Result` lint or grep
   5. All 12 Lean acceptance criteria from `docs/milestones/lean.md` verified by manual demo walkthrough: capture form <30s, Sync-now pulls 7-day window, canonical rejection auto-classifies + auto-updates + is undoable from timeline, ambiguous outreach lands in `/inbox` without auto-apply, list shows correct counts per status, detail timeline is chronological, ≥3 real applications logged, ≥1 auto-classification triggered correctly
 
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 05-01-PLAN.md — Inbox data layer: queries (findEmailsForReview) + review actions (confirm/override/link/ignore) + rate-limited full-body fetch endpoint [Wave 1]
+- [ ] 05-02-PLAN.md — Inbox UI: 6 components (confidence-badge, classification-select, link-application-dialog, degradation-banner, inbox-row, inbox-list) + /inbox Server Component page [Wave 2]
+- [ ] 05-03-PLAN.md — Hardening: FND-03 category coverage audit + FND-04 structural CI check (check-server-actions.ts) + Lean acceptance criteria walkthrough [Wave 3]
+
 **UI hint**: yes
 
 ---
@@ -165,7 +169,7 @@ These designed-once-touched-many concerns need a coherent decision before the re
 | 2. Applications Slice | 5/5 | ✅ Complete | 2026-05-09 |
 | 3. Classifier + Matcher | 5/5 | ✅ Complete | 2026-05-09 |
 | 4. Gmail Ingestion + Pipeline | 1/5 | 🔨 In progress | — |
-| 5. Review Queue + Acceptance | 0/5 | ⏳ Pending | — |
+| 5. Review Queue + Acceptance | 0/3 | ⏳ Planning complete | — |
 
 `roadmap_complete: false` — Phases 1–3 verified; Phase 4 execution in progress.
 
@@ -199,3 +203,4 @@ These designed-once-touched-many concerns need a coherent decision before the re
 *Phase 2 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 2`*
 *Phase 3 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 3`*
 *Phase 4 decomposed into 5 plans: 2026-05-09 by `/gsd-plan-phase 4`*
+*Phase 5 decomposed into 3 plans: 2026-05-09 by `/gsd-plan-phase 5`*
