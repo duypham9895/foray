@@ -1,6 +1,7 @@
 import 'server-only'
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 
+import { ok, err, errors, type Result, type AppError } from '@/core/errors'
 import { env } from '@/core/env'
 
 const ALGO = 'aes-256-gcm'
@@ -28,18 +29,23 @@ export function encryptToken(plaintext: string): string {
   return `${iv.toString('base64')}.${tag.toString('base64')}.${ct.toString('base64')}`
 }
 
-export function decryptToken(blob: string): string {
+export function decryptToken(blob: string): Result<string, AppError> {
   const parts = blob.split('.')
   // Must be exactly 3 parts (iv.tag.ciphertext)
-  if (parts.length !== 3) throw new Error('Malformed encrypted blob')
   const [ivB64, tagB64, ctB64] = parts
-  if (!ivB64 || !tagB64 || !ctB64) throw new Error('Malformed encrypted blob')
-  const iv = Buffer.from(ivB64, 'base64')
-  const tag = Buffer.from(tagB64, 'base64')
-  const ct = Buffer.from(ctB64, 'base64')
-  const decipher = createDecipheriv(ALGO, key, iv)
-  decipher.setAuthTag(tag)
-  return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8')
+  if (parts.length !== 3 || !ivB64 || !tagB64 || !ctB64) {
+    return err(errors.validation([{ code: 'custom', message: 'Malformed encrypted blob', path: [] }]))
+  }
+  try {
+    const iv = Buffer.from(ivB64, 'base64')
+    const tag = Buffer.from(tagB64, 'base64')
+    const ct = Buffer.from(ctB64, 'base64')
+    const decipher = createDecipheriv(ALGO, key, iv)
+    decipher.setAuthTag(tag)
+    return ok(Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8'))
+  } catch {
+    return err(errors.validation([{ code: 'custom', message: 'Decryption failed (tampered or corrupt)', path: [] }]))
+  }
 }
 
 // Suppress unused import warning — TAG_BYTES is a documented constant for

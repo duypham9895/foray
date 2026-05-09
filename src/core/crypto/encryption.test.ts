@@ -10,12 +10,16 @@ import { encryptToken, decryptToken } from './encryption'
 describe('encryption helpers', () => {
   it('Test 1: round-trip ASCII — decryptToken(encryptToken(s)) === s', () => {
     const plaintext = 'hello world'
-    expect(decryptToken(encryptToken(plaintext))).toBe(plaintext)
+    const result = decryptToken(encryptToken(plaintext))
+    expect(result.isOk()).toBe(true)
+    expect(result._unsafeUnwrap()).toBe(plaintext)
   })
 
   it('Test 2: round-trip UTF-8 with unicode and emoji', () => {
     const plaintext = 'café 日本語 🚀'
-    expect(decryptToken(encryptToken(plaintext))).toBe(plaintext)
+    const result = decryptToken(encryptToken(plaintext))
+    expect(result.isOk()).toBe(true)
+    expect(result._unsafeUnwrap()).toBe(plaintext)
   })
 
   it('Test 3: two encryptToken calls produce different blobs (per-call random IV)', () => {
@@ -25,7 +29,7 @@ describe('encryption helpers', () => {
     expect(blob1).not.toBe(blob2)
   })
 
-  it('Test 4: tampering — flipping a base64 char in ciphertext throws on decrypt', () => {
+  it('Test 4: tampering — flipping a base64 char in ciphertext returns err on decrypt', () => {
     const blob = encryptToken('sensitive data')
     // blob format: iv.tag.ciphertext — tamper the ciphertext segment
     const parts = blob.split('.')
@@ -36,10 +40,18 @@ describe('encryption helpers', () => {
     const flipped = lastChar === 'A' ? 'B' : 'A'
     parts[2] = ct.slice(0, -1) + flipped
     const tampered = parts.join('.')
-    expect(() => decryptToken(tampered)).toThrow()
+    const result = decryptToken(tampered)
+    expect(result.isErr()).toBe(true)
   })
 
-  it('Test 5: decryptToken with invalid format throws "Malformed encrypted blob"', () => {
-    expect(() => decryptToken('not.valid.format.too.many.dots')).toThrow('Malformed encrypted blob')
+  it('Test 5: decryptToken with invalid format returns err with "Malformed encrypted blob"', () => {
+    const result = decryptToken('not.valid.format.too.many.dots')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error._tag).toBe('Validation')
+      if (result.error._tag === 'Validation') {
+        expect(result.error.issues[0]?.message).toBe('Malformed encrypted blob')
+      }
+    }
   })
 })
