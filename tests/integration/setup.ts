@@ -34,12 +34,21 @@ export default async function globalSetup() {
 
   // Apply all migrations as the owner role.
   // The migration creates the foray_app role with 'CHANGE_ME_VIA_ENV' password.
-  // Use the prisma binary resolved from the worktree root's node_modules.
-  // The worktree is at <foray>/.claude/worktrees/<id>/; node_modules is at <foray>/node_modules/.
-  const worktreeRoot = path.resolve(__dirname, '..', '..')
-  const prismaBin = path.resolve(worktreeRoot, '..', '..', '..', 'node_modules', '.bin', 'prisma')
+  // Resolve the prisma binary from the nearest node_modules ancestor (handles both
+  // main-tree runs and git-worktree runs where node_modules lives at the shared root).
+  const projectRoot = path.resolve(__dirname, '..', '..')
+  const findPrismaBin = (): string => {
+    let dir = projectRoot
+    for (let i = 0; i < 5; i++) {
+      const candidate = path.join(dir, 'node_modules', '.bin', 'prisma')
+      if (require('node:fs').existsSync(candidate)) return candidate
+      dir = path.dirname(dir)
+    }
+    throw new Error('prisma bin not found in any ancestor node_modules')
+  }
+  const prismaBin = findPrismaBin()
   execSync(`${prismaBin} migrate deploy`, {
-    cwd: worktreeRoot,
+    cwd: projectRoot,
     env: { ...process.env, DATABASE_URL: ownerUrl },
     stdio: 'inherit',
   })
