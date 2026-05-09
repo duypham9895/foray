@@ -93,13 +93,32 @@ describe('classifyByRules — 0.95-tier subject matches per label', () => {
 })
 
 describe('classifyByRules — 0.80-tier matches per label', () => {
-  it('Test 9: rejection 0.80 — "thank you for your interest" (subject)', () => {
+  it('Test 9: rejection 0.80 — "thank you for your interest" + paired rejection signal', () => {
+    // After Plan 03-04 (W3) the 0.80 'thank you for your interest' trigger
+    // requires a paired rejection-specific phrase within 200 chars. Bare
+    // "thank you for your interest" alone is NOT a rejection (Workday and
+    // Greenhouse acknowledgments use that exact phrase). See the
+    // tests/integration/classifier-fixtures/should-not-have-fired/workday-sample.json
+    // fixture for the regression case.
+    const out = classifyByRules({
+      subject: 'Thank you for your interest in Acme',
+      bodyExcerpt:
+        'Thank you for your interest in Acme. Unfortunately your profile is not selected for this role at this time.',
+    })
+    expect(out.label).toBe('rejection')
+    expect(out.confidence).toBe(0.8)
+  })
+
+  it('Test 9b: rejection 0.80 — bare "thank you for your interest" alone is NOT a rejection (W3 regression fence)', () => {
+    // Lock the W3 tightening: the bare phrase without a paired signal must
+    // NOT classify as rejection. This protects against the Pitfall #4
+    // false-positive that would mis-route Workday/Greenhouse acknowledgments
+    // to the rejection branch even at the 0.80 tier.
     const out = classifyByRules({
       subject: 'Thank you for your interest in Acme',
       bodyExcerpt: '',
     })
-    expect(out.label).toBe('rejection')
-    expect(out.confidence).toBe(0.8)
+    expect(out.label).not.toBe('rejection')
   })
 
   it('Test 10: rejection 0.80 — "after careful consideration" (body)', () => {
@@ -185,10 +204,16 @@ describe('classifyByRules — body-side matching (subject empty)', () => {
     expect(out.label).toBe('noise')
   })
 
-  it('Test 19: rejection 0.80 body match', () => {
+  it('Test 19: rejection 0.80 body match — "thank you for your interest" + "not selected" (paired W3 trigger)', () => {
+    // Updated for Plan 03-04 (W3): "thank you for your interest" alone no
+    // longer fires. The new 0.80 rule requires it paired with a
+    // rejection-specific signal within 200 chars. This test locks the paired
+    // trigger as the body-side counterpart to Test 9 (subject-side paired
+    // trigger).
     const out = classifyByRules({
       subject: '',
-      bodyExcerpt: 'Thank you for your interest in joining our team.',
+      bodyExcerpt:
+        'Thank you for your interest in joining our team. After review your application is not selected.',
     })
     expect(out.label).toBe('rejection')
     expect(out.confidence).toBe(0.8)
@@ -262,9 +287,12 @@ describe('classifyByRules — unmatched + edge cases', () => {
 
 describe('classifyByRules — match metadata', () => {
   it('Test 27: matchedRuleIndex is a valid index into CLASSIFICATION_RULES on a hit', () => {
+    // Updated for Plan 03-04 (W3): use "after careful consideration" — the
+    // surviving sole-trigger 0.80 rejection signal — to keep this test about
+    // the matchedRuleIndex contract, not about specific phrasings.
     const out = classifyByRules({
-      subject: 'Thank you for your interest in our company',
-      bodyExcerpt: '',
+      subject: 'Hiring decision update',
+      bodyExcerpt: 'After careful consideration, we have chosen another applicant.',
     })
     expect(out.label).toBe('rejection')
     expect(out.matchedRuleIndex).toBeDefined()

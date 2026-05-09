@@ -69,9 +69,38 @@ export const CLASSIFICATION_RULES: ReadonlyArray<ClassificationRule> = [
     confidence: 0.95,
     source: 'either',
   },
+  // 0.80 rejection — TIGHTENED in Plan 03-04 (W3) to defend against Pitfall #4.
+  //
+  // Before: /(thank you for your interest|after careful consideration)/i
+  // The bare "thank you for your interest" phrase alone fires on Workday
+  // status emails ("Thank you for your interest in joining Acme Corp.") and
+  // many other ATS acknowledgments that are NOT rejections. The 0.80 tier
+  // sits below the rejection auto-act threshold (0.92) so it doesn't
+  // auto-update — but it short-circuits the LLM fallback at confidence < 0.85
+  // and confuses downstream review-queue triage. Driven by the
+  // tests/integration/classifier-fixtures/should-not-have-fired/workday-sample.json
+  // fixture.
+  //
+  // After:
+  //   - "after careful consideration" alone still fires at 0.80 (canonical
+  //     rejection lead-in; rare in non-rejection contexts).
+  //   - "thank you for your interest" must be paired with a rejection-specific
+  //     signal within 200 chars: "not selected" | "unable to offer" |
+  //     "not (be) moving forward" | "decided to move/go with another" |
+  //     "chosen another candidate" | "other candidates/applicants" |
+  //     "another/different candidate".
+  //
+  // The .{0,200} bound preserves the no-ReDoS posture (T-03-01-05).
   {
     label: 'rejection',
-    pattern: /(thank you for your interest|after careful consideration)/i,
+    pattern: /after careful consideration/i,
+    confidence: 0.8,
+    source: 'either',
+  },
+  {
+    label: 'rejection',
+    pattern:
+      /thank you for your interest.{0,200}(not selected|unable to offer|not (be )?moving forward|decided to (move forward|go) with another|chosen (another|a different) (candidate|applicant)|other (candidates|applicants)|(another|different) (candidate|applicant))/i,
     confidence: 0.8,
     source: 'either',
   },
@@ -99,11 +128,21 @@ export const CLASSIFICATION_RULES: ReadonlyArray<ClassificationRule> = [
     confidence: 0.95,
     source: 'either',
   },
+  // 0.80 recruiter_outreach — RESTRICTED to subject-only in Plan 03-04 (W3
+  // follow-on). The bare body phrase "position at <Company>" fires on
+  // Greenhouse and Lever acknowledgment bodies ("thank you for applying to
+  // the Senior Product Manager position at Acme Corp"). Recruiter outreach
+  // legitimately announces itself in the SUBJECT ("Senior engineering opening
+  // at TechCo", "Position with Acme Inc."), but ATS acknowledgments use very
+  // different subject shapes ("We've received your application", "Application
+  // received"). Restricting to subject preserves real recruiter-outreach
+  // coverage while excluding ATS confirmation false-positives. Driven by the
+  // greenhouse-sample.json + lever-sample.json fixtures.
   {
     label: 'recruiter_outreach',
     pattern: /(opportunity|opening|position) (at|with) /i,
     confidence: 0.8,
-    source: 'either',
+    source: 'subject',
   },
 
   // -- noise ---------------------------------------------------------------
