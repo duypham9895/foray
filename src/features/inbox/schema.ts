@@ -11,3 +11,23 @@ export const parsedEmailSchema = z.object({
 })
 
 export type ParsedEmailInput = z.infer<typeof parsedEmailSchema>
+
+export const overrideClassificationSchema = z.object({
+  emailId: z.number().int().positive(),
+  newClassification: z.enum([
+    'rejection',
+    'interview_invite',
+    'recruiter_outreach',
+    'noise',
+    'unmatched',
+  ]),
+})
+
+export const linkApplicationSchema = z.object({
+  emailId: z.number().int().positive(),
+  applicationId: z.number().int().positive(),
+})
+
+export const reviewActionSchema = z.object({
+  emailId: z.number().int().positive(),
+})
