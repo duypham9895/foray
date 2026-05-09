@@ -37,6 +37,17 @@ const eslintConfig = defineConfig([
             { from: 'ui',        allow: ['ui', 'core'] },
             { from: 'test',      allow: ['feature', 'core', 'ui', 'generated'] },
             { from: 'generated', allow: ['generated'] },
+            // Inbox orchestrator: the one allowed cross-slice dependency
+            // (imports matcher, classifier, and applications services).
+            // Mirrors .dependency-cruiser.cjs exception (line 27).
+            {
+              from: [['feature', { slice: 'inbox' }]],
+              allow: [
+                ['feature', { slice: 'matcher' }],
+                ['feature', { slice: 'classifier' }],
+                ['feature', { slice: 'applications' }],
+              ],
+            },
           ],
         },
       ],
