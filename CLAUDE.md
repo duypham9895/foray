@@ -90,7 +90,22 @@ E2E user flow                          → tests/e2e/<flow>.spec.ts             
 
 ---
 
-## 3. Domain Language
+## 3. Phase Completion Protocol (mandatory)
+
+When a phase execution is complete and verified, **immediately update these files in order** to maintain data consistency across all docs:
+
+1. **`.planning/STATE.md`** — Update YAML header (completed_phases, completed_plans, percent), Current Position section, Performance Metrics, Open Todos, Session Continuity table
+2. **`landing/index.html`** — Update build status indicator in Roadmap section (e.g., "Phases 1–4 complete. Phase 5 in progress.")
+3. **Memory files** (`.ccs/.../memory/`) — Update phase status file and MEMORY.md index with completion date
+4. **Git commit** — Single commit referencing all updates + artifact count
+
+See **`.planning/PHASE_COMPLETION_CHECKLIST.md`** for detailed checklist. This prevents the status inconsistencies that happened in early phases — all stakeholders (you, GitHub visitors, future sessions) must see the same accurate phase progress.
+
+**Rule**: No phase is considered "complete" for communication purposes until STATE.md + landing page + memory are all updated in the same commit.
+
+---
+
+## 4. Domain Language
 
 Use these terms consistently throughout the codebase, docs, UI copy, and commit messages.
 
@@ -112,7 +127,7 @@ Don't invent synonyms. "Tracker" is wrong. "Application record" is wrong. The wo
 
 ---
 
-## 4. Naming Conventions
+## 5. Naming Conventions
 
 - **Files**: kebab-case (`gmail-poller.ts`)
 - **React components**: PascalCase, one per file (`<ApplicationCard />` in `application-card.tsx`)
@@ -125,7 +140,7 @@ Don't invent synonyms. "Tracker" is wrong. "Application record" is wrong. The wo
 
 ---
 
-## 5. Commit Style
+## 6. Commit Style
 
 - One concern per commit. If you fixed two bugs, write two commits.
 - Subject: ≤72 chars, present-tense verb, no trailing period.
@@ -135,7 +150,7 @@ Don't invent synonyms. "Tracker" is wrong. "Application record" is wrong. The wo
 
 ---
 
-## 6. Privacy + Data Handling
+## 7. Privacy + Data Handling
 
 - Email **bodies are not stored indefinitely**. Store metadata + body excerpt (≤500 chars). Fetch full body via Gmail API on demand for review queue display only.
 - API keys (`ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_SECRET`, etc.) live in `.env.local` (not `.env`) and are gitignored. They never go in `.env.example`.
@@ -144,7 +159,7 @@ Don't invent synonyms. "Tracker" is wrong. "Application record" is wrong. The wo
 
 ---
 
-## 7. Skills + agent priority
+## 8. Skills + agent priority
 
 When multiple installed AI skills could match the same trigger, prefer in this order:
 
@@ -157,7 +172,7 @@ This list will grow. When you add a skill, add it here.
 
 ---
 
-## 8. When in doubt
+## 9. When in doubt
 
 - Read [PRINCIPLES.md](./PRINCIPLES.md) for "how should this be shaped" (architecture, error handling, security)
 - Read [AGENTS.md](./AGENTS.md) for "where things live"
