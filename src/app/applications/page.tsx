@@ -2,7 +2,12 @@ import { redirect } from 'next/navigation'
 
 import { requireUser } from '@/core/auth/session'
 import { ApplicationList } from '@/features/applications/components/application-list'
-import { countApplicationsByStatus, findApplicationsForList, type ListSort } from '@/features/applications/queries'
+import {
+  countApplicationsByStatus,
+  findApplicationsForList,
+  listSortSchema,
+  type ListSort,
+} from '@/features/applications/queries'
 import type { CanonicalStatus } from '@/generated/prisma/client'
 
 const ALL_STATUSES: CanonicalStatus[] = ['applied','screening','interviewing','offer','rejected','withdrawn']
@@ -22,11 +27,15 @@ export default async function ApplicationsPage({
   const fromUrl = params.status?.split(',').filter(isCanonicalStatus) ?? []
   const activeStatuses: CanonicalStatus[] =
     fromUrl.length > 0 ? fromUrl : DEFAULT_STATUSES
-  const activeSort: ListSort = (params.sort as ListSort) ?? 'lastActivityAt:desc'
+  // Validate `?sort=` against the schema; fall back to default on bad input
+  // so attackers cannot smuggle arbitrary `orderBy` keys into Prisma.
+  const sortParse = listSortSchema.safeParse(params.sort)
+  const activeSort: ListSort = sortParse.success ? sortParse.data : 'lastActivityAt:desc'
 
   const currentParams = new URLSearchParams()
   if (params.status) currentParams.set('status', params.status)
-  if (params.sort) currentParams.set('sort', params.sort)
+  // Only forward `sort` when it parsed successfully — drop unknown values.
+  if (sortParse.success) currentParams.set('sort', activeSort)
 
   const [listResult, countsResult] = await Promise.all([
     findApplicationsForList(userId, { statuses: activeStatuses, sort: activeSort }),

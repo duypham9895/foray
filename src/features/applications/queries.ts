@@ -10,6 +10,7 @@
 
 import 'server-only'
 import { type Result } from 'neverthrow'
+import { z } from 'zod'
 
 import { withRls } from '@/core/db/with-rls'
 import type { AppError } from '@/core/errors'
@@ -43,11 +44,16 @@ export type ApplicationDetail = {
   emails: Email[]
 }
 
-export type ListSort =
-  | 'lastActivityAt:desc'
-  | 'lastActivityAt:asc'
-  | 'appliedAt:desc'
-  | 'appliedAt:asc'
+// URL-driven sort param. Validated at the page boundary via `safeParse` so
+// arbitrary `?sort=...` strings cannot reach Prisma's `orderBy` (PRINCIPLES.md
+// §"Zod at every boundary"). The union below mirrors the schema literals.
+export const listSortSchema = z.enum([
+  'lastActivityAt:desc',
+  'lastActivityAt:asc',
+  'appliedAt:desc',
+  'appliedAt:asc',
+])
+export type ListSort = z.infer<typeof listSortSchema>
 
 const ALL_STATUSES: ReadonlyArray<CanonicalStatus> = [
   'applied',
