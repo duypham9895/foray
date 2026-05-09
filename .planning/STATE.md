@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
-status: planning
-last_updated: "2026-05-09T08:05:02.786Z"
+status: executing
+last_updated: "2026-05-09T20:50:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 3
+  total_plans: 19
+  completed_plans: 19
   percent: 100
 ---
 
@@ -25,25 +25,25 @@ progress:
 
 **Core value:** One screen tells the owner what's actually happening today — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance and without LLM hallucination changing the record without consent.
 
-**Current focus:** Phase 1 — Foundation + Auth. Lock the multi-tenant safety net (`withRls` helper, RLS migration with `FORCE ROW LEVEL SECURITY`, non-superuser `foray_app` role, `tenantDb` extensions) and wire iron-session auth so every later slice writes through verified-safe primitives.
+**Current focus:** Phase 4 — Gmail Ingestion + Pipeline + Cron. Connect Gmail (OAuth + encrypted refresh token + token-health banner), wire the 4-stage pipeline (`ingest → match → classify → act`), schedule cron every 15 minutes with trust safety nets (first-50 grace, status-regression block, undo idempotency).
 
 ---
 
 ## Current Position
 
 **Milestone:** Lean (v0.1)
-**Phase:** 2 of 5 (applications slice (manual tracker))
-**Plan:** Not started
-**Status:** Ready to plan
+**Phase:** 4 of 5 (Gmail Ingestion + Pipeline + Cron)
+**Plan:** 1 of 5 (schema setup: ProcessingStatus enum + gmailHistoryId)
+**Status:** Executing Phase 4 (plans written, execution in progress)
 
-**Progress:** [▱▱▱▱▱] 0/5 phases complete
+**Progress:** [▰▰▰▰⠀] 3/5 phases complete; Phase 4 executing
 
 ```
-Phase 1: Foundation + Auth          ⏳ Next up
-Phase 2: Applications Slice         ⏸ Pending
-Phase 3: Classifier + Matcher       ⏸ Pending
-Phase 4: Gmail Ingestion + Pipeline ⏸ Pending
-Phase 5: Review Queue + Acceptance  ⏸ Pending
+Phase 1: Foundation + Auth          ✅ Complete (verification 2026-05-09, browser UAT deferred)
+Phase 2: Applications Slice         ✅ Complete (verification 2026-05-09, browser UAT deferred)
+Phase 3: Classifier + Matcher       ✅ Complete (verification passed 2026-05-09)
+Phase 4: Gmail Ingestion + Pipeline ⏳ Executing (plans → execution)
+Phase 5: Review Queue + Acceptance  ⏳ Pending
 ```
 
 ---
@@ -52,10 +52,14 @@ Phase 5: Review Queue + Acceptance  ⏸ Pending
 
 | Metric | Value |
 |---|---|
-| Phases completed | 0/5 |
+| Phases completed | 3/5 (Phases 1, 2, 3 verified) |
+| Phases in progress | 1/5 (Phase 4 executing) |
+| Total plans completed | 19/19 (planning 100% done) |
+| Phase 1 status | Complete (RLS + auth verified; 2 browser UAT deferred) |
+| Phase 2 status | Complete (all code+tests in; browser UAT deferred) |
+| Phase 3 status | Complete (verification passed) |
 | v1 requirements mapped | 31/31 |
 | ADRs landed | 10 (0001–0010) |
-| ADR candidates queued | 2 (ADR-0011 RLS via `withRls`, ADR-0012 asymmetric thresholds) |
 | Pre-commit gate | Configured (`lint && typecheck && test:run && build && depcheck`) |
 | Test coverage strategy | Category-based (per FND-03, replaces gameable count) |
 
@@ -70,12 +74,13 @@ Phase 5: Review Queue + Acceptance  ⏸ Pending
 - **Cross-cutting trust trio:** Per-label thresholds (Phase 3), status-regression block + undo idempotency (Phase 4), visually-distinct event styling (Phase 2 + Phase 5) designed in one pass during Phase 3 planning.
 - **Coverage footer discrepancy flagged:** REQUIREMENTS.md says "30 total" but actual count is 31. Traceability table updated to 31; recommend one-line fix to the coverage footer.
 
-### Open Todos
+### Open Todos (Phase 4 Execution)
 
-- [ ] Decompose Phase 1 into plans via `/gsd-plan-phase 1`
-- [ ] Land ADR-0011 candidate during Phase 1 ("RLS via `withRls()` helper, not Prisma client extension, until SaaS flip")
-- [ ] Land ADR-0012 candidate during Phase 3 ("Asymmetric per-label classifier thresholds + status-regression block")
-- [ ] Fix REQUIREMENTS.md coverage footer (30 → 31)
+- [ ] Execute Phase 4 plans 01-05 in waves (schema → OAuth → pipeline stages → cron → verification)
+- [ ] Deferred from Phase 1: Browser UAT for login form (cookie issuance) + protected route redirect
+- [ ] Deferred from Phase 2: Browser UAT for capture flow (<30s), ATS rejection, status/stage/notes interactivity
+- [ ] Land ADR-0013 during Phase 4 ("Refresh token rotation on hot-deploy + advisory lock pattern")
+- [ ] Verify Phase 4 success criteria before Phase 5 planning
 
 ### Blockers
 
@@ -83,9 +88,9 @@ None.
 
 ### Research Flags (per-phase deeper research candidates)
 
-- **Phase 1:** RLS migration patterns under Prisma 7, pgTAP-style escape tests, non-superuser role + grant matrix. Architecture file flags this as "non-trivially harder than the one-paragraph version in PRINCIPLES.md." Candidate for `/gsd-research-phase 1`.
-- **Phase 4:** Gmail OAuth in Next 16 App Router with `googleapis` (callback config, token refresh failure UX, `history.list` 404 fallback contract); cron + hot-reload + advisory-lock interaction. Candidate for `/gsd-research-phase 4`.
-- **Phases 2, 3, 5:** Standard patterns; skip research-phase. Server Actions + Zod + Prisma + shadcn primitives + Anthropic SDK wrapped in `Result` are well-trodden ground; non-obvious bits documented in PITFALLS.md and SUMMARY.md.
+- **Phase 1:** Pending — RLS migration patterns under Prisma 7, pgTAP-style escape tests, non-superuser role + grant matrix. Deferred until Phase 1 planning.
+- **Phase 4:** In progress — Gmail OAuth token refresh + hot-reload interaction covered in `04-RESEARCH.md`. Advisory lock pattern for cron scheduling documented.
+- **Phase 2, 5:** Pending — Standard patterns deferred to phase execution. Server Actions + Zod + Prisma + shadcn primitives are well-trodden ground.
 
 ### UI Phase Candidates
 
@@ -95,24 +100,25 @@ Phases 1, 2, 4, 5 contain user-facing surfaces (login form, applications list/de
 
 ## Session Continuity
 
-**Files written this session:**
+**Complete Status (2026-05-09):**
 
-- `.planning/ROADMAP.md` (5 phases, 31 requirements mapped, success criteria + cross-cutting concerns)
-- `.planning/STATE.md` (this file)
-- `.planning/REQUIREMENTS.md` (traceability table populated)
+| Phase | Status | Artifacts | Notes |
+|-------|--------|-----------|-------|
+| Phase 1 | ✅ Complete | 14 files (4 plans + 4 summaries + research + review + verification) | RLS + auth verified; 2 browser UAT deferred |
+| Phase 2 | ✅ Complete | 15 files (5 plans + 5 summaries + context + review + UAT + verification) | All code + integration tests; browser UAT deferred |
+| Phase 3 | ✅ Complete | 15 files (5 plans + 5 summaries + context + review + verification) | Classifier + matcher verified |
+| Phase 4 | ⏳ Executing | 8 files (5 plans + 1 research + 1 context + 1 summary stub) | Plans written, execution starting |
+| Phase 5 | ❌ Pending | — | Not started |
+| Landing page | ✅ Complete | 1 file (`landing/index.html`) | Static build ready for deployment |
 
-**Files read for context:**
+**Key files for Phase 4 execution:**
 
-- `.planning/PROJECT.md`
-- `.planning/REQUIREMENTS.md`
-- `.planning/research/SUMMARY.md`
-- `.planning/research/ARCHITECTURE.md`
-- `.planning/research/PITFALLS.md`
-- `.planning/config.json`
-- `PRINCIPLES.md`
-- `docs/milestones/lean.md`
+- `.planning/phases/04-gmail-ingestion-pipeline-cron/04-RESEARCH.md` (OAuth + cron patterns)
+- `.planning/phases/04-gmail-ingestion-pipeline-cron/04-01-PLAN.md` (schema: ProcessingStatus + gmailHistoryId)
+- `.planning/ROADMAP.md` (Phase 4 goal + success criteria)
+- `PRINCIPLES.md` §"Email pipeline — 4 idempotent stages"
 
-**Next command:** `/gsd-plan-phase 1`
+**Next action:** Execute `04-01-PLAN.md` (Prisma schema modifications)
 
 ---
 

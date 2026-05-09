@@ -113,7 +113,7 @@ One screen tells the owner what's actually happening today — what's stale, wha
   5. `src/instrumentation.ts` registers a single 15-minute `node-cron` job guarded by `process.env.NEXT_RUNTIME === 'nodejs'` (skip on Edge) + `globalThis.__forayCron?.stop()` (hot-reload safety) + `pg_try_advisory_lock('poll-gmail')` (overlap prevention) + `NODE_ENV !== 'test'` (test-process safety); the cron calls `pollOnce` directly in-process, no HTTP self-call
 
 **Plans**: 5 plans
-- [ ] 04-01-PLAN.md — Schema migration: ProcessingStatus enum + processing_status on Email + gmailHistoryId on User [Wave 1]
+- [x] 04-01-PLAN.md — Schema migration: ProcessingStatus enum + processing_status on Email + gmailHistoryId on User [Wave 1]
 - [ ] 04-02-PLAN.md — Gmail OAuth + client: /api/gmail/auth + /api/gmail/callback + gmail-client.ts (OAuth2, Gmail API, email metadata extraction) [Wave 2]
 - [ ] 04-03-PLAN.md — Pipeline orchestrator: ingest.ts (history.list + fallback) + act.ts (4 gates: threshold, match, regression, first-50) + service.ts (pollOnce) [Wave 2]
 - [ ] 04-04-PLAN.md — Settings page + cron: /settings UI (Connect/Disconnect/Sync-now + token-health banner) + instrumentation.ts (node-cron with 4 guards) [Wave 3]
