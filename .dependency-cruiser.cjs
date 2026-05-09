@@ -22,9 +22,14 @@ module.exports = {
       severity: 'error',
       comment:
         'Feature slices may not import each other. ' +
-        'Cross-slice sharing goes in src/core/ (cross-cutting) or a new shared slice.',
+        'Cross-slice sharing goes in src/core/ (cross-cutting) or a new shared slice. ' +
+        'EXCEPTION: src/features/inbox/ may import from features/{matcher,classifier}/service.ts ' +
+        'as the email pipeline orchestrator. See ARCHITECTURE.md §"The one allowed exception".',
       from: { path: '^src/features/([^/]+)/' },
-      to: { path: '^src/features/(?!\\1)([^/]+)/' },
+      to: {
+        path: '^src/features/(?!\\1)([^/]+)/',
+        pathNot: '^src/features/(matcher|classifier)/service\\.ts$',
+      },
     },
 
     // -- Rule 3: src/core/ is a leaf. ---------------------------------------
@@ -73,6 +78,7 @@ module.exports = {
           'src/app/',         // Next.js routes are entrypoints (framework imports them)
           'src/instrumentation\\.',
           'src/generated/',
+          'src/__mocks__/',   // Vitest mocks are referenced by alias in vitest.config.ts
           'scripts/seed\\.ts$',
           '(README|CHANGELOG|LICENSE)\\.md$',
         ],
