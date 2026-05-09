@@ -52,3 +52,6 @@ foray-sync.log
 # Dev-only one-off scripts (fixtures, manual repro tools — NOT shipped)
 scripts/dev/
 
+# Visual companion brainstorm sessions
+.superpowers/
+
