@@ -237,6 +237,20 @@ export function tenantDb(userId: UserId) {
       },
     },
 
+    user: {
+      findUnique: (args: Prisma.UserFindUniqueArgs) =>
+        prisma.user.findUnique({
+          ...args,
+          where: { ...args.where, id: numericUserId },
+        }),
+
+      update: (args: Prisma.UserUpdateArgs) =>
+        prisma.user.update({
+          ...args,
+          where: { ...args.where, id: numericUserId },
+        }),
+    },
+
     // TODO(duy, 2026-05-09): add tenantDb wrappers for recruiter, applicationRecruiter, document (Full milestone)
   }
 }
