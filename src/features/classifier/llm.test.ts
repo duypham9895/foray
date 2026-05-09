@@ -49,6 +49,7 @@ vi.mock('@anthropic-ai/sdk', async () => {
     default: MockAnthropic,
     APIError: actual.APIError,
     AuthenticationError: actual.AuthenticationError,
+    PermissionDeniedError: actual.PermissionDeniedError,
     RateLimitError: actual.RateLimitError,
     APIConnectionTimeoutError: actual.APIConnectionTimeoutError,
     APIConnectionError: actual.APIConnectionError,
