@@ -37,6 +37,7 @@
     "date-fns": "^4.1.0",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
+    "iron-session": "^8.0.4",
     "lucide-react": "^1.14.0",
     "neverthrow": "^8.2.0",
     "next": "16.2.6",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testcontainers/postgresql": "^11.14.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",

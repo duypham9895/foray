@@ -19,7 +19,11 @@ const envSchema = z.object({
     .string()
     .length(64, 'ENCRYPTION_KEY must be 64 hex chars (32 bytes). Run: openssl rand -hex 32'),
 
-  APP_PASSWORD: z.string().min(8, 'APP_PASSWORD must be at least 8 characters'),
+  APP_PASSWORD: z.string().min(12, 'APP_PASSWORD must be at least 12 characters'),
+
+  APP_SESSION_SECRET: z
+    .string()
+    .min(32, 'APP_SESSION_SECRET must be ≥32 chars per iron-session requirement. Run: openssl rand -hex 32'),
 
   // -- Optional in v1; required when relevant feature lands -----------------
   ANTHROPIC_API_KEY:   z.string().optional(),
