@@ -1,0 +1,113 @@
+// Public classifier service — composition of rules-first → budget gate → LLM
+// fallback → cost recording.
+//
+// **Algorithm (LOCKED in CONTEXT §Area 2):**
+//
+//   1. Validate input via classifyEmailInputSchema (≤500 chars each).
+//   2. Run classifyByRules() — pure regex tier table from Plan 03-01.
+//   3. Short-circuit:
+//        - rules.label === 'unmatched'         → return rules result as-is
+//        - rules.confidence >= 0.85            → return rules result as-is
+//      Both paths skip checkBudget AND classifyByLlm — cost-bound by design.
+//   4. checkBudget() — FAIL CLOSED on read failure (Plan 03-01 / T-03-02-03).
+//      If RateLimited, return that err. The LLM is NEVER called.
+//   5. classifyByLlm() — Anthropic Haiku 4.5 with structured tool output.
+//      If err, return that err. appendCostEntry is NOT called (no charge for
+//      failures — Anthropic doesn't bill failed requests).
+//   6. appendCostEntry() — best-effort. See HACK comment below for why we
+//      intentionally ignore the Result.
+//   7. Return ok({label, confidence, classifiedBy: 'llm'}).
+//
+// **Trust contract for Phase 4 (inbox.pollOnce):**
+//   - Idempotency on email.classifiedBy is the CALLER's job (skip re-classify
+//     if already classified). This service is pure w.r.t. the database.
+//   - The 50-email-per-tick cap is the CALLER's loop concern.
+//
+// See PRINCIPLES.md §"Error handling" + threat-model entries T-03-02-01..08.
+
+import 'server-only'
+
+import { ok, err, type Result } from 'neverthrow'
+
+import { errors, type AppError } from '@/core/errors'
+import type { EmailClassification } from '@/generated/prisma/client'
+
+import { classifyByRules } from './rules'
+import { classifyByLlm, MODEL } from './llm'
+import { checkBudget, appendCostEntry, hashEmailContent } from './budget'
+import { classifyEmailInputSchema } from './schema'
+
+// ---------------------------------------------------------------------------
+// Public types — Phase 4's import surface
+// ---------------------------------------------------------------------------
+
+export type ClassifyEmailInput = {
+  subject: string
+  bodyExcerpt: string
+}
+
+export type ClassifyEmailOutput = {
+  label: EmailClassification
+  confidence: number
+  classifiedBy: 'rules' | 'llm'
+}
+
+/** The `confidence >= RULES_SHORT_CIRCUIT` threshold above which a rules
+ *  match is accepted without LLM refinement. CONTEXT §Area 2 LOCKED at 0.85. */
+const RULES_SHORT_CIRCUIT = 0.85
+
+// ---------------------------------------------------------------------------
+// classifyEmail — public entry point
+// ---------------------------------------------------------------------------
+
+export async function classifyEmail(
+  input: ClassifyEmailInput,
+): Promise<Result<ClassifyEmailOutput, AppError>> {
+  // Step 1: validate input (slice boundary).
+  const parsed = classifyEmailInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return err(errors.validation(parsed.error.issues))
+  }
+  const { subject, bodyExcerpt } = parsed.data
+
+  // Step 2: rules-first.
+  const rules = classifyByRules({ subject, bodyExcerpt })
+
+  // Step 3: short-circuit (no I/O on the confident-or-unmatched paths).
+  if (rules.label === 'unmatched') {
+    return ok({ label: 'unmatched', confidence: 0, classifiedBy: 'rules' })
+  }
+  if (rules.confidence >= RULES_SHORT_CIRCUIT) {
+    return ok({ label: rules.label, confidence: rules.confidence, classifiedBy: 'rules' })
+  }
+
+  // Step 4: budget gate BEFORE the SDK call (control, not monitoring).
+  const budget = await checkBudget()
+  if (budget.isErr()) return err(budget.error)
+
+  // Step 5: LLM call. On failure, propagate without recording cost — Anthropic
+  // doesn't bill for failed requests (T-03-02-07 documents the trade-off).
+  const llm = await classifyByLlm({ subject, bodyExcerpt })
+  if (llm.isErr()) return err(llm.error)
+
+  // Step 6: best-effort cost recording.
+  // HACK(duy, 2026-05-09): cost-log write failure is intentionally ignored
+  // here. Classification SUCCEEDED; logging is best-effort. The trade-off:
+  // a write failure means we under-count today's spend (conservative —
+  // tomorrow's budget is unaffected; today's may incorrectly under-count).
+  // Standard milestone: route this to a separate alerting channel.
+  const emailHash = hashEmailContent(subject, bodyExcerpt)
+  await appendCostEntry({
+    inputTokens: llm.value.inputTokens,
+    outputTokens: llm.value.outputTokens,
+    model: MODEL,
+    emailHash,
+  })
+
+  // Step 7.
+  return ok({
+    label: llm.value.label,
+    confidence: llm.value.confidence,
+    classifiedBy: 'llm',
+  })
+}
