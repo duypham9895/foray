@@ -12,9 +12,12 @@
 
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // --- Config ---
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const FEATURES_DIR = path.resolve(__dirname, '..', 'src', 'features')
 
 // Return type patterns that indicate a safe return type.
