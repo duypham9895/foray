@@ -204,6 +204,31 @@ pnpm seed                        # repopulates demo data
 
 ---
 
+## Database role split (Phase 1)
+
+foray uses TWO Postgres roles to make multi-tenant safety enforceable:
+
+- **`foray_owner`** — owns tables, runs migrations. Set via `DATABASE_URL_OWNER`. Used by `pnpm prisma migrate dev` and `pnpm prisma migrate deploy` only.
+- **`foray_app`** — non-superuser runtime role. Set via `DATABASE_URL`. Used by the Next.js app + tests. Has CRUD grants but does NOT own tables, so `FORCE ROW LEVEL SECURITY` policies fire correctly.
+
+For Path A (native dev with Docker Postgres):
+
+```bash
+# In .env.local:
+DATABASE_URL_OWNER=postgresql://foray:foray@localhost:5432/foray
+DATABASE_URL=postgresql://foray_app:<password>@localhost:5432/foray
+```
+
+First-time setup: after `pnpm prisma migrate deploy` runs (using `DATABASE_URL_OWNER`), set the `foray_app` password out-of-band:
+
+```bash
+docker compose exec db psql -U foray -d foray -c "ALTER ROLE foray_app PASSWORD '<your-password-here>';"
+```
+
+Why split: superuser bypasses RLS silently (Pitfall #9). Tests + runtime MUST connect as a non-superuser to prove the safety net works.
+
+---
+
 ## Where to go next
 
 - **[README.md](./README.md)** — what foray is and why
