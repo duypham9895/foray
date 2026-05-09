@@ -15,7 +15,7 @@ import 'server-only'
 import type { gmail_v1 } from 'googleapis'
 
 import { withRls } from '@/core/db/with-rls'
-import { errors, ok, err, type Result, type AppError } from '@/core/errors'
+import { type Result, type AppError } from '@/core/errors'
 import { logger } from '@/core/logger'
 import type { UserId } from '@/core/types/ids'
 
