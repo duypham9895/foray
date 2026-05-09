@@ -1,125 +1,217 @@
 ---
-gsd_state_version: 1.0
-milestone: v0.1
-milestone_name: milestone
-status: planning
-last_updated: "2026-05-09T14:40:34.097Z"
+gsd_state_version: 2.0
+global_phase: 5
+milestone: Lean (v0.1)
+status: executing
+last_updated: "2026-05-09T22:00:00Z"
 progress:
-  total_phases: 5
+  total_phases: 16
   completed_phases: 4
-  total_plans: 19
+  current_phase_completion: 80%
+  total_plans: 57
   completed_plans: 19
-  percent: 100
 ---
 
-# State: foray
+# State: foray (Global Phase Tracking)
 
-**Last updated:** 2026-05-09
-**Mode:** yolo (auto_advance enabled)
+**Version**: 2.0 (Global continuous numbering: phases 1–16+)  
+**Last updated**: 2026-05-09  
+**Mode**: yolo (auto_advance enabled)
 
 ---
 
-## Project Reference
+## 🎯 Quick Status
 
-**Source of truth:** `.planning/PROJECT.md` (foray Lean milestone v0.1)
+| Metric | Value |
+|---|---|
+| **Milestone** | Lean (v0.1) — phases 1–5 |
+| **Current Phase** | 5 of 16 (Review Queue + Acceptance) |
+| **Phase Status** | 🔨 Executing (~80% complete) |
+| **Next Phase** | 6 (Bookmarklet + Capture API) |
+| **Milestone Progress** | 4/5 complete; Phase 5 executing |
 
-**Core value:** One screen tells the owner what's actually happening today — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance and without LLM hallucination changing the record without consent.
+---
 
-**Current focus:** Phase 4 — Gmail Ingestion + Pipeline + Cron. Connect Gmail (OAuth + encrypted refresh token + token-health banner), wire the 4-stage pipeline (`ingest → match → classify → act`), schedule cron every 15 minutes with trust safety nets (first-50 grace, status-regression block, undo idempotency).
+## Milestone Overview
+
+### ✅ Lean Milestone (v0.1) — Phases 1–5
+
+**Goal**: One screen tells the owner what's happening today — no manual spreadsheets, no hallucination without consent.
+
+| Phase | Name | Status | Completed |
+|-------|------|--------|-----------|
+| **1** | Foundation + Auth | ✅ Complete | 2026-05-09 |
+| **2** | Applications Slice | ✅ Complete | 2026-05-09 |
+| **3** | Classifier + Matcher | ✅ Complete | 2026-05-09 |
+| **4** | Gmail Ingestion + Pipeline | ✅ Complete | 2026-05-09 |
+| **5** | Review Queue + Acceptance | 🔨 Executing | — |
+
+### ⏳ Standard Milestone (v0.2) — Phases 6–10
+
+**Goal**: Zero-friction capture from anywhere + daily check-in experience.
+
+| Phase | Name | Status | Completed |
+|-------|------|--------|-----------|
+| **6** | Bookmarklet + Capture API | ⏳ Pending | — |
+| **7** | Today Dashboard | ⏳ Pending | — |
+| **8** | Tags + Search | ⏳ Pending | — |
+| **9** | UX Polish + Keyboard Shortcuts | ⏳ Pending | — |
+| **10** | E2E Tests + Acceptance | ⏳ Pending | — |
+
+### ⏳ Full Milestone (v0.3) — Phases 11–16
+
+**Goal**: Power features (extension, storage, recruiter tracking, calendar, analytics, polish).
+
+| Phase | Name | Status | Completed |
+|-------|------|--------|-----------|
+| **11** | Chrome MV3 Extension | ⏳ Pending | — |
+| **12** | Document Storage | ⏳ Pending | — |
+| **13** | Recruiter Entity | ⏳ Pending | — |
+| **14** | Google Calendar Integration | ⏳ Pending | — |
+| **15** | Analytics Dashboard | ⏳ Pending | — |
+| **16** | Reminders + Polish | ⏳ Pending | — |
+
+### 🔮 Future Milestone (v0.4+) — Phases 17+
+
+| Phase | Name | Status |
+|-------|------|--------|
+| **17** | Multi-LLM Provider Abstraction | 🔮 Future |
 
 ---
 
 ## Current Position
 
-**Milestone:** Lean (v0.1)
-**Phase:** 5 of 5 (review queue + acceptance)
-**Plan:** Not started
-**Status:** Ready to plan
+### Phase 5: Review Queue + Acceptance (Lean-5)
 
-**Progress:** [▰▰▰▰⠀] 3/5 phases complete; Phase 4 executing
+**Objective**: Ship human-triage surface (`/inbox`), structural CI checks, category-based test coverage, verify all 12 Lean acceptance criteria.
 
-```
-Phase 1: Foundation + Auth          ✅ Complete (verification 2026-05-09, browser UAT deferred)
-Phase 2: Applications Slice         ✅ Complete (verification 2026-05-09, browser UAT deferred)
-Phase 3: Classifier + Matcher       ✅ Complete (verification passed 2026-05-09)
-Phase 4: Gmail Ingestion + Pipeline ⏳ Executing (plans → execution)
-Phase 5: Review Queue + Acceptance  ⏳ Pending
-```
+**Dependencies**: Phase 4 complete (Gmail ingestion + pipeline)
+
+**Progress**:
+- [x] Plan 05-01 complete
+- [x] Plan 05-02 complete
+- [ ] Plan 05-03 (in progress)
+
+**Blocking**: None  
+**Next phase after completion**: Phase 6 (Bookmarklet + Capture API — Standard-1)
+
+---
+
+## Transition Points
+
+### Lean → Standard (After Phase 5)
+
+**Trigger**: Phase 5 automation completes  
+**Verification**: Pre-commit gate + all 12 Lean acceptance criteria verified  
+**Auto-advance**: Yes (`/gsd-autonomous --from 06 --continue --auto-advance`)
+
+### Standard → Full (After Phase 10)
+
+**Trigger**: Phase 10 automation completes  
+**Verification**: Pre-commit gate + E2E tests passing  
+**Auto-advance**: Yes (`/gsd-autonomous --from 11 --continue --auto-advance`)
 
 ---
 
 ## Performance Metrics
 
-| Metric | Value |
-|---|---|
-| Phases completed | 3/5 (Phases 1, 2, 3 verified) |
-| Phases in progress | 1/5 (Phase 4 executing) |
-| Total plans completed | 19/19 (planning 100% done) |
-| Phase 1 status | Complete (RLS + auth verified; 2 browser UAT deferred) |
-| Phase 2 status | Complete (all code+tests in; browser UAT deferred) |
-| Phase 3 status | Complete (verification passed) |
-| v1 requirements mapped | 31/31 |
-| ADRs landed | 10 (0001–0010) |
-| Pre-commit gate | Configured (`lint && typecheck && test:run && build && depcheck`) |
-| Test coverage strategy | Category-based (per FND-03, replaces gameable count) |
+| Metric | Value | Target |
+|---|---|---|
+| Phases complete (Lean) | 4/5 | 5/5 |
+| Phases complete (total) | 4/16 | 16/16 |
+| Plans complete | 19/57 | 57/57 |
+| Coverage | 31/31 v1 requirements mapped | ✅ 100% |
+| ADRs landed | 10 (0001–0010) | — |
+| Pre-commit gate | 5 checks configured | ✅ Ready |
+| Test strategy | Category-based (replaces count) | ✅ Implemented |
 
 ---
 
-## Accumulated Context
+## File Locations
 
-### Decisions Made (this session)
+**Authoritative source**: `.planning/PHASE-MANIFEST.md`  
+**Lean roadmap** (phases 1–5): `.planning/LEAN-ROADMAP.md`  
+**Phase details**:
+- Plans: `.planning/phases/NN-*/NN-0N-PLAN.md`
+- Research: `.planning/phases/NN-*/RESEARCH.md`
+- Requirements: `.planning/phases/NN-*/REQUIREMENTS.md`
 
-- **Phase structure:** 5 phases, derived from research synthesis (4-dimension parallel research, HIGH confidence). Coarse granularity per `config.json`.
-- **Phase ordering:** Foundation first (RLS + auth), then independently-shippable manual tracker (Applications), then pure-ish slices (Classifier + Matcher), then the one legitimate cross-slice composition (Gmail + pipeline orchestration + cron), then review-queue UI + Lean acceptance verification.
-- **Cross-cutting trust trio:** Per-label thresholds (Phase 3), status-regression block + undo idempotency (Phase 4), visually-distinct event styling (Phase 2 + Phase 5) designed in one pass during Phase 3 planning.
-- **Coverage footer discrepancy flagged:** REQUIREMENTS.md says "30 total" but actual count is 31. Traceability table updated to 31; recommend one-line fix to the coverage footer.
+**Research synthesis**: `.planning/research/SUMMARY.md`
 
-### Open Todos (Phase 4 Execution)
+---
 
-- [ ] Execute Phase 4 plans 01-05 in waves (schema → OAuth → pipeline stages → cron → verification)
-- [ ] Deferred from Phase 1: Browser UAT for login form (cookie issuance) + protected route redirect
-- [ ] Deferred from Phase 2: Browser UAT for capture flow (<30s), ATS rejection, status/stage/notes interactivity
-- [ ] Land ADR-0013 during Phase 4 ("Refresh token rotation on hot-deploy + advisory lock pattern")
-- [ ] Verify Phase 4 success criteria before Phase 5 planning
+## How to Resume Work
 
-### Blockers
+### From Phase 5 (currently executing)
 
-None.
+```bash
+# See what's next
+cat .planning/phases/05-review-queue-acceptance/05-03-PLAN.md
 
-### Research Flags (per-phase deeper research candidates)
+# Check phase details
+cat .planning/phases/05-review-queue-acceptance/RESEARCH.md
+```
 
-- **Phase 1:** Pending — RLS migration patterns under Prisma 7, pgTAP-style escape tests, non-superuser role + grant matrix. Deferred until Phase 1 planning.
-- **Phase 4:** In progress — Gmail OAuth token refresh + hot-reload interaction covered in `04-RESEARCH.md`. Advisory lock pattern for cron scheduling documented.
-- **Phase 2, 5:** Pending — Standard patterns deferred to phase execution. Server Actions + Zod + Prisma + shadcn primitives are well-trodden ground.
+### After Phase 5 Completes
 
-### UI Phase Candidates
+```bash
+# Verify Lean complete
+cat .planning/PHASE_COMPLETION_CHECKLIST.md
 
-Phases 1, 2, 4, 5 contain user-facing surfaces (login form, applications list/detail/new, settings + token-health banner, review queue). `/gsd-ui-phase` may be invoked at the end of any of these phases per `config.workflow.ui_phase = true`.
+# Start Standard Phase 1 (Bookmarklet)
+/gsd-autonomous --from 06 --continue --auto-advance
+
+# Or read the next phase first
+cat .planning/phases/06-bookmarklet-capture-api/RESEARCH.md
+```
+
+---
+
+## Key Decisions
+
+- **Global phase numbering** (1–16+, not per-milestone) for clarity in automation
+- **Continuous execution** with auto-advance (Standard → Full happens automatically on Phase 10 completion)
+- **Category-based test coverage** (replaces gameable "≥30 tests" target)
+- **RLS via `withRls()` helper** (per ADR-0011, until SaaS flip)
+- **LLM cost as control, not monitoring** (pre-call guard, fail closed at $0.50/day)
+- **Status-regression block** (auto-update refuses interviewing → rejected)
+- **Undo via `reviewedByUser` flag** (idempotency: cron won't re-act on already-triaged email)
+
+---
+
+## Open Todos
+
+### Phase 5 (In Progress)
+- [ ] Complete Plan 05-03 (inbox integration + token-health banner)
+- [ ] Execute Plan 05-04 (CI checks + category coverage validation)
+- [ ] Execute Plan 05-05 (manual UAT walkthrough + acceptance sign-off)
+
+### Post-Phase 5
+- [ ] Verify all 12 Lean acceptance criteria
+- [ ] Update LEAN-ROADMAP.md with final completion date
+- [ ] Commit Phase 5 completion
+- [ ] Trigger Phase 6 auto-advance
+
+### Phase 17 (Future)
+- [ ] Create 17-01-PLAN.md, 17-02-PLAN.md, 17-03-PLAN.md
+- [ ] Refactor Lean-3 classifier to use ILLMProvider abstraction
 
 ---
 
 ## Session Continuity
 
-**Complete Status (2026-05-09):**
+**When resuming from idle**:
+1. Read this file (STATE.md) — always the first step
+2. Check current phase: `.planning/phases/0N-*/0N-0M-PLAN.md`
+3. Verify pre-commit gate: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build`
+4. Continue execution or ask for next task
 
-| Phase | Status | Artifacts | Notes |
-|-------|--------|-----------|-------|
-| Phase 1 | ✅ Complete | 14 files (4 plans + 4 summaries + research + review + verification) | RLS + auth verified; 2 browser UAT deferred |
-| Phase 2 | ✅ Complete | 15 files (5 plans + 5 summaries + context + review + UAT + verification) | All code + integration tests; browser UAT deferred |
-| Phase 3 | ✅ Complete | 15 files (5 plans + 5 summaries + context + review + verification) | Classifier + matcher verified |
-| Phase 4 | ⏳ Executing | 8 files (5 plans + 1 research + 1 context + 1 summary stub) | Plans written, execution starting |
-| Phase 5 | ❌ Pending | — | Not started |
-| Landing page | ✅ Complete | 1 file (`landing/index.html`) | Static build ready for deployment |
-
-**Key files for Phase 4 execution:**
-
-- `.planning/phases/04-gmail-ingestion-pipeline-cron/04-RESEARCH.md` (OAuth + cron patterns)
-- `.planning/phases/04-gmail-ingestion-pipeline-cron/04-01-PLAN.md` (schema: ProcessingStatus + gmailHistoryId)
-- `.planning/ROADMAP.md` (Phase 4 goal + success criteria)
-- `PRINCIPLES.md` §"Email pipeline — 4 idempotent stages"
-
-**Next action:** Execute `04-01-PLAN.md` (Prisma schema modifications)
+**Phase transition checklist** (when a phase completes):
+1. Update PHASE-MANIFEST.md (status column)
+2. Update this STATE.md (progress metrics + current position)
+3. Commit: "docs: phase N complete"
+4. Resume/auto-advance to next phase
 
 ---
 
-*State maintained by GSD workflow. Updated at phase transitions and significant decisions.*
+*State file version 2.0 (global continuous numbering) — created 2026-05-09 after cleanup*

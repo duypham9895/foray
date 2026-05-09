@@ -1,0 +1,100 @@
+================================================================================
+                    ⚠️  PHASE 5 COMPLETE - READ IMMEDIATELY  ⚠️
+================================================================================
+
+Phase 5 (Lean: Review Queue + Acceptance) has FINISHED executing.
+
+DO NOT continue without reading this.
+
+================================================================================
+                              IMMEDIATE NEXT STEPS
+================================================================================
+
+1. READ THIS FILE FIRST (you're reading it now):
+   .planning/POST-PHASE-5-ACTION.txt ✓
+
+2. READ HANDOFF OVERVIEW (5 min):
+   cat .planning/PHASES-5-TO-STANDARD-BRIDGE.md
+
+3. READ COMPLETE HANDOFF (10 min):
+   cat .planning/LEAN-COMPLETION-HANDOFF.md
+
+4. RUN VERIFICATION CHECKLIST (20 min):
+   pnpm lint && pnpm typecheck && pnpm test:run && pnpm build && pnpm depcheck
+
+5. MANUAL WALKTHROUGH (30 min):
+   npm run dev
+   # Walk through all 12 Lean acceptance criteria (see LEAN-COMPLETION-HANDOFF.md)
+
+6. CHECK GIT STATE:
+   git status
+
+7. IF ALL PASS, START STANDARD:
+   /gsd-autonomous --from standard-1
+
+================================================================================
+                            WHY THIS IS CRITICAL
+================================================================================
+
+Phase 5 automation may have succeeded, but that DOESN'T mean Lean is done.
+
+You MUST verify:
+- ✓ All 12 acceptance criteria pass
+- ✓ Pre-commit gate passes
+- ✓ Manual walkthrough shows everything works
+
+ONLY THEN can you confidently say "Lean is complete" and start Standard.
+
+================================================================================
+                           KEY DOCUMENT PATHS
+================================================================================
+
+.planning/PHASES-5-TO-STANDARD-BRIDGE.md
+   └─ Overview + timeline + reading order
+
+.planning/LEAN-COMPLETION-HANDOFF.md
+   └─ Complete verification checklist (step-by-step for all 12 criteria)
+
+.planning/COMMAND-SEQUENCE.md
+   └─ All Standard milestone commands (reference)
+
+.planning/STATE.md
+   └─ Current progress status
+
+================================================================================
+                            ESTIMATED TIME
+================================================================================
+
+Total time to verify Lean + start Standard:
+- Read handoff docs: 15 min
+- Run verification: 20 min
+- Manual walkthrough: 30 min
+- Total: ~1 hour
+
+Then Standard Phase 1 runs autonomously (~2 hours).
+
+================================================================================
+                          DECISION TREE
+================================================================================
+
+AFTER you complete all verification above:
+
+  All checks ✅?
+  ├─ YES → Start Standard: /gsd-autonomous --from standard-1
+  └─ NO  → Fix the failure(s), re-verify, then decide
+
+================================================================================
+                          NEXT IMMEDIATE ACTION
+================================================================================
+
+Right now, READ THIS:
+
+  cat .planning/PHASES-5-TO-STANDARD-BRIDGE.md
+
+Then follow the steps in that document.
+
+================================================================================
+                    Created: 2026-05-09
+            Purpose: Flag Phase 5 completion, direct to handoff docs
+           Audience: Current thread running Phase 5
+================================================================================
