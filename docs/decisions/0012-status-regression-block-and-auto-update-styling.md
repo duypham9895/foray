@@ -1,7 +1,7 @@
 # ADR-0012: Status-regression block at the service layer + auto-update Event visual treatment
 
 **Status**: Accepted
-**Date**: 2026-05-09
+**Date**: 2026-05-09 (amended 2026-05-09 — added Decision C)
 
 ## Context
 
@@ -69,6 +69,23 @@ Three visual treatments were considered:
    palette so the visual stays consistent if Phase 4 adds more system events.
    Cons: more Tailwind classes to track in one component (acceptable — the
    classes are documented in this ADR + the file is the only renderer).
+
+### Sub-context C — per-label threshold asymmetry
+
+PITFALLS.md §4 documents the central trust risk: the FIRST wrong auto-classification
+destroys trust before undo can save it. The asymmetric cost is the key insight —
+a false-positive `rejection` on an active interview is *catastrophic* (the owner
+may stop replying to the recruiter), while a false-negative (item lands in
+review queue) is *zero cost*.
+
+The original `env.CLASSIFIER_AUTO_THRESHOLD` (single number, default 0.85)
+encodes the wrong assumption that all labels carry equal cost. A 0.85 threshold
+is too lax for `rejection` (which needs to be near-certain to auto-act) and too
+strict for `noise` (where filtering aggressively is the goal — false positives
+just sit in review queue harmlessly).
+
+Phase 3's classifier slice introduces a typed map of asymmetric thresholds
+that supersedes the single env-var gate.
 
 ## Decision
 
@@ -153,6 +170,83 @@ Phase 2 doesn't exercise this branch (no Gmail wired yet; `emailId` is always
 null on real data). The branch must exist in code so Phase 4 can wire
 `/inbox/[emailId]` without re-editing `timeline.tsx`. Verified by grep in
 the Plan 04 acceptance criteria.
+
+### C. Asymmetric per-label classifier thresholds (Phase 3 — added 2026-05-09)
+
+The single source of truth for the auto-act gate is
+`src/features/classifier/thresholds.ts`, which exports a typed
+`THRESHOLDS: Record<EmailClassification, number>` and a `meetsThreshold(label, confidence): boolean`
+predicate. Phase 4's `inbox/act` stage MUST use `meetsThreshold(cls.label, cls.confidence)`
+as the auto-act gate — NOT `cls.confidence >= env.CLASSIFIER_AUTO_THRESHOLD`.
+
+Locked threshold values (Phase 3 CONTEXT §Area 3):
+
+| Label                | Threshold | Rationale                                                                                                                                                                                |
+| -------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rejection`          | **0.92**  | HIGH bar — false positive is catastrophic (PITFALLS.md §4). Better to land in review than to silently un-engage with a live opportunity.                                                |
+| `interview_invite`   | **0.85**  | Moderate — false positive is recoverable (the user sees a "scheduled interview" status they didn't expect, edits to correct). False negative just goes to review.                       |
+| `recruiter_outreach` | **0.80**  | Moderate-low — these emails don't change `Application.canonicalStatus`; the cost of mis-labeling is informational.                                                                     |
+| `noise`              | **0.70**  | Aggressive — we WANT noise filtered. False positives sit in review queue with no downstream effect. False negatives clutter the user's view.                                            |
+| `unmatched`          | **1.0**   | NEVER auto-acts. Always sent to review. The unmatched label is the explicit "I don't know" outcome.                                                                                     |
+
+Why a typed map, not env vars:
+
+- Per-label values must be set together (asymmetry is the contract).
+- Threshold changes are decisions that warrant code review + test changes — not
+  an .env edit at runtime.
+- The map is type-checked: adding a new `EmailClassification` enum variant
+  forces a TypeScript error in `thresholds.ts` until the new label is mapped.
+
+The pre-existing `env.CLASSIFIER_AUTO_THRESHOLD` (default 0.85) STAYS in
+`src/core/env.ts` for backward compatibility but is **not consumed by the
+act-stage gate**. Phase 4 may use it as a global *floor* (e.g., reject if
+any label's confidence is below 0.5 regardless of `THRESHOLDS[label]`),
+but it is NOT the discriminating value.
+
+#### Pitfall #4 — never quietly lower `REJECTION_FLOOR`
+
+A future operator looking at the review queue and seeing rejections sitting at
+0.90 confidence will be tempted: "why don't we just auto-apply these?" The
+answer is the asymmetric cost matrix above. Rejection is destructive: hides a
+foray, removes it from active tracking, can be undone but the user has to
+notice it happened. Interview-invite and recruiter-outreach are additive: they
+create or surface state. False positives there waste a slot in the review
+queue or add a label; false positives on rejection make the user lose track
+of a live opportunity.
+
+Anyone proposing to lower `REJECTION_FLOOR` below 0.92 must (a) measure
+recent classifier precision on rejections at the current floor, (b) propose a
+recovery UX (e.g., "undo last 24h of auto-rejections" — Phase 3 does NOT ship
+that view), AND (c) supersede this ADR per the rule below — a numeric tweak
+that lowers the rejection floor crosses the asymmetric-cost reasoning, so it
+is no longer a tunable, it is a new decision.
+
+#### Bonus — budget guard as control, not monitoring (Phase 3 CONTEXT §Area 4)
+
+Plan 03-01's `src/features/classifier/budget.ts` exports `checkBudget()`,
+which Plan 03-02's `classifyEmail` calls BEFORE every Anthropic SDK call
+(PITFALLS.md §6: pre-call check, not post-call accounting). The daily cap
+is `$0.50 USD`, computed from `data/classifier-log.jsonl` entries with
+today's `ts`. On budget exhaustion: `err({_tag: 'RateLimited', retryAfterSeconds: secondsUntilMidnight()})`.
+On read failure: **FAIL CLOSED** (also `RateLimited`) — never silently allow.
+
+Anthropic Claude Haiku 4.5 pricing constants (locked in `budget.ts`,
+comment-anchored to source date):
+
+- `HAIKU_INPUT_USD_PER_MTOK = 0.80`
+- `HAIKU_OUTPUT_USD_PER_MTOK = 4.00`
+
+Updates to pricing require a `budget.ts` edit + a test re-run (the pure
+`computeCostUsd` function is unit-tested with exact expected values).
+
+#### Code paths that must update in lockstep
+
+Anyone changing the threshold values must update them in lockstep:
+
+- `src/features/classifier/thresholds.ts` — the values themselves and their JSDoc.
+- `src/features/classifier/service.ts` — composes rules → budget → LLM; reads the rules-confidence short-circuit threshold (0.85). If the THRESHOLDS table changes, the short-circuit threshold may need to follow.
+- `src/features/classifier/budget.ts` — pricing + daily cap. Independent of the per-label thresholds, but lives in the same slice and is part of the same trust contract (Decision C bonus).
+- The corresponding `*.test.ts` colocated tests — every threshold has a boundary test that pins the value (e.g., 0.91 → review queue, 0.92 → auto-apply for rejection). The pre-commit hook runs `pnpm test:run`; do not bypass it with `--no-verify`.
 
 ## Consequences
 
@@ -239,9 +333,26 @@ the Plan 04 acceptance criteria.
   `src/features/applications/components/timeline.tsx` (the rendering site).
 - Tests: `src/features/applications/status-transitions.test.ts` (36-cell
   truth table covering every (prev, next) canonical_status pair).
+- `src/features/classifier/thresholds.ts` (Plan 03-01) — the typed THRESHOLDS map + meetsThreshold predicate. Authoritative spec for Decision C.
+- `src/features/classifier/budget.ts` (Plan 03-01) — checkBudget pre-call guard + appendCostEntry recorder. Authoritative spec for Decision C bonus.
+- `src/features/classifier/service.ts` (Plan 03-02) — composes rules → budget gate → LLM. Reference implementation for "budget gate runs before SDK call".
+- `.planning/phases/03-classifier-matcher/03-CONTEXT.md` §"Area 3" + §"Area 4" — the locked Phase 3 decisions Decision C records.
+- PITFALLS.md §4 — "First wrong auto-classification destroys trust before undo can save it". The driving rationale for the asymmetry table and Pitfall #4.
 
 ## Supersedes
 
 None. New decision. Future ADRs amending the visual treatment or regression
 semantics MUST mark themselves as superseding this one (do **not** silently
 edit) — see ADR-0011 §"Supersedes" for the established convention.
+
+The §C amendment landed on 2026-05-09 (Plan 03-05) is the **documented
+exception** to that rule. The trust trio (block + flash + threshold) was
+always intended to close in Phase 3 per ROADMAP.md §"Cross-Cutting Concerns";
+the threshold half was held back only because it required a working
+classifier. Decision C is therefore the natural completion of the original
+scope, not a revision of any decision actually made in Phase 2. The amendment
+is visible (date-stamped, new section appended after §B; §A and §B are
+unchanged), so the supersession line is drawn at: **edits to existing §A or
+§B content require supersession; appending the originally-deferred §C does
+not.** Future amendments must follow the supersession rule. This one is the
+recorded exception.
