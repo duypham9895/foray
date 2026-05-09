@@ -3,9 +3,10 @@
 import Link from 'next/link'
 
 import type { InboxItem } from '@/features/inbox/queries'
+import type { EmailClassification } from '@/generated/prisma/client'
+import { Badge } from '@/ui/badge'
 import { Button } from '@/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import type { EmailClassification } from '@/generated/prisma/client'
 
 import { ClassificationSelect } from './classification-select'
 import { ConfidenceBadge } from './confidence-badge'
@@ -26,12 +27,12 @@ type Props = {
   onIgnore: (emailId: number) => void
 }
 
-const CLASSIFICATION_COLORS: Record<string, string> = {
-  rejection: 'bg-gray-200 text-gray-700',
-  interview_invite: 'bg-green-100 text-green-800',
-  recruiter_outreach: 'bg-blue-100 text-blue-800',
-  noise: 'bg-gray-100 text-gray-600',
-  unmatched: 'bg-yellow-100 text-yellow-800',
+const CLASSIFICATION_LABELS: Record<EmailClassification, string> = {
+  rejection: 'rejection',
+  interview_invite: 'interview invite',
+  recruiter_outreach: 'recruiter outreach',
+  noise: 'noise',
+  unmatched: 'unmatched',
 }
 
 function ClassificationBadge({
@@ -40,15 +41,10 @@ function ClassificationBadge({
   classification: EmailClassification | null
 }) {
   if (!classification) return null
-  const color =
-    CLASSIFICATION_COLORS[classification] ?? 'bg-gray-100 text-gray-600'
-  const label = classification.replace(/_/g, ' ')
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}
-    >
-      {label}
-    </span>
+    <Badge variant="outline" className="font-mono text-[11px] tracking-wide">
+      {CLASSIFICATION_LABELS[classification]}
+    </Badge>
   )
 }
 
@@ -62,19 +58,23 @@ export function InboxRow({
 }: Props) {
   const excerpt =
     item.bodyExcerpt.length > 200
-      ? `${item.bodyExcerpt.slice(0, 200)}...`
+      ? `${item.bodyExcerpt.slice(0, 200)}…`
       : item.bodyExcerpt
 
   return (
-    <Card>
+    <Card className="border-border bg-card">
       <CardHeader>
-        <CardTitle className="text-base">{item.subject}</CardTitle>
+        <CardTitle className="text-base font-medium">{item.subject}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {item.from} · {item.receivedAt.toLocaleDateString()}
+          <span className="font-mono text-xs">{item.from}</span>
+          {' · '}
+          <span className="font-mono text-xs">
+            {item.receivedAt.toLocaleDateString()}
+          </span>
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{excerpt}</p>
+      <CardContent className="space-y-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">{excerpt}</p>
 
         <div className="flex flex-wrap items-center gap-3">
           <ClassificationBadge classification={item.classification} />
@@ -82,7 +82,7 @@ export function InboxRow({
           {item.applicationId && item.applicationRoleTitle && (
             <Link
               href={`/applications/${item.applicationId}`}
-              className="text-sm text-primary underline"
+              className="text-sm text-foreground underline-offset-4 hover:underline"
             >
               {item.applicationRoleTitle}
               {item.companyName ? ` at ${item.companyName}` : ''}
@@ -90,7 +90,7 @@ export function InboxRow({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <Button size="sm" onClick={() => onConfirm(item.id)}>
             Confirm
           </Button>

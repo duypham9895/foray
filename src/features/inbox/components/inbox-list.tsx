@@ -4,9 +4,9 @@ import { useState } from 'react'
 
 import {
   confirmClassification,
-  overrideClassification,
-  linkToApplication,
   ignoreEmail,
+  linkToApplication,
+  overrideClassification,
 } from '@/features/inbox/actions'
 import type { InboxItem } from '@/features/inbox/queries'
 import type { EmailClassification } from '@/generated/prisma/client'
@@ -60,25 +60,30 @@ export function InboxList({ items, applications }: Props) {
 
   if (emails.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-muted-foreground">
-        No emails to review. All caught up.
-      </p>
+      <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
+        <p className="text-base text-foreground">All caught up.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          No emails waiting for review. New ones will appear here when the classifier
+          isn&apos;t confident about a label.
+        </p>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <ul className="space-y-3">
       {emails.map((item) => (
-        <InboxRow
-          key={item.id}
-          item={item}
-          applications={applications}
-          onConfirm={handleConfirm}
-          onOverride={handleOverride}
-          onLink={handleLink}
-          onIgnore={handleIgnore}
-        />
+        <li key={item.id}>
+          <InboxRow
+            item={item}
+            applications={applications}
+            onConfirm={handleConfirm}
+            onOverride={handleOverride}
+            onLink={handleLink}
+            onIgnore={handleIgnore}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }
