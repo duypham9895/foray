@@ -15,14 +15,18 @@
 // Phase 4 contract: matchEmail does NOT mutate email.applicationId. The
 // act-stage in Phase 4 owns the write after both match + classify succeed.
 //
-// All Prisma access goes through tenantDb(userId) — verified by depcheck
-// rule "no-direct-prisma". Zero direct prisma.* imports.
+// All Prisma access via withRls(userId), per the established
+// applications/queries.ts pattern. The runtime DATABASE_URL points to
+// foray_app (non-superuser, FORCE RLS active) — without the GUC set,
+// RLS denies all rows. tenantDb's auto-userId-injection is unnecessary
+// here because RLS already filters by the GUC inside the transaction.
+// See deviation note in 03-03-SUMMARY.md (Rule 1).
 
 import 'server-only'
 
-import { tenantDb } from '@/core/db'
+import { withRls } from '@/core/db/with-rls'
 import { isAtsDomain } from '@/core/domains/ats-domains'
-import { errors, fromPromise, err, type AppError } from '@/core/errors'
+import { errors, err, type AppError } from '@/core/errors'
 import { ApplicationId, type UserId } from '@/core/types/ids'
 import type { Result } from 'neverthrow'
 
@@ -50,57 +54,49 @@ export async function matchEmail(
   if (!parsed.success) return err(errors.validation(parsed.error.issues))
 
   // userId arrives already-branded from the caller; the schema validates the
-  // string shape. Restore the brand without re-running the constructor (which
-  // would re-validate the regex) — see threat T-03-03-04.
+  // string shape. Restore the brand at the type-system boundary — see
+  // threat T-03-03-04 for the runtime trust contract.
   const { userId, gmailThreadId, fromDomain } = parsed.data
-  const tdb = tenantDb(userId as UserId)
+  const brandedUserId = userId as UserId
 
-  return fromPromise(
-    (async (): Promise<MatchEmailOutput> => {
-      // 1. Thread continuity — most-recent linked email on this thread wins.
-      const threadEmail = await tdb.email.findFirst({
-        where: { gmailThreadId, applicationId: { not: null } },
-        orderBy: { receivedAt: 'desc' },
-        select: { applicationId: true },
-      })
-      if (threadEmail?.applicationId) {
-        return { applicationId: ApplicationId(threadEmail.applicationId) }
-      }
+  return withRls(brandedUserId, async (tx): Promise<MatchEmailOutput> => {
+    // 1. Thread continuity — most-recent linked email on this thread wins.
+    const threadEmail = await tx.email.findFirst({
+      where: { gmailThreadId, applicationId: { not: null } },
+      orderBy: { receivedAt: 'desc' },
+      select: { applicationId: true },
+    })
+    if (threadEmail?.applicationId) {
+      return { applicationId: ApplicationId(threadEmail.applicationId) }
+    }
 
-      // 2. ATS-domain skip — BEFORE domain match (Pitfall #5).
-      // Defense-in-depth: even if Phase 2's capture validation gets bypassed
-      // and an ATS domain ends up in Company.domain, the matcher refuses to
-      // attribute ATS-shaped emails to that company.
-      if (isAtsDomain(fromDomain)) {
-        return { applicationId: null }
-      }
-
-      // 3. Sender-domain match — most-recent application for the matched company.
-      // The tenantDb.company.findFirst wrapper signature returns the base
-      // Company type and does not narrow the include payload — assert the
-      // shape we requested via include. (Surgical workaround per CLAUDE.md
-      // §1.3; extending the wrapper to be generic is out of scope for this
-      // plan — see the threat-model entry T-03-03-04.)
-      const company = (await tdb.company.findFirst({
-        where: { domain: fromDomain },
-        include: {
-          applications: {
-            orderBy: { appliedAt: 'desc' },
-            take: 1,
-            select: { id: true },
-          },
-        },
-      })) as ({ id: number; applications: { id: number }[] } | null)
-      if (company && company.applications.length > 0) {
-        const firstApp = company.applications[0]
-        if (firstApp) {
-          return { applicationId: ApplicationId(firstApp.id) }
-        }
-      }
-
-      // 4. Unmatched — normal outcome, not an error.
+    // 2. ATS-domain skip — BEFORE domain match (Pitfall #5).
+    // Defense-in-depth: even if Phase 2's capture validation gets bypassed
+    // and an ATS domain ends up in Company.domain, the matcher refuses to
+    // attribute ATS-shaped emails to that company.
+    if (isAtsDomain(fromDomain)) {
       return { applicationId: null }
-    })(),
-    (cause) => errors.db(cause),
-  )
+    }
+
+    // 3. Sender-domain match — most-recent application for the matched company.
+    const company = await tx.company.findFirst({
+      where: { domain: fromDomain },
+      include: {
+        applications: {
+          orderBy: { appliedAt: 'desc' },
+          take: 1,
+          select: { id: true },
+        },
+      },
+    })
+    if (company && company.applications.length > 0) {
+      const firstApp = company.applications[0]
+      if (firstApp) {
+        return { applicationId: ApplicationId(firstApp.id) }
+      }
+    }
+
+    // 4. Unmatched — normal outcome, not an error.
+    return { applicationId: null }
+  })
 }
