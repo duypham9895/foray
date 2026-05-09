@@ -17,9 +17,9 @@ export async function register() {
 
   g.__forayCron = cron.schedule('*/15 * * * *', async () => {
     // Guard 4: Advisory lock prevents overlap
-    const [{ locked }] = await prisma.$queryRaw<{ locked: boolean }[]>`
+    const lockResult = await prisma.$queryRaw<{ locked: boolean }[]>`
       SELECT pg_try_advisory_lock(hashtext('poll-gmail')) AS locked`
-    if (!locked) return
+    if (!lockResult[0]?.locked) return
 
     try {
       const { pollOnce } = await import('@/features/inbox/service')
