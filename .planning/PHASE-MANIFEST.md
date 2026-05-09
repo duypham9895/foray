@@ -1,7 +1,7 @@
 # Phase Manifest — Global Numbering Map
 
 **Version**: 1.0  
-**Last Updated**: 2026-05-09  
+**Last Updated**: 2026-05-10
 **Purpose**: Single source of truth for global phase numbering across all milestones (Lean → Standard → Full)
 
 ---
@@ -10,7 +10,7 @@
 
 | Phase # | Milestone | Pos in MS | Phase Name | Status |
 |---------|-----------|-----------|-----------|--------|
-| 1–5 | **Lean** | 1–5 | Foundation → Review Queue | ✅ Executing |
+| 1–5 | **Lean** | 1–5 | Foundation → Review Queue | ✅ Complete (shipped 2026-05-09) |
 | 6–10 | **Standard** | 1–5 | Bookmarklet → E2E Tests | ⏳ Pending |
 | 11–16 | **Full** | 1–6 | Chrome Extension → Polish | ⏳ Pending |
 | 17+ | **Future** | 1+ | Multi-LLM Providers → ... | 🔮 Future |
@@ -27,7 +27,7 @@
 | **2** | Applications Slice (Manual Tracker) | `.planning/phases/02-applications-slice-manual-tracker` | ✅ Complete |
 | **3** | Classifier + Matcher | `.planning/phases/03-classifier-matcher` | ✅ Complete |
 | **4** | Gmail Ingestion + Pipeline | `.planning/phases/04-gmail-ingestion-pipeline-cron` | ✅ Complete |
-| **5** | Review Queue + Acceptance | `.planning/phases/05-review-queue-acceptance` | 🔨 Executing |
+| **5** | Review Queue + Acceptance | `.planning/phases/05-review-queue-acceptance` | ✅ Complete |
 
 ### Standard Milestone (v0.2) — Phases 6–10
 
