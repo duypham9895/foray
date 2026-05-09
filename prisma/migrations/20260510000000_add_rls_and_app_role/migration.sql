@@ -64,47 +64,54 @@ ALTER TABLE documents               FORCE  ROW LEVEL SECURITY;
 -- =============================================================================
 -- 3. Tenant isolation policies
 -- =============================================================================
--- Pattern: USING + WITH CHECK both reference current_setting('app.user_id', true).
--- The `, true` arg means "return NULL if unset" rather than throwing — combined
--- with the ::int cast and the equality check, NULL → policy denies (no row
--- matches `user_id = NULL`). This is the safe default.
+-- Pattern: USING + WITH CHECK both reference NULLIF(current_setting(...), '').
+--
+-- NULLIF wraps current_setting to handle two safe-denial cases:
+--   a) Parameter unset: current_setting('app.user_id', true) returns NULL
+--      → NULLIF(NULL, '') = NULL → NULL::int = NULL → user_id = NULL is false
+--   b) Parameter set to empty string: current_setting returns ''
+--      → NULLIF('', '') = NULL → same safe-denial as case (a)
+-- Without NULLIF, case (b) throws "invalid input syntax for type integer: ''"
+-- instead of silently denying. Both cases should deny, not throw.
+--
+-- The `, true` arg to current_setting is missing_ok — returns NULL vs throw.
 
 -- User table: id = …, NOT user_id = … (User has no user_id column; its id IS the user)
 CREATE POLICY tenant_isolation ON users
-  USING       (id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (id = current_setting('app.user_id', true)::int);
+  USING       (id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 CREATE POLICY tenant_isolation ON companies
-  USING       (user_id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (user_id = current_setting('app.user_id', true)::int);
+  USING       (user_id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (user_id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 CREATE POLICY tenant_isolation ON applications
-  USING       (user_id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (user_id = current_setting('app.user_id', true)::int);
+  USING       (user_id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (user_id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 CREATE POLICY tenant_isolation ON events
-  USING       (user_id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (user_id = current_setting('app.user_id', true)::int);
+  USING       (user_id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (user_id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 CREATE POLICY tenant_isolation ON emails
-  USING       (user_id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (user_id = current_setting('app.user_id', true)::int);
+  USING       (user_id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (user_id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 CREATE POLICY tenant_isolation ON recruiters
-  USING       (user_id = current_setting('app.user_id', true)::int)
-  WITH CHECK  (user_id = current_setting('app.user_id', true)::int);
+  USING       (user_id = NULLIF(current_setting('app.user_id', true), '')::int)
+  WITH CHECK  (user_id = NULLIF(current_setting('app.user_id', true), '')::int);
 
 -- Stages: scope through Application (no direct user_id column)
 CREATE POLICY tenant_isolation ON stages
-  USING       (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int))
-  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int));
+  USING       (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int))
+  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int));
 
 -- ApplicationRecruiters: same parent-scope pattern (no direct user_id column)
 CREATE POLICY tenant_isolation ON application_recruiters
-  USING       (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int))
-  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int));
+  USING       (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int))
+  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int));
 
 -- Documents: same parent-scope pattern (no direct user_id column)
 CREATE POLICY tenant_isolation ON documents
-  USING       (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int))
-  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = current_setting('app.user_id', true)::int));
+  USING       (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int))
+  WITH CHECK  (application_id IN (SELECT id FROM applications WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::int));
