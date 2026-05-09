@@ -1,5 +1,6 @@
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import { execSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 /**
@@ -41,7 +42,7 @@ export default async function globalSetup() {
     let dir = projectRoot
     for (let i = 0; i < 5; i++) {
       const candidate = path.join(dir, 'node_modules', '.bin', 'prisma')
-      if (require('node:fs').existsSync(candidate)) return candidate
+      if (existsSync(candidate)) return candidate
       dir = path.dirname(dir)
     }
     throw new Error('prisma bin not found in any ancestor node_modules')
