@@ -3,7 +3,7 @@
 > **Goal**: a usable foray by Friday. Owner can manually log applications, Gmail auto-classifies high-confidence emails, ambiguous ones land in a small review queue.
 
 **Estimated effort**: ~1 week
-**Status**: 🔨 In progress — Phases 1–3 complete, Phase 4 (Gmail integration) executing
+**Status**: 🔨 In progress — Phases 1–4 complete, Phase 5 (Review Queue + Acceptance) executing
 
 ---
 
@@ -98,11 +98,11 @@ Milestone is done when **all** of these are true:
 4. An ambiguous recruiter outreach ("are you open to opportunities?") lands in `/inbox` review queue without auto-applying any change
 5. The `/applications` list shows all Applications with correct counts per canonicalStatus
 6. The `/applications/[id]` detail view shows the full timeline (Stages + Events + Emails) in chronological order
-7. `pnpm test:run` passes with ≥30 tests across classifier, matcher, and env modules
+7. `pnpm test:run` passes with category-based coverage per FND-03 (tenant isolation, classifier fixtures, matcher tiebreak, auto-update + undo, budget guard, env validation)
 8. `pnpm build` produces a successful production build
 9. **`pnpm depcheck` passes — no module boundary violations** (PRINCIPLES.md §"Module boundaries")
 10. **No direct `prisma.*` imports outside `src/core/db/`** (verified by depcheck rule `no-direct-prisma`)
-11. **Every Server Action returns `Result<T, AppError>`** (verified by code review checklist item #6)
+11. **Every Server Action returns `Result<T, AppError>` or `ActionState`** (verified by `node scripts/check-server-actions.ts`)
 12. Owner has used foray to log ≥3 real applications and seen at least one auto-classification trigger correctly
 
 ---
