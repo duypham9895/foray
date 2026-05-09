@@ -6,6 +6,7 @@
 // rejection rendered in muted gray (NOT red), no decorative icons.
 
 import { formatDistanceToNow } from 'date-fns'
+import Link from 'next/link'
 
 import { Badge } from '@/ui/badge'
 import { Card, CardContent } from '@/ui/card'
@@ -103,27 +104,27 @@ export function ApplicationList({
               ? ` (archived ${counts.archived})`
               : ''
           return (
-            <a key={status} href={href} data-active={active}>
+            <Link key={status} href={href} data-active={active}>
               <Badge variant={active ? 'default' : 'secondary'}>
                 {STATUS_LABELS[status]} {count}
                 {archivedSuffix}
               </Badge>
-            </a>
+            </Link>
           )
         })}
-        <a href="/applications" className="text-sm text-stone-500 hover:text-stone-700">
+        <Link href="/applications" className="text-sm text-stone-500 hover:text-stone-700">
           Reset
-        </a>
+        </Link>
       </div>
 
       {/* Sort toggle */}
       <div className="text-sm text-stone-500">
-        <a
+        <Link
           href={`/applications${toggleSortInUrl(currentParams, nextSort)}`}
           className="hover:text-stone-700 underline"
         >
           {sortLabel}
-        </a>
+        </Link>
       </div>
 
       {isEmpty ? (
@@ -131,12 +132,12 @@ export function ApplicationList({
           {usingDefaultFilter ? (
             <p className="text-base">
               No forays yet.{' '}
-              <a
+              <Link
                 href="/applications/new"
                 className="underline hover:text-stone-700"
               >
                 Capture your first foray
-              </a>
+              </Link>
               .
             </p>
           ) : (
@@ -147,7 +148,7 @@ export function ApplicationList({
         <ul className="space-y-3">
           {items.map((item) => (
             <li key={item.id}>
-              <a href={`/applications/${item.id}`} className="block">
+              <Link href={`/applications/${item.id}`} className="block">
                 <Card>
                   <CardContent className="flex items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -164,7 +165,7 @@ export function ApplicationList({
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </Link>
             </li>
           ))}
         </ul>

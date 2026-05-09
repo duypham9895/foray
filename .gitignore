@@ -49,3 +49,6 @@ foray-sync.log
 # Prisma — generated client (regenerated on `pnpm prisma generate`)
 /src/generated/
 
+# Dev-only one-off scripts (fixtures, manual repro tools — NOT shipped)
+scripts/dev/
+
