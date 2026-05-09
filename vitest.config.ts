@@ -7,10 +7,12 @@ export default defineConfig({
     globals: false,
     setupFiles: ['./vitest.setup.ts'],
 
-    // Forks pool with single fork avoids parallel Postgres-write conflicts
-    // while keeping process isolation. Per Pitfalls #3 + Stack research.
+    // forks pool avoids parallel Postgres-write conflicts while keeping
+    // process isolation. maxWorkers=1 ensures a single fork (singleFork
+    // equivalent in Vitest 4 — poolOptions was removed in v4).
+    // Per Pitfalls #3 + Stack research.
     pool: 'forks',
-    poolOptions: { forks: { singleFork: true } },
+    maxWorkers: 1,
 
     // globalSetup boots Testcontainers ONCE per test run, not per file.
     globalSetup: './tests/integration/setup.ts',

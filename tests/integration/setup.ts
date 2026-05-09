@@ -1,5 +1,6 @@
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import { execSync } from 'node:child_process'
+import path from 'node:path'
 
 /**
  * Testcontainers globalSetup — boots a disposable Postgres 16 container
@@ -33,7 +34,12 @@ export default async function globalSetup() {
 
   // Apply all migrations as the owner role.
   // The migration creates the foray_app role with 'CHANGE_ME_VIA_ENV' password.
-  execSync('pnpm prisma migrate deploy', {
+  // Use the prisma binary resolved from the worktree root's node_modules.
+  // The worktree is at <foray>/.claude/worktrees/<id>/; node_modules is at <foray>/node_modules/.
+  const worktreeRoot = path.resolve(__dirname, '..', '..')
+  const prismaBin = path.resolve(worktreeRoot, '..', '..', '..', 'node_modules', '.bin', 'prisma')
+  execSync(`${prismaBin} migrate deploy`, {
+    cwd: worktreeRoot,
     env: { ...process.env, DATABASE_URL: ownerUrl },
     stdio: 'inherit',
   })
@@ -55,12 +61,26 @@ export default async function globalSetup() {
       ON CONFLICT (email) DO NOTHING;
   `)
 
+  // Seed one Company per user (required by applications.company_id NOT NULL FK).
+  await client.query(`
+    INSERT INTO companies (user_id, name, created_at, updated_at)
+      VALUES (1, 'Alice Corp', NOW(), NOW()),
+             (2, 'Bob Corp',   NOW(), NOW())
+      ON CONFLICT DO NOTHING;
+  `)
+
   // Seed one Application per user so the RLS escape tests have rows to verify.
+  // company_id references the just-inserted companies.
+  // Use separate query calls to avoid multi-statement parsing issues with pg.
   await client.query(`
     INSERT INTO applications (user_id, company_id, role_title, applied_at, last_activity_at, created_at, updated_at)
-      VALUES (1, NULL, 'Alice Test Role', NOW(), NOW(), NOW(), NOW()),
-             (2, NULL, 'Bob Test Role',   NOW(), NOW(), NOW(), NOW())
-      ON CONFLICT DO NOTHING;
+      SELECT 1, c.id, 'Alice Test Role', NOW(), NOW(), NOW(), NOW()
+        FROM companies c WHERE c.user_id = 1 LIMIT 1;
+  `)
+  await client.query(`
+    INSERT INTO applications (user_id, company_id, role_title, applied_at, last_activity_at, created_at, updated_at)
+      SELECT 2, c.id, 'Bob Test Role', NOW(), NOW(), NOW(), NOW()
+        FROM companies c WHERE c.user_id = 2 LIMIT 1;
   `)
 
   // Set the foray_app password to a known test value so the app connection works.
