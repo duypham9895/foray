@@ -116,8 +116,8 @@ One screen tells the owner what's actually happening today — what's stale, wha
 - [x] 04-01-PLAN.md — Schema migration: ProcessingStatus enum + processing_status on Email + gmailHistoryId on User [Wave 1]
 - [x] 04-02-PLAN.md — Gmail OAuth + client: /api/gmail/auth + /api/gmail/callback + gmail-client.ts (OAuth2, Gmail API, email metadata extraction) [Wave 2]
 - [x] 04-03-PLAN.md — Pipeline orchestrator: ingest.ts (history.list + fallback) + act.ts (4 gates: threshold, match, regression, first-50) + service.ts (pollOnce) [Wave 2]
-- [ ] 04-04-PLAN.md — Settings page + cron: /settings UI (Connect/Disconnect/Sync-now + token-health banner) + instrumentation.ts (node-cron with 4 guards) [Wave 3]
-- [ ] 04-05-PLAN.md — Integration tests: OAuth round-trip + act-stage gates + pipeline idempotency + cron guard logic [Wave 4]
+- [x] 04-04-PLAN.md — Settings page + cron: /settings UI (Connect/Disconnect/Sync-now + token-health banner) + instrumentation.ts (node-cron with 4 guards) [Wave 3]
+- [x] 04-05-PLAN.md — Integration tests: OAuth round-trip + act-stage gates + pipeline idempotency + cron guard logic [Wave 4]
 
 **UI hint**: yes
 
