@@ -10,7 +10,7 @@ import { z } from 'zod'
 //   2. Add to envSchema below with appropriate constraints + default
 //   3. Use as env.MY_VAR throughout the app
 
-const envSchema = z.object({
+export const envSchema = z.object({
   // -- Required at runtime (any environment) --------------------------------
   DATABASE_URL: z.url(),
 

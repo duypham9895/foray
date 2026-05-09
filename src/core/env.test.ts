@@ -12,29 +12,7 @@
 // exported `env` object has the right shape when the environment is valid.
 
 import { describe, it, expect } from 'vitest'
-import { z } from 'zod'
-
-// --- Reproduce the schema inline so we can unit-test validation rules -------
-// This mirrors src/core/env.ts envSchema. If the real schema drifts, these
-// tests will tell you.
-
-const envSchema = z.object({
-  DATABASE_URL: z.url(),
-  ENCRYPTION_KEY: z
-    .string()
-    .length(64, 'ENCRYPTION_KEY must be 64 hex chars (32 bytes). Run: openssl rand -hex 32'),
-  APP_PASSWORD: z.string().min(12, 'APP_PASSWORD must be at least 12 characters'),
-  APP_SESSION_SECRET: z
-    .string()
-    .min(32, 'APP_SESSION_SECRET must be ≥32 chars per iron-session requirement. Run: openssl rand -hex 32'),
-  ANTHROPIC_API_KEY: z.string().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_REDIRECT_URI: z.url().default('http://localhost:3000/api/gmail/callback'),
-  CLASSIFIER_AUTO_THRESHOLD: z.coerce.number().min(0).max(1).default(0.85),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-})
+import { envSchema } from './env'
 
 const baseEnv = {
   DATABASE_URL: 'postgresql://foray:foray@localhost:5432/foray',
