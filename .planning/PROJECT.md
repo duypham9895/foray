@@ -12,105 +12,102 @@
 
 ### Validated
 
-<!-- Shipped and confirmed valuable. -->
-
-(None yet — Lean milestone is the first ship to validate)
-
-### Active
-
-<!-- Lean milestone (v0.1) — single-week scope, deliver a usable foray. -->
+<!-- Shipped and confirmed valuable in v0.1 Lean milestone. -->
 
 #### Capture
 
-- [ ] **CAPT-01**: Owner can manually create a new Application via `/applications/new` form (company autocomplete, role title, role URL, JD paste, location, salary range, source, applied date) in <30 seconds
-- [ ] **CAPT-02**: Form validation via Zod runs on both client and server with parsed/branded types
-- [ ] **CAPT-03**: Submission creates `Application` + `Event(type='created')` in one transaction
+- ✓ **CAPT-01**: Owner can manually create a new Application via `/applications/new` form — v0.1
+- ✓ **CAPT-02**: Form validation via Zod runs on both client and server with parsed/branded types — v0.1
+- ✓ **CAPT-03**: Submission creates `Application` + `Event(type='created')` in one transaction — v0.1
 
 #### Gmail Ingestion
 
-- [ ] **GMAIL-01**: Owner completes Google OAuth flow (test mode, single user) at `/api/gmail/auth` and `/api/gmail/callback`; refresh token stored encrypted on User row
-- [ ] **GMAIL-02**: Settings page at `/settings` shows connection state with "Connect Gmail" / "Disconnect" / "Sync now" actions
-- [ ] **GMAIL-03**: Polling endpoint `/api/gmail/poll` fetches threads modified since `User.gmailLastSyncAt` and persists Email metadata + ≤500 char body excerpt
-- [ ] **GMAIL-04**: In-process `node-cron` fires `/api/gmail/poll` every 15 minutes while app is running
+- ✓ **GMAIL-01**: Owner completes Google OAuth flow at `/api/gmail/auth` and `/api/gmail/callback`; refresh token stored encrypted — v0.1
+- ✓ **GMAIL-02**: Settings page at `/settings` shows connection state with Connect/Disconnect/Sync-now actions — v0.1
+- ✓ **GMAIL-03**: Polling via `pollOnce` fetches threads with history.list fallback; persists metadata + ≤500 char body excerpt — v0.1
+- ✓ **GMAIL-04**: In-process `node-cron` fires every 15 minutes with 4 guards (NEXT_RUNTIME, NODE_ENV, globalThis, advisory lock) — v0.1
 
 #### Classifier
 
-- [ ] **CLASS-01**: Rules-first classifier in `src/features/classifier/service.ts` recognizes `rejection`, `interview_invite`, `recruiter_outreach`, `noise`, `unmatched` with regex patterns externalized in `rules.ts`
-- [ ] **CLASS-02**: LLM fallback (Claude Haiku) handles low-confidence rule cases; SDK call wrapped in `Result<…, AppError>`
-- [ ] **CLASS-03**: Returns `{ label, confidence, classifiedBy: 'rules' | 'llm' }`; threshold sourced from `env.CLASSIFIER_AUTO_THRESHOLD`
-- [ ] **CLASS-04**: All Anthropic calls logged to `data/classifier-log.jsonl` with token counts; alert if daily total >$0.50
+- ✓ **CLASS-01**: Rules-first classifier recognizes 5 labels with regex patterns externalized in `rules.ts` — v0.1
+- ✓ **CLASS-02**: LLM fallback (Claude Haiku) handles low-confidence rule cases; SDK call wrapped in `Result<…, AppError>` — v0.1
+- ✓ **CLASS-03**: Returns `{ label, confidence, classifiedBy }` with per-label asymmetric thresholds — v0.1
+- ✓ **CLASS-04**: Pre-call budget guard reads daily cost; returns `err(RateLimited)` when ≥$0.50/day — v0.1
 
 #### Matcher
 
-- [ ] **MATCH-01**: Email→Application matcher in `src/features/matcher/service.ts` returns `Result<{ applicationId: ApplicationId | null }, AppError>`
-- [ ] **MATCH-02**: Tiebreak order: thread continuity (`gmailThreadId` linked) → sender domain match against `Company.domain` → unmatched
-- [ ] **MATCH-03**: All Prisma access via `tenantDb(userId)` — zero direct `prisma.*` imports outside `src/core/db/`
+- ✓ **MATCH-01**: Email→Application matcher returns `Result<{ applicationId: ApplicationId | null }, AppError>` — v0.1
+- ✓ **MATCH-02**: 4-step tiebreak: thread continuity → ATS-domain skip → sender domain match → unmatched — v0.1
+- ✓ **MATCH-03**: All Prisma access via `tenantDb(userId)` — zero direct `prisma.*` imports outside `src/core/db/` — v0.1
 
 #### Auto-Update + Review Queue
 
-- [ ] **AUTO-01**: confidence ≥ threshold AND application matched → update `Application.canonicalStatus`, write `Event(type='auto_status_changed', undoable=true)`
-- [ ] **AUTO-02**: confidence < threshold OR unmatched → surface in `/inbox` review queue (no auto-apply)
-- [ ] **AUTO-03**: First 50 emails after Gmail connect bypass auto-update and go to review queue regardless (build user-corrected ground truth)
-- [ ] **AUTO-04**: Auto-applied changes show prominent undo (toast ~10s + permanent in event timeline)
+- ✓ **AUTO-01**: Confidence ≥ threshold AND application matched AND NOT regression → auto-update with undoable event — v0.1
+- ✓ **AUTO-02**: Low confidence OR unmatched OR regression → surface in `/inbox` review queue — v0.1
+- ✓ **AUTO-03**: First 50 emails after Gmail connect bypass auto-update (build user-corrected ground truth) — v0.1
+- ✓ **AUTO-04**: Auto-applied changes show undo in event timeline; undo sets `reviewedByUser=true` — v0.1
 
 #### Review Queue
 
-- [ ] **REVIEW-01**: `/inbox` page shows low-confidence + unmatched emails (subject, from, body excerpt, suggested classification + confidence, suggested application)
-- [ ] **REVIEW-02**: Per-row actions: confirm classification, override classification, link to existing Application, ignore (mark `reviewedByUser=true`)
+- ✓ **REVIEW-01**: `/inbox` page shows low-confidence + unmatched emails with subject, excerpt, classification, confidence, suggested application — v0.1
+- ✓ **REVIEW-02**: Per-row actions: confirm, override, link-to-application, ignore — v0.1
 
 #### Application Views
 
-- [ ] **APP-01**: `/applications` list — table view filterable by `canonicalStatus`, sortable by `appliedAt` / `lastActivityAt`, count per status
-- [ ] **APP-02**: `/applications/[id]` detail — chronological timeline (Stages + Events + Emails), edit affordances
-- [ ] **APP-03**: Quick `canonicalStatus` change dropdown in detail view
-- [ ] **APP-04**: Add/edit/complete Stages inline; free-form notes field
+- ✓ **APP-01**: `/applications` list — filterable by canonicalStatus, sortable, count per status — v0.1
+- ✓ **APP-02**: `/applications/[id]` detail — chronological timeline (Stages + Events + Emails) — v0.1
+- ✓ **APP-03**: Quick canonicalStatus change dropdown in detail view — v0.1
+- ✓ **APP-04**: Add/edit/complete Stages inline; free-form notes field — v0.1
 
 #### Auth
 
-- [ ] **AUTH-01**: `src/core/auth/session.ts` `requireUser()` wired to real cookie/session check (HMAC over `APP_PASSWORD`-derived secret)
-- [ ] **AUTH-02**: `/login` page with single password field; sets `foray_session` cookie on success
-- [ ] **AUTH-03**: Middleware redirects unauthenticated requests to `/login` (defense-in-depth; real auth check stays in `requireUser()`)
+- ✓ **AUTH-01**: `requireUser()` wired to iron-session HMAC cookie check — v0.1
+- ✓ **AUTH-02**: `/login` page with single password field; sets `foray_session` cookie on success — v0.1
+- ✓ **AUTH-03**: Middleware redirects unauthenticated requests to `/login` — v0.1
 
 #### Foundational Hardening
 
-- [ ] **FND-01**: Extend `tenantDb` with all CRUD methods needed by Lean slices (currently only `application.findMany/findUnique/findFirst/count` are wrapped)
-- [ ] **FND-02**: Add Postgres RLS policies in a migration (one policy per tenant-scoped table; `SET LOCAL app.user_id` per transaction via Prisma client extension)
-- [ ] **FND-03**: ≥30 tests across classifier, matcher, env validation, tenantDb safety; `pnpm test:run` green
-- [ ] **FND-04**: Pre-commit gate green: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build && pnpm depcheck`
+- ✓ **FND-01**: `tenantDb` exposes wrapped CRUD methods for all tenant-scoped tables — v0.1
+- ✓ **FND-02**: Postgres RLS policies active on every tenant-scoped table; `withRls` helper sets `app.user_id` per transaction — v0.1
+- ✓ **FND-03**: Category-based test coverage: 314 tests across 6 categories (tenant isolation, classifier fixtures, matcher tiebreak, auto-update + undo, budget guard, env validation) — v0.1
+- ✓ **FND-04**: Pre-commit gate green: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build && pnpm depcheck` — v0.1
+
+### Active
+
+<!-- Next milestone requirements will go here after /gsd-new-milestone -->
+
+(None — run `/gsd-new-milestone` to define next milestone)
 
 ### Out of Scope
 
-<!-- Lean explicitly defers these — re-evaluated after Lean ships. -->
+<!-- Re-evaluated after each milestone. -->
 
-- **Bookmarklet** — Standard milestone; manual form is enough for v0.1
-- **"Today" dashboard** — Standard milestone; `/applications` list serves the daily glance for now
-- **Native Chrome MV3 extension** — Full milestone; bookmarklet + manual form cover v0.1
+- **Bookmarklet** — Manual form is enough; may be added in Standard milestone
+- **"Today" dashboard** — `/applications` list serves the daily glance; may be added in Standard milestone
+- **Native Chrome MV3 extension** — Full milestone; bookmarklet + manual form cover current needs
 - **Document upload / storage** — Full milestone; resume PDFs live in Drive for now
-- **Recruiter entity UI** — Full milestone; recruiter is a free-text field in v0.1
+- **Recruiter entity UI** — Full milestone; recruiter is a free-text field currently
 - **Google Calendar sync** — Full milestone; calendar invites stay in Gmail/Calendar manually
-- **Analytics view** — Full milestone; no funnel/cohort metrics until owner has ≥30 forays of real data
-- **Follow-up reminders** — Full milestone; manual nudge from `lastActivityAt` is enough for v0.1
-- **Tags + cross-record search** — Standard milestone; canonicalStatus filter is enough for v0.1
-- **Multi-user / SaaS deployment** — Multi-tenant patterns are baked in (tenantDb, branded IDs, RLS) but only single-user is shipped; SaaS is a separate decision
+- **Analytics view** — Full milestone; no funnel/cohort metrics until ≥30 forays of real data
+- **Follow-up reminders** — Full milestone; manual nudge from `lastActivityAt` is enough
+- **Tags + cross-record search** — Standard milestone; canonicalStatus filter is enough
+- **Multi-user / SaaS deployment** — Multi-tenant patterns are baked in but only single-user is shipped
 
 ## Context
 
-**Stack & scaffold (already in place from v0.1.0):**
+**Stack & scaffold:**
 - Next.js 16 App Router + React 19 + TypeScript (strict)
 - Prisma 7 + PostgreSQL (Docker), tenant-scoped via `tenantDb(userId)` wrapper
 - Zod-validated `env.ts`, branded ID types (`UserId`, `ApplicationId`, `EmailId`)
 - `AppError` + `neverthrow` `Result<T, E>` for fallible operations
 - Pino with redaction for logs; classifier prompt/response logged to `data/classifier-log.jsonl` (gitignored)
-- Vertical Slice Architecture under `src/features/<slice>/{actions,service,queries,schema,components}.ts` with thin `src/core/`
+- Vertical Slice Architecture under `src/features/<slice>/` with thin `src/core/`
 
-**Established by ADRs (read in `docs/decisions/`):**
-- ADR-0001: Track and capture (manual capture is the entry point; automation augments, never replaces)
-- ADR-0002: Multi-tenant ready from day one (tenantDb wrapper + branded IDs even though only one user ships)
-- ADR-0003: Local-first (Docker Postgres, no cloud DB until SaaS decision)
-- ADR-0005: Hybrid stages (canonical status + free-form per-foray stages — never collapse to one)
-- ADR-0006: Hybrid trust classifier (rules first, LLM only on low confidence — protects against silent record corruption)
-- ADR-0007: Lean → Standard → Full milestone progression
-- ADR-0010: VSA over Clean/Hexagonal (no horizontal layering tax for single-dev project)
+**Shipped in v0.1 (Lean milestone):**
+- 5 phases, 22 plans, 314 tests passing
+- Full pipeline: manual capture → Gmail OAuth → 4-stage pipeline → auto-update → review queue
+- 31/31 v1 requirements satisfied
+- Structural CI checks prevent regression of safety properties
 
 **Owner profile:** Single user (Duy / Edward Pham). Built to escape spreadsheet-and-Notion pain during active job search. Owner is technical (PM with prior SWE background) — comfortable with `pnpm`, Docker, and reading the schema directly. Tolerance for autonomy is HIGH (auto-apply with undo > review-everything queues), but **trust crisis on first wrong auto-apply is fatal** — undo must be obvious, undoable events must be permanent in the timeline.
 
@@ -118,38 +115,29 @@
 
 ## Constraints
 
-- **Tech stack**: Next.js 16 + Prisma 7 + Postgres in Docker — no cloud DB, no Vercel deploy in Lean (local-first per ADR-0003)
-- **Timeline**: Lean = ~1 week of focused effort; ship Friday or cut scope, never extend
-- **Budget**: LLM cost cap $0.50/day — alert if exceeded; classifier defaults to rules-first to keep this honest
-- **Privacy**: Email **bodies are not stored indefinitely** — metadata + ≤500 char excerpt only; full body fetched from Gmail API on demand for review queue display
-- **Security**: API keys in `.env.local` (gitignored, never `.env.example`); OAuth refresh token encrypted at rest via `ENCRYPTION_KEY`; HMAC session cookies, not JWT
-- **Testing**: Pre-commit gate (`lint && typecheck && test:run && build && depcheck`) is non-negotiable; `--no-verify` is forbidden — fix the hook, not the workaround
-- **Architecture**: Vertical Slice (per ADR-0010) — features stay self-contained under `src/features/<slice>/`; cross-cutting work lives in `src/core/`; no horizontal "service layer" or "repository pattern"
-- **Multi-tenant safety enforced by types**: `tenantDb(userId)` wrapper is the only way to query tenant-scoped tables; ESLint `no-direct-prisma` rule blocks the escape hatch; Postgres RLS is the second line
+- **Tech stack**: Next.js 16 + Prisma 7 + Postgres in Docker — local-first per ADR-0003
+- **Budget**: LLM cost cap $0.50/day — classifier defaults to rules-first
+- **Privacy**: Email bodies not stored indefinitely — metadata + ≤500 char excerpt only
+- **Security**: API keys in `.env.local`; OAuth refresh token encrypted at rest; HMAC session cookies
+- **Testing**: Pre-commit gate is non-negotiable; `--no-verify` is forbidden
+- **Architecture**: Vertical Slice (per ADR-0010) — features self-contained under `src/features/<slice>/`
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Lean before Standard before Full (per ADR-0007) | Each milestone validates the assumption that the next is needed; Standard or Full may be skipped if Lean covers ≥90% of real use | — Pending (Lean ships first) |
-| Vertical Slice Architecture (per ADR-0010) | Single-dev scale — horizontal layering imposes ceremony tax that never pays out | ✓ Good (committed in `603e7e7`, refined in `dc760bf`) |
-| Rules-first classifier with LLM fallback (per ADR-0006) | Predictable cheap path for 80% of email; LLM only when rules can't decide; bounds cost and latency | — Pending (Lean ships classifier) |
-| Manual capture is primary; automation augments (per ADR-0001) | Owner trust is built by manual capture working perfectly; auto-classification is bonus, not foundation | — Pending |
-| Hybrid status (canonical enum + free-form stages) (per ADR-0005) | Global filtering needs 6 fixed states; per-foray reality needs free-form stage names; resist collapsing them | ✓ Good (committed in schema) |
-| Multi-tenant scaffolding even for single-user (per ADR-0002) | Cheap to bake in early via tenantDb wrapper + branded IDs + RLS; expensive to retrofit later if SaaS is ever needed | ✓ Good (committed in `603e7e7`) |
-| Local-first (Docker Postgres, no cloud) (per ADR-0003) | Owner privacy + zero monthly cost + no vendor lock until SaaS pivot | ✓ Good |
-| GSD planning + autonomous execution from Lean | Bootstrapping `.planning/` artifacts so subsequent milestones (Standard, Full) reuse the same workflow | — Pending (this commit) |
+| Lean before Standard before Full (ADR-0007) | Each milestone validates the assumption that the next is needed | ✓ Good — Lean shipped, validates core value |
+| Vertical Slice Architecture (ADR-0010) | Single-dev scale — horizontal layering imposes ceremony tax | ✓ Good |
+| Rules-first classifier with LLM fallback (ADR-0006) | Predictable cheap path for 80%; LLM only on low confidence | ✓ Good — 314 tests, per-label thresholds |
+| Manual capture is primary; automation augments (ADR-0001) | Owner trust built by manual capture working perfectly | ✓ Good |
+| Hybrid status (ADR-0005) | Global filtering needs fixed states; per-foray needs free-form stages | ✓ Good |
+| Multi-tenant scaffolding for single-user (ADR-0002) | Cheap to bake in early; expensive to retrofit | ✓ Good — RLS + tenantDb active |
+| Local-first (ADR-0003) | Privacy + zero cost + no vendor lock | ✓ Good |
+| GSD planning + autonomous execution | Bootstrapping `.planning/` for subsequent milestones | ✓ Good — 5 phases autonomously executed |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
@@ -158,4 +146,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 after initialization (Lean milestone bootstrap)*
+*Last updated: 2026-05-09 after v0.1 Lean milestone*
