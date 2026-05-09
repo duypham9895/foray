@@ -3,7 +3,7 @@
 > **Goal**: a usable foray by Friday. Owner can manually log applications, Gmail auto-classifies high-confidence emails, ambiguous ones land in a small review queue.
 
 **Estimated effort**: ~1 week
-**Status**: ⏳ Not started
+**Status**: 🔨 In progress — Phases 1–3 complete, Phase 4 (Gmail integration) executing
 
 ---
 

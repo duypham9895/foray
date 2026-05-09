@@ -66,7 +66,7 @@ Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma schema. A
 
 | Milestone | Status | Scope |
 |-----------|--------|-------|
-| **Lean** | ⏳ Not started | Manual entry + Gmail polling + classifier + review queue + applications list/detail |
+| **Lean** | 🔨 In progress (Phase 4/5) | Manual entry + Gmail polling + classifier + review queue + applications list/detail |
 | **Standard** | ⏳ Pending Lean | + Bookmarklet capture + "Today" dashboard + tags + search |
 | **Full** | ⏳ Pending Standard | + Native Chrome MV3 extension + document storage + recruiter entity + Google Calendar sync + analytics + follow-up reminders |
 
