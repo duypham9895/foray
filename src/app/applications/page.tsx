@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { AppShell } from '@/components/app-shell'
 import { requireUser } from '@/core/auth/session'
 import { ApplicationList } from '@/features/applications/components/application-list'
 import {
@@ -34,31 +36,43 @@ export default async function ApplicationsPage({
 
   const currentParams = new URLSearchParams()
   if (params.status) currentParams.set('status', params.status)
-  // Only forward `sort` when it parsed successfully — drop unknown values.
   if (sortParse.success) currentParams.set('sort', activeSort)
 
   const [listResult, countsResult] = await Promise.all([
     findApplicationsForList(userId, { statuses: activeStatuses, sort: activeSort }),
     countApplicationsByStatus(userId),
   ])
-  if (listResult.isErr() || countsResult.isErr()) {
-    return (
-      <main className="p-6">
-        <p>Could not load forays. Try refreshing.</p>
-      </main>
-    )
-  }
 
   return (
-    <main className="p-6">
-      <h1 className="text-3xl mb-6">Forays</h1>
-      <ApplicationList
-        items={listResult.value}
-        counts={countsResult.value}
-        activeStatuses={activeStatuses}
-        activeSort={activeSort}
-        currentParams={currentParams}
-      />
-    </main>
+    <AppShell>
+      <div className="mx-auto max-w-4xl px-6 py-10 lg:px-10 lg:py-14">
+        <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-medium tracking-tight">Forays</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Every role you&apos;ve applied to. Filter by status to focus the view.
+            </p>
+          </div>
+          <Link
+            href="/applications/new"
+            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+          >
+            Capture foray
+          </Link>
+        </header>
+
+        {listResult.isErr() || countsResult.isErr() ? (
+          <p className="text-muted-foreground">Could not load forays. Try refreshing.</p>
+        ) : (
+          <ApplicationList
+            items={listResult.value}
+            counts={countsResult.value}
+            activeStatuses={activeStatuses}
+            activeSort={activeSort}
+            currentParams={currentParams}
+          />
+        )}
+      </div>
+    </AppShell>
   )
 }

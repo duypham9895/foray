@@ -8,9 +8,10 @@
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 
+import { StatusBadge } from '@/components/status-badge'
+import type { CanonicalStatus } from '@/generated/prisma/client'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent } from '@/ui/card'
-import type { CanonicalStatus } from '@/generated/prisma/client'
 
 import type { ApplicationListItem, ListSort } from '../queries'
 
@@ -94,10 +95,7 @@ export function ApplicationList({
 
   return (
     <div className="space-y-6">
-      {/* Status filter chip strip — multi-select toggle. The archived total
-          spans both terminal statuses (rejected + withdrawn), so it renders as
-          a sibling label rather than a per-chip suffix (was previously pinned
-          to the rejected chip — see WR-04). */}
+      {/* Status filter chip strip — multi-select toggle. */}
       <div className="flex flex-wrap items-center gap-2">
         {ALL_STATUSES.map((status) => {
           const active = activeStatuses.includes(status)
@@ -105,45 +103,58 @@ export function ApplicationList({
           const href = `/applications${toggleStatusInUrl(currentParams, status)}`
           return (
             <Link key={status} href={href} data-active={active}>
-              <Badge variant={active ? 'default' : 'secondary'}>
-                {STATUS_LABELS[status]} {count}
+              <Badge variant={active ? 'default' : 'outline'}>
+                {STATUS_LABELS[status]}
+                <span className="ml-1 opacity-60">{count}</span>
               </Badge>
             </Link>
           )
         })}
-        <Link href="/applications" className="text-sm text-stone-500 hover:text-stone-700">
+        <Link
+          href="/applications"
+          className="text-sm text-muted-foreground transition hover:text-foreground"
+        >
           Reset
         </Link>
         {counts.archived > 0 ? (
-          <span className="text-sm text-stone-500">· {counts.archived} archived</span>
+          <span className="text-sm text-muted-foreground">
+            · {counts.archived} archived
+          </span>
         ) : null}
       </div>
 
       {/* Sort toggle */}
-      <div className="text-sm text-stone-500">
+      <div className="text-sm text-muted-foreground">
         <Link
           href={`/applications${toggleSortInUrl(currentParams, nextSort)}`}
-          className="hover:text-stone-700 underline"
+          className="underline-offset-4 transition hover:text-foreground hover:underline"
         >
           {sortLabel}
         </Link>
       </div>
 
       {isEmpty ? (
-        <div className="rounded border border-stone-200 dark:border-stone-800 px-6 py-10 text-center">
+        <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
           {usingDefaultFilter ? (
-            <p className="text-base">
-              No forays yet.{' '}
-              <Link
-                href="/applications/new"
-                className="underline hover:text-stone-700"
-              >
-                Capture your first foray
-              </Link>
-              .
-            </p>
+            <div className="space-y-3">
+              <p className="text-base text-foreground">No forays yet.</p>
+              <p className="text-sm text-muted-foreground">
+                Capture your first role to start tracking. Drag the bookmarklet from
+                Settings, or add one manually.
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/applications/new"
+                  className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                >
+                  Capture foray
+                </Link>
+              </div>
+            </div>
           ) : (
-            <p className="text-base">No forays match this filter.</p>
+            <p className="text-base text-muted-foreground">
+              No forays match this filter.
+            </p>
           )}
         </div>
       ) : (
@@ -151,17 +162,19 @@ export function ApplicationList({
           {items.map((item) => (
             <li key={item.id}>
               <Link href={`/applications/${item.id}`} className="block">
-                <Card>
-                  <CardContent className="flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-base font-medium">{item.roleTitle}</p>
-                      <p className="text-sm text-stone-500">{item.companyName}</p>
+                <Card className="border-border bg-card transition hover:border-foreground/20 hover:shadow-sm">
+                  <CardContent className="flex items-center justify-between gap-4 px-6">
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-base font-medium">
+                        {item.roleTitle}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.companyName}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary">
-                        {STATUS_LABELS[item.canonicalStatus]}
-                      </Badge>
-                      <span className="text-xs text-stone-500">
+                    <div className="flex shrink-0 items-center gap-3">
+                      <StatusBadge status={item.canonicalStatus} />
+                      <span className="font-mono text-xs text-muted-foreground">
                         {formatDistanceToNow(item.lastActivityAt, { addSuffix: true })}
                       </span>
                     </div>
