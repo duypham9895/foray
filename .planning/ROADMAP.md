@@ -39,10 +39,10 @@ One screen tells the owner what's actually happening today — what's stale, wha
   5. ADR-0011 candidate ("RLS via `withRls()` helper, not Prisma client extension, until SaaS flip") is committed to `docs/decisions/`
 
 **Plans**: 4 plans
-- [ ] 01-01-PLAN.md — Foundation primitives (env + crypto + withRls + dep-cruiser exception) [Wave 1]
-- [ ] 01-02-PLAN.md — Auth slice (iron-session + login page + Server Action + middleware) [Wave 1]
-- [ ] 01-03-PLAN.md — RLS migration + tenantDb mutation matrix + Testcontainers + escape tests [Wave 2]
-- [ ] 01-04-PLAN.md — ADR-0011 + PROJECT.md doc fix + FND-04 sentinel pre-commit gate [Wave 2]
+- [x] 01-01-PLAN.md — Foundation primitives (env + crypto + withRls + dep-cruiser exception) [Wave 1]
+- [x] 01-02-PLAN.md — Auth slice (iron-session + login page + Server Action + middleware) [Wave 1]
+- [x] 01-03-PLAN.md — RLS migration + tenantDb mutation matrix + Testcontainers + escape tests [Wave 2]
+- [x] 01-04-PLAN.md — ADR-0011 + PROJECT.md doc fix + FND-04 sentinel pre-commit gate [Wave 2]
 
 **UI hint**: yes
 
