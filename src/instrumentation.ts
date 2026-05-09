@@ -1,16 +1,16 @@
-import { prisma } from '@/core/db/client'
-
 // Global declaration for hot-reload safety
 const g = globalThis as unknown as { __forayCron?: { stop: () => void } }
 
 export async function register() {
   // Guard 1: Skip on Edge runtime (node-cron requires Node.js)
+  // prisma is dynamically imported below — keeping it out of the Edge bundle.
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
 
   // Guard 2: Skip in test environment
   if (process.env.NODE_ENV === 'test') return
 
   const cron = await import('node-cron')
+  const { prisma } = await import('@/core/db/client')
 
   // Guard 3: Stop previous cron on hot reload
   g.__forayCron?.stop()
