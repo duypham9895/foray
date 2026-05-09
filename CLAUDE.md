@@ -179,7 +179,39 @@ This list will grow. When you add a skill, add it here.
 
 ---
 
-## 9. When in doubt
+## 9. RTK (Rust Token Killer) Usage
+
+**RTK is installed and active on this project.** Use it to optimize token consumption.
+
+### 9.1 RTK Commands
+
+RTK is a transparent CLI proxy that wraps commands to save **60-90% tokens** on dev operations. The hook auto-wraps most commands, but be intentional:
+
+```bash
+rtk gain              # Show token savings analytics
+rtk gain --history    # Usage history + savings breakdown
+rtk discover          # Analyze Claude Code history for missed opportunities
+rtk proxy <cmd>       # Run raw command (debugging, bypass hook)
+```
+
+### 9.2 When to Use RTK Explicitly
+
+The hook auto-wraps most `git`, `pnpm`, `npm`, and CLI commands transparently. But you can call RTK explicitly for:
+
+- **Heavy commands**: `rtk bash -c "pnpm build && pnpm test:run"` — run multiple commands through single RTK wrap
+- **File exploration**: `rtk bash -c "find . -type f -name '*.tsx' | head -20"` — compress file search overhead
+- **Chained operations**: Use `rtk` wrapper for any multi-step shell pipeline
+
+### 9.3 Avoid Re-running Commands
+
+Since RTK caches intelligently:
+- Don't re-run `pnpm lint`, `git status`, `git log` repeatedly without checking local files first
+- Trust RTK's compression — if it ran it once, you've saved tokens the second time
+- Check `rtk gain --history` to see what's being optimized
+
+---
+
+## 10. When in doubt
 
 - Read [PRINCIPLES.md](./PRINCIPLES.md) for "how should this be shaped" (architecture, error handling, security)
 - Read [AGENTS.md](./AGENTS.md) for "where things live"
