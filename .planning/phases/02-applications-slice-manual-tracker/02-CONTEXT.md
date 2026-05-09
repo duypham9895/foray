@@ -37,7 +37,7 @@ foray becomes a usable manual tracker. The owner can:
 
 - [auto] **Server Components by default:** `/applications` and `/applications/[id]` are Server Components reading via `tenantDb(userId).application.findMany/findUnique`. Client islands only for interactive bits (status dropdown, inline stage edit, notes editor).
 - [auto] **Filter state:** URL-driven (`?status=applied,screening&sort=lastActivityAt:desc`). Server reads `searchParams`, no client filter state. Default filter excludes `rejected` + `withdrawn`.
-- [auto] **Sort:** URL-driven, two sort axes — `appliedAt` and `lastActivityAt`, each asc/desc. Default: `lastActivityAt:desc`.
+- [auto] **Sort:** URL-driven, two sort axes — `appliedAt` and `lastActivityAt`, **`:desc` only for Lean** (the UI toggle has no asc/desc affordance). Default: `lastActivityAt:desc`. Asc variants deferred to the Standard milestone when bulk filtering becomes a UX need (decided in Phase 2 review WR-03).
 - [auto] **Empty state:** `/applications` empty → "No forays yet — capture your first" CTA linking `/applications/new`. `/applications/[id]` not-found → 404 page with "Back to forays". Tone per DESIGN.md (calm, not exclamatory).
 - [auto] **Count badges:** Per-status count + hidden-archived count rendered as text labels (DESIGN.md: no decorative icons).
 

@@ -47,11 +47,14 @@ export type ApplicationDetail = {
 // URL-driven sort param. Validated at the page boundary via `safeParse` so
 // arbitrary `?sort=...` strings cannot reach Prisma's `orderBy` (PRINCIPLES.md
 // §"Zod at every boundary"). The union below mirrors the schema literals.
+//
+// Phase 2 (Lean) ships `:desc` for both axes only — the UI toggle has no
+// asc/desc affordance, so exposing `:asc` literals would be dead code per
+// CLAUDE.md §1.2. The asc variants are deferred to the Standard milestone
+// when bulk filtering becomes a UX need.
 export const listSortSchema = z.enum([
   'lastActivityAt:desc',
-  'lastActivityAt:asc',
   'appliedAt:desc',
-  'appliedAt:asc',
 ])
 export type ListSort = z.infer<typeof listSortSchema>
 

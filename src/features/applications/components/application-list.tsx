@@ -60,8 +60,9 @@ export function toggleStatusInUrl(
 }
 
 /**
- * Toggle the sort direction-pair on the URL while preserving the current
- * `?status=` filter. Phase 2 ships two sort axes: lastActivityAt and appliedAt.
+ * Toggle the sort axis on the URL while preserving the current `?status=`
+ * filter. Phase 2 (Lean) ships two `:desc` axes only — lastActivityAt and
+ * appliedAt. Asc variants are deferred per WR-03; see CONTEXT §"Area 2".
  */
 function toggleSortInUrl(currentParams: URLSearchParams, nextSort: ListSort): string {
   const out = new URLSearchParams()
