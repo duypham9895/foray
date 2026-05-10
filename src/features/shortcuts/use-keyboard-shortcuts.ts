@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef } from 'react'
 
-import { SHORTCUTS } from './shortcuts'
-
 /**
  * Returns true when the active element is a text input where shortcuts
  * should be suppressed (input, textarea, contentEditable).
@@ -48,17 +46,17 @@ export function useKeyboardShortcuts() {
       if (pendingG.current) {
         clearPending()
         switch (e.key) {
-          case SHORTCUTS.goApps.secondKey:
+          case 'a':
             e.preventDefault()
-            router.push(SHORTCUTS.goApps.href!)
+            router.push('/applications')
             return
-          case SHORTCUTS.goInbox.secondKey:
+          case 'i':
             e.preventDefault()
-            router.push(SHORTCUTS.goInbox.href!)
+            router.push('/inbox')
             return
-          case SHORTCUTS.goSettings.secondKey:
+          case 's':
             e.preventDefault()
-            router.push(SHORTCUTS.goSettings.href!)
+            router.push('/settings')
             return
           default:
             // Not a recognized combo — fall through to single-key check
@@ -68,12 +66,12 @@ export function useKeyboardShortcuts() {
 
       // Single-key shortcuts
       switch (e.key) {
-        case SHORTCUTS.newApp.key:
+        case 'n':
           e.preventDefault()
-          router.push(SHORTCUTS.newApp.href!)
+          router.push('/applications/new')
           return
 
-        case SHORTCUTS.goApps.key:
+        case 'g':
           // Start g-prefix combo
           pendingG.current = true
           timeoutRef.current = setTimeout(clearPending, 1000)
