@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.3
 milestone_name: Full
-status: defining_requirements
-last_updated: "2026-05-10T13:30:00.000Z"
+status: ready_to_plan
+last_updated: "2026-05-10T14:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -14,127 +14,87 @@ progress:
 
 # State: foray (v0.3 Full)
 
-**Version**: 2.0 (Global continuous numbering: phases 1–16+)
+**Version**: 2.0 (Global continuous numbering: phases 1-16)
 **Last updated**: 2026-05-10
 **Mode**: autonomous (auto-advance enabled)
 
 ---
 
-## Quick Status
+## Project Reference
 
-| Metric | Value |
-|---|---|
-| **Milestone** | Full (v0.3) — phases 11–16 |
-| **Current Phase** | Not started (defining requirements) |
-| **Phase Status** | — |
-| **Milestone Progress** | 0/6 phases |
+See: .planning/PROJECT.md (updated 2026-05-10)
 
----
-
-## Milestone Overview
-
-### ✅ Lean Milestone (v0.1) — Phases 1–5 — SHIPPED 2026-05-09
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **1** | Foundation + Auth | ✅ Complete | 2026-05-09 |
-| **2** | Applications Slice | ✅ Complete | 2026-05-09 |
-| **3** | Classifier + Matcher | ✅ Complete | 2026-05-09 |
-| **4** | Gmail Ingestion + Pipeline | ✅ Complete | 2026-05-09 |
-| **5** | Review Queue + Acceptance | ✅ Complete | 2026-05-09 |
-
-### ✅ Standard Milestone (v0.2) — Phases 6–10 — SHIPPED 2026-05-10
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **6** | Bookmarklet + Capture API | ✅ Complete | 2026-05-10 |
-| **7** | Today Dashboard | ✅ Complete | 2026-05-10 |
-| **8** | Tags + Search | ✅ Complete | 2026-05-10 |
-| **9** | UX Polish + Keyboard Shortcuts | ✅ Complete | 2026-05-10 |
-| **10** | E2E Tests + Acceptance | ✅ Complete | 2026-05-10 |
-
-### ⏳ Full Milestone (v0.3) — Phases 11–16
-
-**Goal:** Transform foray into a complete job-search command center.
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **TBD** | Chrome MV3 Extension | ⏳ Pending | — |
-| **TBD** | Document Storage | ⏳ Pending | — |
-| **TBD** | Recruiter Entity | ⏳ Pending | — |
-| **TBD** | Google Calendar Integration | ⏳ Pending | — |
-| **TBD** | Analytics Dashboard | ⏳ Pending | — |
-| **TBD** | Reminders + Polish | ⏳ Pending | — |
+**Core value:** One screen tells the owner what's actually happening today — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance.
+**Current focus:** Phase 11 — Reminders + Cron Infrastructure
 
 ---
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-10 — Milestone v0.3 Full started
+Phase: 11 of 16 (Reminders + Cron Infrastructure)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-05-10 — v0.3 Full roadmap created (6 phases, 44 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ---
 
-## Transition Points
+## Performance Metrics
 
-### Standard → Full (After Phase 10)
+**Velocity:**
+- Total plans completed: 0 (v0.3)
+- Prior milestone plans: 15 (v0.1) + 15 (v0.2) = 30 total
 
-**Trigger**: Phase 10 complete ✅
-**Status**: Transition complete — starting v0.3 Full
+**By Phase:**
 
----
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 11. Reminders + Cron | TBD | Not started |
+| 12. Document Storage | TBD | Not started |
+| 13. Chrome MV3 Extension | TBD | Not started |
+| 14. Recruiter Entity | TBD | Not started |
+| 15. Analytics Dashboard | TBD | Not started |
+| 16. Google Calendar | TBD | Not started |
 
-## File Locations
-
-**Authoritative source**: `.planning/PHASE-MANIFEST.md`
-**Lean roadmap** (phases 1–5): `.planning/milestones/v0.1-ROADMAP.md`
-**Standard roadmap** (phases 6–10): `.planning/milestones/v0.2-ROADMAP.md`
-**Phase details**:
-
-- Plans: `.planning/phases/NN-*/NN-0N-PLAN.md`
-- Research: `.planning/phases/NN-*/RESEARCH.md`
-- Requirements: `.planning/phases/NN-*/REQUIREMENTS.md`
-
----
-
-## How to Resume Work
-
-### From v0.3 (starting Full milestone)
-
-```bash
-# See what's next
-cat .planning/REQUIREMENTS.md
-cat .planning/ROADMAP.md
-
-# Check phase details
-cat .planning/phases/11-*/11-01-PLAN.md
-```
+*Updated after each plan completion*
 
 ---
 
-## Key Decisions
+## Accumulated Context
 
-- **Global phase numbering** (1–16+, not per-milestone) for clarity in automation
-- **Continuous execution** with auto-advance
-- **Category-based test coverage** (replaces gameable "≥30 tests" target)
-- **RLS via `withRls()` helper** (per ADR-0011, until SaaS flip)
-- **LLM cost as control, not monitoring** (pre-call guard, fail closed at $0.50/day)
-- **Status-regression block** (auto-update refuses interviewing → rejected)
-- **Undo via `reviewedByUser` flag** (idempotency: cron won't re-act on already-triaged email)
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v0.3] Build order: Reminders → Documents → Extension → Recruiters → Analytics → Calendar (research-recommended dependency order)
+- [v0.3] Granularity: coarse (6 natural feature boundaries, each one phase)
+- [v0.3] Phase numbering continues from 10 (phases 11-16)
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+- Chrome extension (Phase 13) has highest friction — WXT framework, MV3 service worker lifecycle, Bearer token auth pattern
+- Google Calendar (Phase 16) requires separate OAuth token from existing Gmail token — must not invalidate Gmail session
+- Document storage introduces first file I/O pattern in the codebase — `data/documents/` path traversal protection critical
 
 ---
 
 ## Session Continuity
 
-**When resuming from idle**:
+Last session: 2026-05-10
+Stopped at: Roadmap created, ready to plan Phase 11
+Resume file: None
 
-1. Read this file (STATE.md) — always the first step
-2. Check current phase: `.planning/phases/0N-*/0N-0M-PLAN.md`
+**When resuming:**
+1. Read this file (STATE.md)
+2. Run `/gsd-plan-phase 11` to plan Reminders + Cron Infrastructure
 3. Verify pre-commit gate: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build`
-4. Continue execution or ask for next task
 
 ---
 
-*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.3 Full milestone*
+*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.3 Full milestone roadmap creation*

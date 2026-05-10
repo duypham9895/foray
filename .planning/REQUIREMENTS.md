@@ -104,58 +104,58 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REMIND-01 | TBD | Pending |
-| REMIND-02 | TBD | Pending |
-| REMIND-03 | TBD | Pending |
-| REMIND-04 | TBD | Pending |
-| REMIND-05 | TBD | Pending |
-| DOC-01 | TBD | Pending |
-| DOC-02 | TBD | Pending |
-| DOC-03 | TBD | Pending |
-| DOC-04 | TBD | Pending |
-| DOC-05 | TBD | Pending |
-| DOC-06 | TBD | Pending |
-| DOC-07 | TBD | Pending |
-| EXT-01 | TBD | Pending |
-| EXT-02 | TBD | Pending |
-| EXT-03 | TBD | Pending |
-| EXT-04 | TBD | Pending |
-| EXT-05 | TBD | Pending |
-| EXT-06 | TBD | Pending |
-| EXT-07 | TBD | Pending |
-| EXT-08 | TBD | Pending |
-| EXT-09 | TBD | Pending |
-| RCRT-01 | TBD | Pending |
-| RCRT-02 | TBD | Pending |
-| RCRT-03 | TBD | Pending |
-| RCRT-04 | TBD | Pending |
-| RCRT-05 | TBD | Pending |
-| RCRT-06 | TBD | Pending |
-| RCRT-07 | TBD | Pending |
-| RCRT-08 | TBD | Pending |
-| ANAL-01 | TBD | Pending |
-| ANAL-02 | TBD | Pending |
-| ANAL-03 | TBD | Pending |
-| ANAL-04 | TBD | Pending |
-| ANAL-05 | TBD | Pending |
-| ANAL-06 | TBD | Pending |
-| ANAL-07 | TBD | Pending |
-| ANAL-08 | TBD | Pending |
-| CAL-01 | TBD | Pending |
-| CAL-02 | TBD | Pending |
-| CAL-03 | TBD | Pending |
-| CAL-04 | TBD | Pending |
-| CAL-05 | TBD | Pending |
-| CAL-06 | TBD | Pending |
-| CAL-07 | TBD | Pending |
-| CAL-08 | TBD | Pending |
-| CAL-09 | TBD | Pending |
+| REMIND-01 | 11 | Pending |
+| REMIND-02 | 11 | Pending |
+| REMIND-03 | 11 | Pending |
+| REMIND-04 | 11 | Pending |
+| REMIND-05 | 11 | Pending |
+| DOC-01 | 12 | Pending |
+| DOC-02 | 12 | Pending |
+| DOC-03 | 12 | Pending |
+| DOC-04 | 12 | Pending |
+| DOC-05 | 12 | Pending |
+| DOC-06 | 12 | Pending |
+| DOC-07 | 12 | Pending |
+| EXT-01 | 13 | Pending |
+| EXT-02 | 13 | Pending |
+| EXT-03 | 13 | Pending |
+| EXT-04 | 13 | Pending |
+| EXT-05 | 13 | Pending |
+| EXT-06 | 13 | Pending |
+| EXT-07 | 13 | Pending |
+| EXT-08 | 13 | Pending |
+| EXT-09 | 13 | Pending |
+| RCRT-01 | 14 | Pending |
+| RCRT-02 | 14 | Pending |
+| RCRT-03 | 14 | Pending |
+| RCRT-04 | 14 | Pending |
+| RCRT-05 | 14 | Pending |
+| RCRT-06 | 14 | Pending |
+| RCRT-07 | 14 | Pending |
+| RCRT-08 | 14 | Pending |
+| ANAL-01 | 15 | Pending |
+| ANAL-02 | 15 | Pending |
+| ANAL-03 | 15 | Pending |
+| ANAL-04 | 15 | Pending |
+| ANAL-05 | 15 | Pending |
+| ANAL-06 | 15 | Pending |
+| ANAL-07 | 15 | Pending |
+| ANAL-08 | 15 | Pending |
+| CAL-01 | 16 | Pending |
+| CAL-02 | 16 | Pending |
+| CAL-03 | 16 | Pending |
+| CAL-04 | 16 | Pending |
+| CAL-05 | 16 | Pending |
+| CAL-06 | 16 | Pending |
+| CAL-07 | 16 | Pending |
+| CAL-08 | 16 | Pending |
+| CAL-09 | 16 | Pending |
 
 **Coverage:**
 - v0.3 requirements: 44 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 44
+- Mapped to phases: 44
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-10*
-*Last updated: 2026-05-10 after initial definition*
+*Last updated: 2026-05-10 after roadmap creation*
