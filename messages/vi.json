@@ -47,7 +47,10 @@
     "sortByApplied": "Sắp xếp: ngày ứng tuyển",
     "archivedCount": "{n} đã lưu trữ",
     "loadError": "Không tải được forays. Thử làm mới.",
-    "back": "← Forays"
+    "back": "← Forays",
+    "viewBoard": "Bảng",
+    "viewList": "Danh sách",
+    "boardEmpty": "Không có foray nào trong cột này."
   },
   "forayDetail": {
     "appliedOn": "Ứng tuyển {date}",

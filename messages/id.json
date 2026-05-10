@@ -47,7 +47,10 @@
     "sortByApplied": "Urut: tanggal melamar",
     "archivedCount": "{n} diarsipkan",
     "loadError": "Gagal memuat forays. Coba refresh.",
-    "back": "← Forays"
+    "back": "← Forays",
+    "viewBoard": "Papan",
+    "viewList": "Daftar",
+    "boardEmpty": "Tidak ada foray di kolom ini."
   },
   "forayDetail": {
     "appliedOn": "Dilamar {date}",

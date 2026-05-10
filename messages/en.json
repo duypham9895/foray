@@ -47,7 +47,10 @@
     "sortByApplied": "Sort: applied date",
     "archivedCount": "{n} archived",
     "loadError": "Could not load forays. Try refreshing.",
-    "back": "← Forays"
+    "back": "← Forays",
+    "viewBoard": "Board",
+    "viewList": "List",
+    "boardEmpty": "No forays in this column."
   },
   "forayDetail": {
     "appliedOn": "Applied {date}",
