@@ -59,3 +59,7 @@ scripts/dev/
 # Claude Code harness runtime data (hook decision log, prepush-skip flag)
 .claude/.devkit/
 
+# Claude Code agent worktrees — git worktrees that must NEVER be committed
+# (committing creates orphan gitlinks with no .gitmodules → CI checkout fails)
+.claude/worktrees/
+
