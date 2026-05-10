@@ -77,6 +77,25 @@
     "degradationDisconnected": "Gmail belum terhubung — isi penuh tidak tersedia. <link>Hubungkan Gmail di Pengaturan</link>.",
     "degradationStale": "Sinkron terakhir lebih dari 5 hari lalu. Token Gmail mode Test kedaluwarsa setelah 7 hari. <link>Hubungkan ulang di Pengaturan</link>."
   },
+  "today": {
+    "staleSuffix": "sepi {n} hari",
+    "staleSuffixOne": "sepi 1 hari",
+    "decisionsTitle": "Perlu keputusan",
+    "decisionsSubtitle": "{n} hal menunggu kamu",
+    "decisionsEmpty": "Tidak ada yang menunggu kamu saat ini.",
+    "decisionsClassifier": "Klasifikasi: kemungkinan {label} · {percent}%",
+    "interviewsTitle": "Wawancara hari ini",
+    "interviewsEmpty": "Tidak ada wawancara di kalender.",
+    "quietTitle": "Sepi",
+    "quietSubtitle": "{n} foray yang mungkin perlu kamu ingatkan",
+    "quietLastReply": "balasan terakhir {n} hari lalu",
+    "quietLastReplyOne": "balasan terakhir 1 hari lalu",
+    "quietViewAll": "Lihat semua",
+    "pipelineTitle": "Pipeline",
+    "pipelineClosed": "ditutup",
+    "globalEmptyTitle": "Hari ini tidak ada yang mendesak.",
+    "globalEmptyBody": "Tambah foray (⌘K) atau buka pipeline."
+  },
   "settings": {
     "title": "Pengaturan",
     "subtitle": "Hubungkan Gmail, pasang bookmarklet, kelola foray lokalmu.",

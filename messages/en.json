@@ -77,6 +77,25 @@
     "degradationDisconnected": "Gmail disconnected — full bodies unavailable. <link>Connect Gmail in Settings</link>.",
     "degradationStale": "Last sync was over 5 days ago. Gmail Test-mode tokens expire after 7 days. <link>Reconnect in Settings</link>."
   },
+  "today": {
+    "staleSuffix": "{n} days quiet",
+    "staleSuffixOne": "1 day quiet",
+    "decisionsTitle": "Decisions",
+    "decisionsSubtitle": "{n} items waiting on you",
+    "decisionsEmpty": "Nothing waiting on you right now.",
+    "decisionsClassifier": "Classifier: probably {label} · {percent}%",
+    "interviewsTitle": "Today's interviews",
+    "interviewsEmpty": "No interviews on the calendar.",
+    "quietTitle": "Quiet",
+    "quietSubtitle": "{n} forays you might want to nudge",
+    "quietLastReply": "last reply {n} days ago",
+    "quietLastReplyOne": "last reply 1 day ago",
+    "quietViewAll": "See all",
+    "pipelineTitle": "Pipeline",
+    "pipelineClosed": "closed",
+    "globalEmptyTitle": "Nothing pressing today.",
+    "globalEmptyBody": "Capture a foray (⌘K) or open your pipeline."
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Connect Gmail, install the bookmarklet, manage your local foray instance.",

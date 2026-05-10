@@ -77,6 +77,25 @@
     "degradationDisconnected": "Gmail chưa kết nối — không xem được nội dung đầy đủ. <link>Kết nối Gmail trong Cài đặt</link>.",
     "degradationStale": "Đồng bộ lần cuối đã hơn 5 ngày. Token Gmail ở chế độ Test hết hạn sau 7 ngày. <link>Kết nối lại trong Cài đặt</link>."
   },
+  "today": {
+    "staleSuffix": "yên ắng {n} ngày",
+    "staleSuffixOne": "yên ắng 1 ngày",
+    "decisionsTitle": "Cần quyết định",
+    "decisionsSubtitle": "{n} mục đang chờ bạn",
+    "decisionsEmpty": "Hiện không có gì chờ bạn xử lý.",
+    "decisionsClassifier": "Phân loại: có thể là {label} · {percent}%",
+    "interviewsTitle": "Phỏng vấn hôm nay",
+    "interviewsEmpty": "Không có phỏng vấn nào trong lịch.",
+    "quietTitle": "Yên ắng",
+    "quietSubtitle": "{n} foray bạn có thể nên nhắc lại",
+    "quietLastReply": "trả lời cuối {n} ngày trước",
+    "quietLastReplyOne": "trả lời cuối 1 ngày trước",
+    "quietViewAll": "Xem tất cả",
+    "pipelineTitle": "Pipeline",
+    "pipelineClosed": "đã đóng",
+    "globalEmptyTitle": "Hôm nay không có việc gấp.",
+    "globalEmptyBody": "Thêm foray (⌘K) hoặc mở pipeline."
+  },
   "settings": {
     "title": "Cài đặt",
     "subtitle": "Kết nối Gmail, cài bookmarklet, quản lý foray cục bộ.",
