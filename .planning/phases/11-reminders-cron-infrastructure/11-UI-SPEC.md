@@ -54,12 +54,12 @@ Exceptions: none for this phase.
 | Role | Size | Weight | Line Height | Tailwind |
 |------|------|--------|-------------|----------|
 | Body | 16px | 400 (regular) | 1.5 | `text-base` |
-| Label / secondary metadata | 14px | 400 (regular) | 1.4 | `text-sm` |
+| Label / secondary metadata / timestamps | 14px | 400 (regular) | 1.4 | `text-sm` |
 | Section heading (H2) | 20px | 500 (medium) | 1.4 | `text-xl font-medium` |
 | Page heading (H1) | 30px | 500 (medium) | 1.2 | `text-3xl font-medium tracking-tight` |
-| Timestamps / IDs | 12px | 400 (regular) | 1.4 | `text-xs` |
 
-**Source:** DESIGN.md typography section. Avoid `text-2xl` and `text-lg` per design rules.
+4 sizes max — timestamps and IDs use `text-sm` (14px) for data density without adding a 5th size.
+**Source:** DESIGN.md typography section. Avoid `text-2xl`, `text-lg`, and `text-xs` per design rules.
 
 ---
 
@@ -192,14 +192,14 @@ No third-party registries declared. No new shadcn components needed for this pha
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS (merged 12px → 14px, now 4 sizes)
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** verified 2026-05-10
 
 ---
 
