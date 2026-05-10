@@ -75,8 +75,9 @@ export function TagInput({
       setHighlightIndex((prev) => Math.max(prev - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      if (highlightIndex >= 0 && highlightIndex < filtered.length) {
-        addTag(filtered[highlightIndex])
+      const selected = filtered[highlightIndex]
+      if (highlightIndex >= 0 && selected !== undefined) {
+        addTag(selected)
       } else if (input.trim()) {
         addTag(input.trim())
       }
