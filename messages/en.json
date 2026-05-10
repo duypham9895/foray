@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "today": "Today",
+    "forays": "Forays",
+    "inbox": "Inbox",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "actions": {
+    "confirm": "Confirm",
+    "override": "Override",
+    "ignore": "Ignore",
+    "save": "Save",
+    "cancel": "Cancel",
+    "captureForay": "Capture foray",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "openInbox": "Open inbox",
+    "openForay": "Open foray",
+    "reset": "Reset"
+  },
+  "status": {
+    "applied": "Applied",
+    "screening": "Screening",
+    "interviewing": "Interviewing",
+    "offer": "Offer",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn"
+  },
+  "login": {
+    "wordmark": "foray",
+    "tagline": "Every foray, in one place.",
+    "intro": "Capture roles in one click. Watch replies land. Decide what's next from one calm view — without the spreadsheet.",
+    "localFooter": "Locally hosted. Your data stays on your machine.",
+    "title": "Sign in",
+    "passwordHint": "Single-user mode. Use the password from your <code>.env</code> file.",
+    "passwordLabel": "Password",
+    "passwordError": "Incorrect password"
+  },
+  "forays": {
+    "title": "Forays",
+    "subtitle": "Every role you've applied to. Filter by status to focus the view.",
+    "emptyNoForays": "No forays yet.",
+    "emptyCaptureFirst": "Capture your first role to start tracking. Drag the bookmarklet from Settings, or add one manually.",
+    "emptyNoMatch": "No forays match this filter.",
+    "sortByActivity": "Sort: latest activity",
+    "sortByApplied": "Sort: applied date",
+    "archivedCount": "{n} archived",
+    "loadError": "Could not load forays. Try refreshing.",
+    "back": "← Forays"
+  },
+  "forayDetail": {
+    "appliedOn": "Applied {date}",
+    "stages": "Stages",
+    "notes": "Notes",
+    "timeline": "Timeline",
+    "loadError": "Could not load this foray."
+  },
+  "newForay": {
+    "title": "Capture a foray",
+    "subtitle": "Log a role you applied to or are about to apply to."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "subtitleEmpty": "Classified emails the matcher was confident about have already been routed.",
+    "subtitleOne": "1 email the classifier wasn't confident about. Confirm or override.",
+    "subtitleMany": "{n} emails the classifier wasn't confident about. Confirm or override.",
+    "emptyTitle": "All caught up.",
+    "emptyBody": "No emails waiting for review. New ones will appear here when the classifier isn't confident about a label.",
+    "classification": {
+      "rejection": "rejection",
+      "interview_invite": "interview invite",
+      "recruiter_outreach": "recruiter outreach",
+      "noise": "noise",
+      "unmatched": "unmatched"
+    },
+    "degradationDisconnected": "Gmail disconnected — full bodies unavailable. <link>Connect Gmail in Settings</link>.",
+    "degradationStale": "Last sync was over 5 days ago. Gmail Test-mode tokens expire after 7 days. <link>Reconnect in Settings</link>."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Connect Gmail, install the bookmarklet, manage your local foray instance.",
+    "gmail": {
+      "title": "Gmail",
+      "intro": "The classifier reads your inbox to spot replies, interview invites, and rejections. Subjects and 500-char excerpts are stored; full bodies are fetched on demand.",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "lastSynced": "Last synced {date}",
+      "connect": "Connect Gmail",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "syncNow": "Sync now",
+      "syncing": "Syncing…",
+      "tokenStaleTitle": "Gmail sync is {days} days stale.",
+      "tokenStaleBody": "Google may revoke the refresh token after 7 days when the OAuth consent screen is in Test mode. Reconnect Gmail to keep syncing."
+    },
+    "bookmarklet": {
+      "title": "Bookmarklet",
+      "intro": "One-click capture from any job posting. Drag the button to your bookmarks bar — page title, URL, and any selected text get pre-filled into a new foray.",
+      "addButton": "Add to Foray",
+      "notBuilt": "Run <code>pnpm build:bookmarklet</code> to generate the bookmarklet.",
+      "installation": "Installation",
+      "step1": "Drag the button above to your browser's bookmark bar.",
+      "step2": "Or right-click → <em>Bookmark This Link</em>, then choose your folder.",
+      "usage": "Click the bookmark while on any job posting. You'll land on the new foray form with everything captured."
+    },
+    "language": {
+      "title": "Language",
+      "intro": "Interface language. Job content (titles, JDs, emails) stays in its source language.",
+      "english": "English",
+      "vietnamese": "Tiếng Việt",
+      "indonesian": "Bahasa Indonesia",
+      "save": "Save"
+    }
+  }
+}

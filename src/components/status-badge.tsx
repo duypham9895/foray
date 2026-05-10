@@ -1,14 +1,15 @@
-import type { CanonicalStatus } from '@/generated/prisma/client'
+import { useTranslations } from 'next-intl'
 
+import type { CanonicalStatus } from '@/generated/prisma/client'
 import { cn } from '@/lib/utils'
 
-const palette: Record<CanonicalStatus, { dot: string; label: string }> = {
-  applied: { dot: 'bg-status-applied', label: 'Applied' },
-  screening: { dot: 'bg-status-screening', label: 'Screening' },
-  interviewing: { dot: 'bg-status-interviewing', label: 'Interviewing' },
-  offer: { dot: 'bg-status-offer', label: 'Offer' },
-  rejected: { dot: 'bg-status-closed', label: 'Rejected' },
-  withdrawn: { dot: 'bg-status-closed', label: 'Withdrawn' },
+const dotByStatus: Record<CanonicalStatus, string> = {
+  applied: 'bg-status-applied',
+  screening: 'bg-status-screening',
+  interviewing: 'bg-status-interviewing',
+  offer: 'bg-status-offer',
+  rejected: 'bg-status-closed',
+  withdrawn: 'bg-status-closed',
 }
 
 export function StatusBadge({
@@ -18,7 +19,7 @@ export function StatusBadge({
   status: CanonicalStatus
   className?: string
 }) {
-  const { dot, label } = palette[status]
+  const t = useTranslations('status')
   return (
     <span
       className={cn(
@@ -26,8 +27,8 @@ export function StatusBadge({
         className,
       )}
     >
-      <span className={cn('size-1.5 rounded-full', dot)} aria-hidden="true" />
-      {label}
+      <span className={cn('size-1.5 rounded-full', dotByStatus[status])} aria-hidden="true" />
+      {t(status)}
     </span>
   )
 }

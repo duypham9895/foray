@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -10,6 +11,9 @@ export default async function NewApplicationPage() {
   const userResult = await requireUser()
   if (userResult.isErr()) redirect('/login')
   const userId = userResult.value.id
+
+  const t = await getTranslations('newForay')
+  const tForays = await getTranslations('forays')
 
   const companiesResult = await withRls(userId, async (tx) =>
     tx.company.findMany({
@@ -27,13 +31,11 @@ export default async function NewApplicationPage() {
           href="/applications"
           className="text-sm text-muted-foreground transition hover:text-foreground"
         >
-          ← Forays
+          {tForays('back')}
         </Link>
         <header className="space-y-2">
-          <h1 className="text-3xl font-medium tracking-tight">Capture a foray</h1>
-          <p className="text-sm text-muted-foreground">
-            Log a role you applied to or are about to apply to.
-          </p>
+          <h1 className="text-3xl font-medium tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
         </header>
         <NewApplicationForm companies={companies} />
       </div>

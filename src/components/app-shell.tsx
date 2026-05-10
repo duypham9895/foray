@@ -1,7 +1,12 @@
+import { getTranslations } from 'next-intl/server'
+
 import { logout } from '@/features/auth/actions'
+
 import { NavLinks } from './nav-links'
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations('nav')
+
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-[240px_1fr]">
       <aside className="flex flex-col gap-8 border-b border-border bg-card/40 p-6 lg:border-b-0 lg:border-r lg:p-8">
@@ -17,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="submit"
             className="rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-foreground"
           >
-            Sign out
+            {t('signOut')}
           </button>
         </form>
       </aside>

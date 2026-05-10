@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "today": "Hôm nay",
+    "forays": "Forays",
+    "inbox": "Hộp thư",
+    "settings": "Cài đặt",
+    "signOut": "Đăng xuất"
+  },
+  "actions": {
+    "confirm": "Đồng ý",
+    "override": "Thay đổi",
+    "ignore": "Bỏ qua",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "captureForay": "Thêm foray",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập…",
+    "openInbox": "Mở hộp thư",
+    "openForay": "Mở foray",
+    "reset": "Đặt lại"
+  },
+  "status": {
+    "applied": "Đã ứng tuyển",
+    "screening": "Sàng lọc",
+    "interviewing": "Phỏng vấn",
+    "offer": "Đề nghị",
+    "rejected": "Từ chối",
+    "withdrawn": "Đã rút"
+  },
+  "login": {
+    "wordmark": "foray",
+    "tagline": "Mọi foray, gói gọn một nơi.",
+    "intro": "Thêm vị trí chỉ với một cú nhấp. Theo dõi phản hồi tự động. Quyết định bước tiếp theo trong một góc nhìn yên ả — không cần bảng tính.",
+    "localFooter": "Chạy ngay trên máy của bạn. Dữ liệu không rời khỏi laptop.",
+    "title": "Đăng nhập",
+    "passwordHint": "Chế độ một người dùng. Mật khẩu nằm trong file <code>.env</code>.",
+    "passwordLabel": "Mật khẩu",
+    "passwordError": "Sai mật khẩu"
+  },
+  "forays": {
+    "title": "Forays",
+    "subtitle": "Mọi vị trí bạn đã ứng tuyển. Lọc theo trạng thái để tập trung.",
+    "emptyNoForays": "Chưa có foray nào.",
+    "emptyCaptureFirst": "Thêm vị trí đầu tiên để bắt đầu theo dõi. Kéo bookmarklet từ Cài đặt, hoặc thêm thủ công.",
+    "emptyNoMatch": "Không có foray nào khớp bộ lọc này.",
+    "sortByActivity": "Sắp xếp: hoạt động mới nhất",
+    "sortByApplied": "Sắp xếp: ngày ứng tuyển",
+    "archivedCount": "{n} đã lưu trữ",
+    "loadError": "Không tải được forays. Thử làm mới.",
+    "back": "← Forays"
+  },
+  "forayDetail": {
+    "appliedOn": "Ứng tuyển {date}",
+    "stages": "Vòng phỏng vấn",
+    "notes": "Ghi chú",
+    "timeline": "Dòng thời gian",
+    "loadError": "Không tải được foray này."
+  },
+  "newForay": {
+    "title": "Thêm foray",
+    "subtitle": "Ghi nhận vị trí bạn đã ứng tuyển hoặc sắp ứng tuyển."
+  },
+  "inbox": {
+    "title": "Hộp thư",
+    "subtitleEmpty": "Các email đã được phân loại tự động vào đúng foray.",
+    "subtitleOne": "1 email cần bạn xem lại. Đồng ý hoặc chỉnh lại phân loại.",
+    "subtitleMany": "{n} email cần bạn xem lại. Đồng ý hoặc chỉnh lại phân loại.",
+    "emptyTitle": "Đã xử lý hết.",
+    "emptyBody": "Không có email nào chờ xem lại. Email mới sẽ xuất hiện ở đây khi cần phân loại lại.",
+    "classification": {
+      "rejection": "từ chối",
+      "interview_invite": "mời phỏng vấn",
+      "recruiter_outreach": "nhà tuyển dụng liên hệ",
+      "noise": "không liên quan",
+      "unmatched": "chưa khớp"
+    },
+    "degradationDisconnected": "Gmail chưa kết nối — không xem được nội dung đầy đủ. <link>Kết nối Gmail trong Cài đặt</link>.",
+    "degradationStale": "Đồng bộ lần cuối đã hơn 5 ngày. Token Gmail ở chế độ Test hết hạn sau 7 ngày. <link>Kết nối lại trong Cài đặt</link>."
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "subtitle": "Kết nối Gmail, cài bookmarklet, quản lý foray cục bộ.",
+    "gmail": {
+      "title": "Gmail",
+      "intro": "Bộ phân loại đọc hộp thư để phát hiện phản hồi, lời mời phỏng vấn và từ chối. Tiêu đề và 500 ký tự đầu được lưu; nội dung đầy đủ chỉ tải khi cần.",
+      "connected": "Đã kết nối",
+      "disconnected": "Chưa kết nối",
+      "lastSynced": "Đồng bộ lần cuối {date}",
+      "connect": "Kết nối Gmail",
+      "disconnect": "Ngắt kết nối",
+      "disconnecting": "Đang ngắt kết nối…",
+      "syncNow": "Đồng bộ ngay",
+      "syncing": "Đang đồng bộ…",
+      "tokenStaleTitle": "Đồng bộ Gmail đã cũ {days} ngày.",
+      "tokenStaleBody": "Google có thể thu hồi refresh token sau 7 ngày khi màn hình OAuth ở chế độ Test. Kết nối lại Gmail để tiếp tục đồng bộ."
+    },
+    "bookmarklet": {
+      "title": "Bookmarklet",
+      "intro": "Thêm foray chỉ với một cú nhấp từ bất kỳ trang tin tuyển dụng nào. Kéo nút bên dưới vào thanh bookmark — tiêu đề trang, URL và phần text đã bôi đen sẽ được điền sẵn vào foray mới.",
+      "addButton": "Thêm vào Foray",
+      "notBuilt": "Chạy <code>pnpm build:bookmarklet</code> để tạo bookmarklet.",
+      "installation": "Cài đặt",
+      "step1": "Kéo nút bên trên vào thanh bookmark của trình duyệt.",
+      "step2": "Hoặc nhấp chuột phải → <em>Lưu liên kết này</em>, rồi chọn thư mục.",
+      "usage": "Nhấp bookmark khi đang ở trang tuyển dụng. Bạn sẽ vào form foray mới với mọi thứ đã được điền sẵn."
+    },
+    "language": {
+      "title": "Ngôn ngữ",
+      "intro": "Ngôn ngữ giao diện. Nội dung công việc (tiêu đề vị trí, mô tả, email) vẫn giữ nguyên ngôn ngữ gốc.",
+      "english": "English",
+      "vietnamese": "Tiếng Việt",
+      "indonesian": "Bahasa Indonesia",
+      "save": "Lưu"
+    }
+  }
+}

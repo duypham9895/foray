@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -25,12 +26,13 @@ export default async function ApplicationsPage({
   if (userResult.isErr()) redirect('/login')
   const userId = userResult.value.id
 
+  const t = await getTranslations('forays')
+  const tActions = await getTranslations('actions')
+
   const params = await searchParams
   const fromUrl = params.status?.split(',').filter(isCanonicalStatus) ?? []
   const activeStatuses: CanonicalStatus[] =
     fromUrl.length > 0 ? fromUrl : DEFAULT_STATUSES
-  // Validate `?sort=` against the schema; fall back to default on bad input
-  // so attackers cannot smuggle arbitrary `orderBy` keys into Prisma.
   const sortParse = listSortSchema.safeParse(params.sort)
   const activeSort: ListSort = sortParse.success ? sortParse.data : 'lastActivityAt:desc'
 
@@ -48,21 +50,19 @@ export default async function ApplicationsPage({
       <div className="mx-auto max-w-4xl px-6 py-10 lg:px-10 lg:py-14">
         <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-medium tracking-tight">Forays</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Every role you&apos;ve applied to. Filter by status to focus the view.
-            </p>
+            <h1 className="text-3xl font-medium tracking-tight">{t('title')}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
           </div>
           <Link
             href="/applications/new"
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
           >
-            Capture foray
+            {tActions('captureForay')}
           </Link>
         </header>
 
         {listResult.isErr() || countsResult.isErr() ? (
-          <p className="text-muted-foreground">Could not load forays. Try refreshing.</p>
+          <p className="text-muted-foreground">{t('loadError')}</p>
         ) : (
           <ApplicationList
             items={listResult.value}

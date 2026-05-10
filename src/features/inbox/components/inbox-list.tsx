@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 
 import {
@@ -25,6 +26,7 @@ type Props = {
 }
 
 export function InboxList({ items, applications }: Props) {
+  const t = useTranslations('inbox')
   const [emails, setEmails] = useState(items)
 
   const handleConfirm = async (emailId: number) => {
@@ -61,11 +63,8 @@ export function InboxList({ items, applications }: Props) {
   if (emails.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
-        <p className="text-base text-foreground">All caught up.</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          No emails waiting for review. New ones will appear here when the classifier
-          isn&apos;t confident about a label.
-        </p>
+        <p className="text-base text-foreground">{t('emptyTitle')}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t('emptyBody')}</p>
       </div>
     )
   }

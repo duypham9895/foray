@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/app-shell'
@@ -13,6 +14,7 @@ export default async function InboxPage() {
   if (userResult.isErr()) redirect('/login')
 
   const userId = UserId(userResult.value.id)
+  const t = await getTranslations('inbox')
 
   const user = await tenantDb(userId).user.findUnique({
     where: { id: Number(userId) },
@@ -31,16 +33,19 @@ export default async function InboxPage() {
   const emails = emailsResult.isOk() ? emailsResult.value : []
   const applications = appsResult.isOk() ? appsResult.value : []
 
+  const subtitle =
+    emails.length === 0
+      ? t('subtitleEmpty')
+      : emails.length === 1
+        ? t('subtitleOne')
+        : t('subtitleMany', { n: emails.length })
+
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl px-6 py-10 lg:px-10 lg:py-14">
         <header className="mb-10">
-          <h1 className="text-3xl font-medium tracking-tight">Inbox</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {emails.length === 0
-              ? 'Classified emails the matcher was confident about have already been routed.'
-              : `${emails.length} email${emails.length === 1 ? '' : 's'} the classifier wasn't confident about. Confirm or override.`}
-          </p>
+          <h1 className="text-3xl font-medium tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         </header>
 
         <div className="space-y-6">

@@ -1,22 +1,25 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { cn } from '@/lib/utils'
 
 const links = [
-  { href: '/applications', label: 'Forays' },
-  { href: '/inbox', label: 'Inbox' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/today', key: 'today' as const },
+  { href: '/applications', key: 'forays' as const },
+  { href: '/inbox', key: 'inbox' as const },
+  { href: '/settings', key: 'settings' as const },
 ]
 
 export function NavLinks() {
   const pathname = usePathname()
+  const t = useTranslations('nav')
 
   return (
     <nav className="flex gap-1 lg:flex-col lg:gap-1 lg:self-stretch">
-      {links.map(({ href, label }) => {
+      {links.map(({ href, key }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`)
         return (
           <Link
@@ -30,7 +33,7 @@ export function NavLinks() {
                 : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
             )}
           >
-            {label}
+            {t(key)}
           </Link>
         )
       })}

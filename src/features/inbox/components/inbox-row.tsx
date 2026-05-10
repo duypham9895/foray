@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
 import type { InboxItem } from '@/features/inbox/queries'
@@ -27,23 +28,16 @@ type Props = {
   onIgnore: (emailId: number) => void
 }
 
-const CLASSIFICATION_LABELS: Record<EmailClassification, string> = {
-  rejection: 'rejection',
-  interview_invite: 'interview invite',
-  recruiter_outreach: 'recruiter outreach',
-  noise: 'noise',
-  unmatched: 'unmatched',
-}
-
 function ClassificationBadge({
   classification,
 }: {
   classification: EmailClassification | null
 }) {
+  const t = useTranslations('inbox.classification')
   if (!classification) return null
   return (
     <Badge variant="outline" className="font-mono text-[11px] tracking-wide">
-      {CLASSIFICATION_LABELS[classification]}
+      {t(classification)}
     </Badge>
   )
 }
@@ -56,6 +50,7 @@ export function InboxRow({
   onLink,
   onIgnore,
 }: Props) {
+  const tActions = useTranslations('actions')
   const excerpt =
     item.bodyExcerpt.length > 200
       ? `${item.bodyExcerpt.slice(0, 200)}…`
@@ -92,7 +87,7 @@ export function InboxRow({
 
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <Button size="sm" onClick={() => onConfirm(item.id)}>
-            Confirm
+            {tActions('confirm')}
           </Button>
           <ClassificationSelect
             emailId={item.id}
@@ -105,7 +100,7 @@ export function InboxRow({
             onLink={onLink}
           />
           <Button variant="ghost" size="sm" onClick={() => onIgnore(item.id)}>
-            Ignore
+            {tActions('ignore')}
           </Button>
         </div>
       </CardContent>

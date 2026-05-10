@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
@@ -16,6 +17,9 @@ export default async function ApplicationDetailPage({
   if (userResult.isErr()) redirect('/login')
   const userId = userResult.value.id
 
+  const t = await getTranslations('forayDetail')
+  const tForays = await getTranslations('forays')
+
   const { id } = await params
   const result = await findApplicationDetail(userId, ApplicationId(id))
 
@@ -27,9 +31,9 @@ export default async function ApplicationDetailPage({
             href="/applications"
             className="text-sm text-muted-foreground transition hover:text-foreground"
           >
-            ← Forays
+            {tForays('back')}
           </Link>
-          <p className="text-muted-foreground">Could not load this foray.</p>
+          <p className="text-muted-foreground">{t('loadError')}</p>
         </div>
       </AppShell>
     )
@@ -43,7 +47,7 @@ export default async function ApplicationDetailPage({
           href="/applications"
           className="text-sm text-muted-foreground transition hover:text-foreground"
         >
-          ← Forays
+          {tForays('back')}
         </Link>
         <ApplicationDetail detail={result.value} />
       </div>

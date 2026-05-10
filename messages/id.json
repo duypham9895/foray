@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "today": "Hari ini",
+    "forays": "Forays",
+    "inbox": "Kotak masuk",
+    "settings": "Pengaturan",
+    "signOut": "Keluar"
+  },
+  "actions": {
+    "confirm": "Konfirmasi",
+    "override": "Ubah",
+    "ignore": "Abaikan",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "captureForay": "Tambah foray",
+    "signIn": "Masuk",
+    "signingIn": "Sedang masuk…",
+    "openInbox": "Buka kotak masuk",
+    "openForay": "Buka foray",
+    "reset": "Setel ulang"
+  },
+  "status": {
+    "applied": "Sudah lamar",
+    "screening": "Penyaringan",
+    "interviewing": "Wawancara",
+    "offer": "Tawaran",
+    "rejected": "Ditolak",
+    "withdrawn": "Mengundurkan diri"
+  },
+  "login": {
+    "wordmark": "foray",
+    "tagline": "Setiap foray, di satu tempat.",
+    "intro": "Tambah peran dengan satu klik. Pantau balasan masuk. Putuskan langkah berikutnya dari satu tampilan yang tenang — tanpa spreadsheet.",
+    "localFooter": "Berjalan di laptopmu. Data tidak ke mana-mana.",
+    "title": "Masuk",
+    "passwordHint": "Mode satu pengguna. Pakai password dari file <code>.env</code>.",
+    "passwordLabel": "Password",
+    "passwordError": "Password salah"
+  },
+  "forays": {
+    "title": "Forays",
+    "subtitle": "Semua peran yang sudah kamu lamar. Filter berdasarkan status untuk fokus.",
+    "emptyNoForays": "Belum ada foray.",
+    "emptyCaptureFirst": "Tambah peran pertama untuk mulai melacak. Tarik bookmarklet dari Pengaturan, atau tambah manual.",
+    "emptyNoMatch": "Tidak ada foray yang cocok dengan filter ini.",
+    "sortByActivity": "Urut: aktivitas terbaru",
+    "sortByApplied": "Urut: tanggal melamar",
+    "archivedCount": "{n} diarsipkan",
+    "loadError": "Gagal memuat forays. Coba refresh.",
+    "back": "← Forays"
+  },
+  "forayDetail": {
+    "appliedOn": "Dilamar {date}",
+    "stages": "Tahap",
+    "notes": "Catatan",
+    "timeline": "Linimasa",
+    "loadError": "Gagal memuat foray ini."
+  },
+  "newForay": {
+    "title": "Tambah foray",
+    "subtitle": "Catat peran yang sudah kamu lamar atau akan kamu lamar."
+  },
+  "inbox": {
+    "title": "Kotak masuk",
+    "subtitleEmpty": "Email yang sudah jelas klasifikasinya sudah otomatis dirutekan.",
+    "subtitleOne": "1 email yang perlu kamu cek. Konfirmasi atau ubah klasifikasinya.",
+    "subtitleMany": "{n} email yang perlu kamu cek. Konfirmasi atau ubah klasifikasinya.",
+    "emptyTitle": "Sudah selesai.",
+    "emptyBody": "Tidak ada email menunggu review. Email baru akan muncul di sini ketika klasifikasi belum yakin.",
+    "classification": {
+      "rejection": "penolakan",
+      "interview_invite": "undangan wawancara",
+      "recruiter_outreach": "perekrut menghubungi",
+      "noise": "tidak relevan",
+      "unmatched": "belum cocok"
+    },
+    "degradationDisconnected": "Gmail belum terhubung — isi penuh tidak tersedia. <link>Hubungkan Gmail di Pengaturan</link>.",
+    "degradationStale": "Sinkron terakhir lebih dari 5 hari lalu. Token Gmail mode Test kedaluwarsa setelah 7 hari. <link>Hubungkan ulang di Pengaturan</link>."
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "subtitle": "Hubungkan Gmail, pasang bookmarklet, kelola foray lokalmu.",
+    "gmail": {
+      "title": "Gmail",
+      "intro": "Pengklasifikasi membaca kotak masukmu untuk mendeteksi balasan, undangan wawancara, dan penolakan. Subjek dan kutipan 500 karakter disimpan; isi penuh diambil sesuai kebutuhan.",
+      "connected": "Terhubung",
+      "disconnected": "Belum terhubung",
+      "lastSynced": "Sinkron terakhir {date}",
+      "connect": "Hubungkan Gmail",
+      "disconnect": "Putuskan",
+      "disconnecting": "Sedang memutuskan…",
+      "syncNow": "Sinkron sekarang",
+      "syncing": "Sedang sinkron…",
+      "tokenStaleTitle": "Sinkron Gmail sudah {days} hari basi.",
+      "tokenStaleBody": "Google bisa mencabut refresh token setelah 7 hari saat layar OAuth dalam mode Test. Hubungkan ulang Gmail untuk terus sinkron."
+    },
+    "bookmarklet": {
+      "title": "Bookmarklet",
+      "intro": "Tangkap satu klik dari posting kerja mana pun. Tarik tombol ke bilah bookmark — judul halaman, URL, dan teks yang dipilih akan terisi otomatis ke foray baru.",
+      "addButton": "Tambah ke Foray",
+      "notBuilt": "Jalankan <code>pnpm build:bookmarklet</code> untuk membuat bookmarklet.",
+      "installation": "Pemasangan",
+      "step1": "Tarik tombol di atas ke bilah bookmark browser-mu.",
+      "step2": "Atau klik kanan → <em>Tandai Tautan Ini</em>, lalu pilih foldermu.",
+      "usage": "Klik bookmark saat berada di posting kerja. Kamu akan masuk ke form foray baru dengan semua isi sudah terisi."
+    },
+    "language": {
+      "title": "Bahasa",
+      "intro": "Bahasa antarmuka. Konten pekerjaan (judul, deskripsi, email) tetap dalam bahasa aslinya.",
+      "english": "English",
+      "vietnamese": "Tiếng Việt",
+      "indonesian": "Bahasa Indonesia",
+      "save": "Simpan"
+    }
+  }
+}

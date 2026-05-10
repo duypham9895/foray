@@ -6,6 +6,7 @@
 // rejection rendered in muted gray (NOT red), no decorative icons.
 
 import { formatDistanceToNow } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
 import { StatusBadge } from '@/components/status-badge'
@@ -23,15 +24,6 @@ const ALL_STATUSES: CanonicalStatus[] = [
   'rejected',
   'withdrawn',
 ]
-
-const STATUS_LABELS: Record<CanonicalStatus, string> = {
-  applied: 'Applied',
-  screening: 'Screening',
-  interviewing: 'Interviewing',
-  offer: 'Offer',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-}
 
 /**
  * Toggle `target` in `currentParams.status` (comma-separated multi-select).
@@ -86,12 +78,16 @@ export function ApplicationList({
   activeSort: ListSort
   currentParams: URLSearchParams
 }) {
+  const t = useTranslations('forays')
+  const tStatus = useTranslations('status')
+  const tActions = useTranslations('actions')
+
   const usingDefaultFilter = currentParams.get('status') === null
   const isEmpty = items.length === 0
   const nextSort: ListSort =
     activeSort === 'appliedAt:desc' ? 'lastActivityAt:desc' : 'appliedAt:desc'
   const sortLabel =
-    activeSort.startsWith('appliedAt') ? 'Sort: applied date' : 'Sort: latest activity'
+    activeSort.startsWith('appliedAt') ? t('sortByApplied') : t('sortByActivity')
 
   return (
     <div className="space-y-6">
@@ -104,7 +100,7 @@ export function ApplicationList({
           return (
             <Link key={status} href={href} data-active={active}>
               <Badge variant={active ? 'default' : 'outline'}>
-                {STATUS_LABELS[status]}
+                {tStatus(status)}
                 <span className="ml-1 opacity-60">{count}</span>
               </Badge>
             </Link>
@@ -114,11 +110,11 @@ export function ApplicationList({
           href="/applications"
           className="text-sm text-muted-foreground transition hover:text-foreground"
         >
-          Reset
+          {tActions('reset')}
         </Link>
         {counts.archived > 0 ? (
           <span className="text-sm text-muted-foreground">
-            · {counts.archived} archived
+            · {t('archivedCount', { n: counts.archived })}
           </span>
         ) : null}
       </div>
@@ -137,24 +133,19 @@ export function ApplicationList({
         <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
           {usingDefaultFilter ? (
             <div className="space-y-3">
-              <p className="text-base text-foreground">No forays yet.</p>
-              <p className="text-sm text-muted-foreground">
-                Capture your first role to start tracking. Drag the bookmarklet from
-                Settings, or add one manually.
-              </p>
+              <p className="text-base text-foreground">{t('emptyNoForays')}</p>
+              <p className="text-sm text-muted-foreground">{t('emptyCaptureFirst')}</p>
               <div className="pt-2">
                 <Link
                   href="/applications/new"
                   className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                 >
-                  Capture foray
+                  {tActions('captureForay')}
                 </Link>
               </div>
             </div>
           ) : (
-            <p className="text-base text-muted-foreground">
-              No forays match this filter.
-            </p>
+            <p className="text-base text-muted-foreground">{t('emptyNoMatch')}</p>
           )}
         </div>
       ) : (
@@ -165,12 +156,8 @@ export function ApplicationList({
                 <Card className="border-border bg-card transition hover:border-foreground/20 hover:shadow-sm">
                   <CardContent className="flex items-center justify-between gap-4 px-6">
                     <div className="min-w-0 space-y-1">
-                      <p className="truncate text-base font-medium">
-                        {item.roleTitle}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {item.companyName}
-                      </p>
+                      <p className="truncate text-base font-medium">{item.roleTitle}</p>
+                      <p className="text-sm text-muted-foreground">{item.companyName}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <StatusBadge status={item.canonicalStatus} />
