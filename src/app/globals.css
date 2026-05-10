@@ -1,79 +1,83 @@
 @import "tailwindcss";
 
 /*
- * Palette per DESIGN.md — warm off-white / warm near-black.
+ * Palette aligned with landing/index.html — warm parchment + burnt amber.
  * Token names follow shadcn convention so the existing src/ui/* components
  * (Button, Card, Badge, Input, Dialog, Select, DropdownMenu) inherit the
  * campaign-room aesthetic with no per-component edits.
+ *
+ * --primary is the burnt-amber accent (the brand). Status colors live on a
+ * separate --status-* track and are used only by <StatusBadge>.
  */
 :root {
   /* Surfaces */
-  --background: #fafaf9;
-  --foreground: #1c1917;
+  --background: #f5f1e8;        /* warm parchment */
+  --foreground: #1a1814;        /* near-coffee */
 
   --card: #ffffff;
-  --card-foreground: #1c1917;
+  --card-foreground: #1a1814;
 
   --popover: #ffffff;
-  --popover-foreground: #1c1917;
+  --popover-foreground: #1a1814;
 
-  /* Primary CTA = the foreground tone (decisive, not branded) */
-  --primary: #1c1917;
-  --primary-foreground: #fafaf9;
+  /* Primary CTA = burnt amber (brand accent) */
+  --primary: #d97706;
+  --primary-foreground: #ffffff;
 
-  --secondary: #f5f5f4;
-  --secondary-foreground: #1c1917;
+  --secondary: #ede9e0;
+  --secondary-foreground: #1a1814;
 
-  --muted: #f5f5f4;
-  --muted-foreground: #57534e;
+  --muted: #ede9e0;
+  --muted-foreground: #5c564a;
 
-  --accent: #f5f5f4;
-  --accent-foreground: #1c1917;
+  /* Accent = subtle amber wash for hover surfaces, highlighted cards */
+  --accent: #fef7ea;
+  --accent-foreground: #1a1814;
 
   --destructive: #b91c1c;
-  --destructive-foreground: #fafaf9;
+  --destructive-foreground: #ffffff;
 
-  --border: #e7e5e4;
-  --input: #e7e5e4;
-  --ring: #78716c;
+  --border: #ddd6cc;            /* warm beige */
+  --input: #ddd6cc;
+  --ring: #d97706;              /* focus ring matches brand */
 
-  /* DESIGN.md status colors — applied in <StatusBadge> */
+  /* DESIGN.md status colors — applied in <StatusBadge>. Independent of brand. */
   --status-applied: #737373;
   --status-screening: #0891b2;
   --status-interviewing: #ca8a04;
   --status-offer: #16a34a;
-  --status-closed: #a8a29e; /* rejected + withdrawn share quiet gray */
+  --status-closed: #a8a29e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a09;
-    --foreground: #fafaf9;
+    --background: #1a1814;      /* warm coffee */
+    --foreground: #f3f1ed;      /* warm cream */
 
-    --card: #1c1917;
-    --card-foreground: #fafaf9;
+    --card: #2a2520;
+    --card-foreground: #f3f1ed;
 
-    --popover: #1c1917;
-    --popover-foreground: #fafaf9;
+    --popover: #2a2520;
+    --popover-foreground: #f3f1ed;
 
-    --primary: #fafaf9;
-    --primary-foreground: #1c1917;
+    --primary: #f59e0b;          /* lifted amber for dark-mode legibility */
+    --primary-foreground: #1a1814;
 
-    --secondary: #292524;
-    --secondary-foreground: #fafaf9;
+    --secondary: #252220;
+    --secondary-foreground: #f3f1ed;
 
-    --muted: #292524;
-    --muted-foreground: #a8a29e;
+    --muted: #252220;
+    --muted-foreground: #a39e94;
 
-    --accent: #292524;
-    --accent-foreground: #fafaf9;
+    --accent: rgba(245, 158, 11, 0.12);
+    --accent-foreground: #f3f1ed;
 
     --destructive: #f87171;
-    --destructive-foreground: #1c1917;
+    --destructive-foreground: #1a1814;
 
-    --border: #292524;
-    --input: #292524;
-    --ring: #78716c;
+    --border: #342f2a;
+    --input: #342f2a;
+    --ring: #f59e0b;
 
     --status-applied: #a8a29e;
     --status-screening: #22d3ee;
