@@ -12,6 +12,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
+// Mock file system for download tests
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4 test content')),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+  rm: vi.fn().mockResolvedValue(undefined),
+}))
+
 // Mock auth — return a test user by default
 const mockUserId = '1'
 vi.mock('@/core/auth/session', () => ({
@@ -205,11 +213,6 @@ describe('GET /api/documents/[id]', () => {
       value: mockDocument,
       isErr: () => false,
     } as any)
-
-    // Mock readFile
-    vi.doMock('node:fs/promises', () => ({
-      readFile: vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4')),
-    }))
 
     const req = makeDownloadRequest('1')
     const res = await DownloadGET(req, { params: Promise.resolve({ id: '1' }) })
