@@ -119,7 +119,10 @@
     "globalEmptyBody": "Thêm foray (⌘K) hoặc mở pipeline.",
     "readGuide": "Đọc hướng dẫn →",
     "recentActivity": "24 giờ qua",
-    "thisWeek": "Tuần này"
+    "thisWeek": "Tuần này",
+    "followUpsTitle": "Cần theo dõi",
+    "followUpsSubtitle": "{n} quá hạn",
+    "daysOverdue": "{n, plural, one {quá hạn # ngày} other {quá hạn # ngày}}"
   },
   "settings": {
     "title": "Cài đặt",

@@ -119,7 +119,10 @@
     "globalEmptyBody": "Tambah foray (⌘K) atau buka pipeline.",
     "readGuide": "Baca panduan →",
     "recentActivity": "24 jam terakhir",
-    "thisWeek": "Minggu ini"
+    "thisWeek": "Minggu ini",
+    "followUpsTitle": "Perlu ditindaklanjuti",
+    "followUpsSubtitle": "{n} terlambat",
+    "daysOverdue": "{n, plural, one {terlambat # hari} other {terlambat # hari}}"
   },
   "settings": {
     "title": "Pengaturan",

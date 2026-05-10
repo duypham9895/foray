@@ -119,7 +119,10 @@
     "globalEmptyBody": "Capture a foray (⌘K) or open your pipeline.",
     "readGuide": "Read the guide →",
     "recentActivity": "Last 24 hours",
-    "thisWeek": "This week"
+    "thisWeek": "This week",
+    "followUpsTitle": "Follow-ups due",
+    "followUpsSubtitle": "{n} overdue",
+    "daysOverdue": "{n, plural, one {# day overdue} other {# days overdue}}"
   },
   "settings": {
     "title": "Settings",
