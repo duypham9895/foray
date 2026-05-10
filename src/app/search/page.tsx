@@ -49,6 +49,12 @@ export default async function SearchPage({
           />
         </form>
 
+        {results?.isErr() && (
+          <p className="text-center text-destructive">
+            Something went wrong searching. Please try again.
+          </p>
+        )}
+
         {results?.isOk() && query && (
           <div className="space-y-8">
             {/* Applications */}
