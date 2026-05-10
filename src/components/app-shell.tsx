@@ -4,6 +4,7 @@ import { logout } from '@/features/auth/actions'
 
 import { NavLinks } from './nav-links'
 import { QuickCapture } from './quick-capture'
+import { SearchBar } from '@/features/search/components/search-bar'
 
 export async function AppShell({
   children,
@@ -23,6 +24,10 @@ export async function AppShell({
             foray
           </span>
           <NavLinks />
+        </div>
+
+        <div className="hidden lg:block">
+          <SearchBar />
         </div>
 
         {aside ? (
