@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { logout } from '@/features/auth/actions'
 
-import { NavLinks } from './nav-links'
+import { NavLinksWrapper } from './nav-links-wrapper'
 import { QuickCapture } from './quick-capture'
 import { SearchBar } from '@/features/search/components/search-bar'
 
@@ -23,7 +23,7 @@ export async function AppShell({
           <span className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground">
             foray
           </span>
-          <NavLinks />
+          <NavLinksWrapper />
         </div>
 
         <div className="hidden lg:block">
