@@ -17,7 +17,9 @@ async function build() {
     process.exit(1)
   }
 
+  const API_BASE = process.env.FORAY_API_URL ?? 'http://localhost:3000'
   const source = fs.readFileSync(SOURCE, 'utf-8')
+    .replace('__FORAY_API_URL__', API_BASE)
 
   const result = await esbuild.transform(source, {
     minify: true,

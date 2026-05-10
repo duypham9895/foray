@@ -6,13 +6,13 @@
     return {
       title: document.title,
       url: window.location.href,
-      selectedText: window.getSelection().toString(),
+      selectedText: (window.getSelection() || {}).toString() || '',
       timestamp: new Date().toISOString(),
     };
   }
 
   function sendToAPI(data) {
-    var API_URL = "http://localhost:3000/api/capture";
+    var API_URL = "__FORAY_API_URL__/api/capture";
 
     fetch(API_URL, {
       method: "POST",
