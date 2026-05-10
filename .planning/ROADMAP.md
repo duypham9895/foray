@@ -60,7 +60,11 @@
   3. Count badge on Today nav link displays the number of overdue follow-ups
   4. Reminder check cron runs every 15 minutes without hot-reload double-fire (CronRegistry pattern)
   5. Overdue follow-ups appear in Today view within 15 minutes of becoming due
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 11-01-PLAN.md — CronRegistry + Follow-up Backend
+- [ ] 11-02-PLAN.md — Follow-up UI Components
+- [ ] 11-03-PLAN.md — Wiring + Nav Badge
 **UI hint**: yes
 
 ### Phase 12: Document Storage
