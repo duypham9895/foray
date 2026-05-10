@@ -7,9 +7,14 @@
  * Safe to run repeatedly — uses TRUNCATE CASCADE which is idempotent.
  */
 
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+
 import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Order matters: child tables first, then parent.
