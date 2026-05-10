@@ -178,6 +178,7 @@ model Application {
   priority       Int      @default(2)
   tags           String[] @default([])
   notes          String?  @db.Text
+  searchText     String?  @map("search_text") @db.Text // denormalized search corpus
 
   followUpAt DateTime? @map("follow_up_at") // Full milestone
 
