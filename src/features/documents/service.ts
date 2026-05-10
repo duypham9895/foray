@@ -136,38 +136,33 @@ export async function uploadDocument(
       throw new Error(`NOT_FOUND:Application:${String(applicationId)}`)
     }
 
-    // Create Document row (storagePath filled after file write).
+    // Build storage path using a temp ID (file written before DB row to avoid orphans).
+    const tempId = crypto.randomUUID()
+    const storagePath = path.join(
+      process.cwd(),
+      'data',
+      'documents',
+      String(applicationId),
+      tempId,
+      safeFilename,
+    )
+
+    // Write file to disk FIRST — if this fails, no DB row is created.
+    await fs.mkdir(path.dirname(storagePath), { recursive: true })
+    await fs.writeFile(storagePath, Buffer.from(await file.arrayBuffer()))
+
+    // Create Document row with actual storage path.
     const doc = await tx.document.create({
       data: {
         applicationId: Number(applicationId),
         kind,
         filename: safeFilename,
         mimeType: detectedMime,
-        storagePath: '',
+        storagePath,
         sizeBytes: file.size,
         notes: notes || null,
       },
       select: { id: true },
-    })
-
-    // Build storage path from server-generated IDs only.
-    const storagePath = path.join(
-      process.cwd(),
-      'data',
-      'documents',
-      String(applicationId),
-      String(doc.id),
-      safeFilename,
-    )
-
-    // Write file to disk.
-    await fs.mkdir(path.dirname(storagePath), { recursive: true })
-    await fs.writeFile(storagePath, Buffer.from(await file.arrayBuffer()))
-
-    // Update Document with actual storage path.
-    await tx.document.update({
-      where: { id: doc.id },
-      data: { storagePath },
     })
 
     // Create audit event.

@@ -38,12 +38,15 @@ export async function POST(
     )
   }
 
+  const notesResult = uploadSchema.shape.notes.safeParse(notes)
+  const validatedNotes = notesResult.success ? notesResult.data : undefined
+
   const result = await uploadDocument(
     userResult.value.id,
     ApplicationId(id),
     file,
     kindResult.data as DocumentKind,
-    typeof notes === 'string' ? notes : undefined,
+    validatedNotes,
   )
 
   if (result.isErr()) {
