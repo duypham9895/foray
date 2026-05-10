@@ -25,6 +25,7 @@ import { ApplicationId, StageId } from '@/core/types/ids'
 
 import {
   createApplicationSchema,
+  followUpInputSchema,
   notesInputSchema,
   stageInputSchema,
   stageOutcomeEnum,
@@ -40,6 +41,7 @@ import {
   updateStage,
 } from './stages-service'
 import { updateApplicationNotes } from './notes-service'
+import { setFollowUp, clearFollowUp } from './follow-up-service'
 
 import type { ZodError } from 'zod'
 
@@ -363,5 +365,70 @@ export async function updateTagsAction(
 
   revalidatePath(`/applications/${applicationId}`)
   revalidatePath('/applications')
+  return initialOk
+}
+
+// ---------------------------------------------------------------------------
+// setFollowUpAction — curried with applicationId (REMIND-01)
+// ---------------------------------------------------------------------------
+
+export async function setFollowUpAction(
+  applicationId: number,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = followUpInputSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) {
+    return { ok: false, errors: fieldErrorsFromZod(parsed.error) }
+  }
+
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  const result = await setFollowUp(
+    userId,
+    ApplicationId(String(applicationId)),
+    parsed.data.followUpAt,
+  )
+  if (result.isErr()) {
+    const formError =
+      result.error._tag === 'NotFound'
+        ? 'Foray not found.'
+        : 'Could not set follow-up.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/today')
+  return initialOk
+}
+
+// ---------------------------------------------------------------------------
+// clearFollowUpAction — curried with applicationId (REMIND-01)
+// ---------------------------------------------------------------------------
+
+export async function clearFollowUpAction(
+  applicationId: number,
+  _prev: ActionState,
+): Promise<ActionState> {
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  const result = await clearFollowUp(
+    userId,
+    ApplicationId(String(applicationId)),
+  )
+  if (result.isErr()) {
+    const formError =
+      result.error._tag === 'NotFound'
+        ? 'Foray not found.'
+        : 'Could not clear follow-up.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/today')
   return initialOk
 }
