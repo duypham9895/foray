@@ -294,3 +294,69 @@ export async function updateNotesAction(
   }
   return initialOk
 }
+
+// ---------------------------------------------------------------------------
+// updateTagsAction — curried with applicationId
+// Receives tags as JSON string from the TagEditor component.
+// ---------------------------------------------------------------------------
+
+export async function updateTagsAction(
+  applicationId: number,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const rawTags = formData.get('tags')
+  if (typeof rawTags !== 'string') {
+    return { ok: false, errors: {}, formError: 'Tags data missing.' }
+  }
+
+  let tags: string[]
+  try {
+    tags = JSON.parse(rawTags)
+    if (!Array.isArray(tags)) throw new Error()
+  } catch {
+    return { ok: false, errors: {}, formError: 'Invalid tags data.' }
+  }
+
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  // Normalize: lowercase, trim, deduplicate, filter empty
+  const cleaned = [...new Set(tags.map((t) => t.toLowerCase().trim()).filter(Boolean))]
+
+  // Fetch current tags to compute diff
+  const { withRls } = await import('@/core/db/with-rls')
+  const { ApplicationId: AppId } = await import('@/core/types/ids')
+
+  const result = await withRls(userId, async (tx) => {
+    const appId = Number(applicationId)
+    const app = await tx.application.findUnique({
+      where: { id: appId },
+      select: { id: true, userId: true, tags: true },
+    })
+    if (!app || app.userId !== Number(userId)) {
+      throw new Error(`NOT_FOUND:Application:${String(applicationId)}`)
+    }
+
+    const updated = await tx.application.update({
+      where: { id: appId },
+      data: { tags: { set: cleaned } },
+      select: { tags: true },
+    })
+
+    return { tags: updated.tags }
+  })
+
+  if (result.isErr()) {
+    const formError =
+      result.error._tag === 'NotFound'
+        ? 'Foray not found.'
+        : 'Could not save tags.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/applications')
+  return initialOk
+}

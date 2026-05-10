@@ -7,6 +7,7 @@ import { requireUser } from '@/core/auth/session'
 import { ApplicationId } from '@/core/types/ids'
 import { ApplicationDetail } from '@/features/applications/components/application-detail'
 import { findApplicationDetail } from '@/features/applications/queries'
+import { findAllTags } from '@/features/applications/tags-service'
 
 export default async function ApplicationDetailPage({
   params,
@@ -21,7 +22,10 @@ export default async function ApplicationDetailPage({
   const tForays = await getTranslations('forays')
 
   const { id } = await params
-  const result = await findApplicationDetail(userId, ApplicationId(id))
+  const [result, tagsResult] = await Promise.all([
+    findApplicationDetail(userId, ApplicationId(id)),
+    findAllTags(userId),
+  ])
 
   if (result.isErr()) {
     return (
@@ -49,7 +53,10 @@ export default async function ApplicationDetailPage({
         >
           {tForays('back')}
         </Link>
-        <ApplicationDetail detail={result.value} />
+        <ApplicationDetail
+          detail={result.value}
+          allTags={tagsResult.isOk() ? tagsResult.value.map((t) => t.tag) : []}
+        />
       </div>
     </AppShell>
   )

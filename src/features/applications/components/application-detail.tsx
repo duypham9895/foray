@@ -13,9 +13,16 @@ import { ClassifierBreadcrumb } from './classifier-breadcrumb'
 import { NotesEditor } from './notes-editor'
 import { StageEditor } from './stage-editor'
 import { StatusDropdown } from './status-dropdown'
+import { TagEditor } from './tag-editor'
 import { Timeline } from './timeline'
 
-export function ApplicationDetail({ detail }: { detail: ApplicationDetail }) {
+export function ApplicationDetail({
+  detail,
+  allTags = [],
+}: {
+  detail: ApplicationDetail
+  allTags?: string[]
+}) {
   const t = useTranslations('forayDetail')
   const { application, stages, events, emails } = detail
   const company = application.company
@@ -51,6 +58,15 @@ export function ApplicationDetail({ detail }: { detail: ApplicationDetail }) {
         <NotesEditor
           applicationId={application.id}
           initialNotes={application.notes ?? ''}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Tags</h2>
+        <TagEditor
+          applicationId={application.id}
+          initialTags={application.tags}
+          allTags={allTags}
         />
       </section>
 

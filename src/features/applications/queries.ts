@@ -79,7 +79,7 @@ const DEFAULT_HIDDEN_STATUSES: ReadonlySet<CanonicalStatus> = new Set([
  */
 export async function findApplicationsForList(
   userId: UserId,
-  opts: { statuses?: ReadonlyArray<CanonicalStatus>; sort?: ListSort } = {},
+  opts: { statuses?: ReadonlyArray<CanonicalStatus>; sort?: ListSort; tag?: string } = {},
 ): Promise<Result<ApplicationListItem[], AppError>> {
   const sort = opts.sort ?? 'lastActivityAt:desc'
   const [sortField, sortDir] = sort.split(':') as [
@@ -88,6 +88,7 @@ export async function findApplicationsForList(
   ]
   const statuses =
     opts.statuses ?? ALL_STATUSES.filter((s) => !DEFAULT_HIDDEN_STATUSES.has(s))
+  const tag = opts.tag?.toLowerCase().trim()
 
   return withRls(userId, async (tx) => {
     const rows = await tx.application.findMany({
@@ -95,6 +96,7 @@ export async function findApplicationsForList(
         userId: Number(userId),
         archivedAt: null,
         canonicalStatus: { in: [...statuses] },
+        ...(tag ? { tags: { has: tag } } : {}),
       },
       orderBy: { [sortField]: sortDir },
       include: { company: { select: { id: true, name: true } } },

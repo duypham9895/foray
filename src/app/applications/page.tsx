@@ -6,12 +6,14 @@ import { AppShell } from '@/components/app-shell'
 import { requireUser } from '@/core/auth/session'
 import { ApplicationBoard } from '@/features/applications/components/application-board'
 import { ApplicationList } from '@/features/applications/components/application-list'
+import { TagCloud } from '@/features/applications/components/tag-cloud'
 import {
   countApplicationsByStatus,
   findApplicationsForList,
   listSortSchema,
   type ListSort,
 } from '@/features/applications/queries'
+import { findAllTags } from '@/features/applications/tags-service'
 import type { CanonicalStatus } from '@/generated/prisma/client'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +46,7 @@ export default async function ApplicationsPage({
   const sortParse = listSortSchema.safeParse(params.sort)
   const activeSort: ListSort = sortParse.success ? sortParse.data : 'lastActivityAt:desc'
   const view: View = isView(params.view) ? params.view : DEFAULT_VIEW
+  const activeTag = params.tag?.trim() || undefined
 
   // Board mode shows ALL active statuses (the columns themselves are the
   // filter); list mode honors the chip selection.
@@ -53,10 +56,12 @@ export default async function ApplicationsPage({
   const currentParams = new URLSearchParams()
   if (params.status) currentParams.set('status', params.status)
   if (sortParse.success) currentParams.set('sort', activeSort)
+  if (activeTag) currentParams.set('tag', activeTag)
 
-  const [listResult, countsResult] = await Promise.all([
-    findApplicationsForList(userId, { statuses: queryStatuses, sort: activeSort }),
+  const [listResult, countsResult, tagsResult] = await Promise.all([
+    findApplicationsForList(userId, { statuses: queryStatuses, sort: activeSort, tag: activeTag }),
     countApplicationsByStatus(userId),
+    findAllTags(userId),
   ])
 
   const toggleHref = (target: View) => {
@@ -109,6 +114,21 @@ export default async function ApplicationsPage({
             </Link>
           </div>
         </header>
+
+        {/* Tag cloud + active tag indicator */}
+        {tagsResult.isOk() && tagsResult.value.length > 0 && (
+          <div className="mb-6">
+            {activeTag && (
+              <p className="mb-2 text-sm text-muted-foreground">
+                Filtering by tag: <span className="font-medium text-foreground">{activeTag}</span>{' '}
+                <Link href="/applications" className="text-primary hover:underline">
+                  Clear
+                </Link>
+              </p>
+            )}
+            <TagCloud tags={tagsResult.value} activeTag={activeTag} />
+          </div>
+        )}
 
         {listResult.isErr() || countsResult.isErr() ? (
           <p className="text-muted-foreground">{t('loadError')}</p>
