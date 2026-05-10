@@ -25,6 +25,7 @@ export function useSearchShortcut(
   }, [searchInputRef])
 }
 
-function isInTextInput(el: HTMLElement): boolean {
+function isInTextInput(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false
   return el.closest('input, textarea, [contenteditable="true"]') !== null
 }
