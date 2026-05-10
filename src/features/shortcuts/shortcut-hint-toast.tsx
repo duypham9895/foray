@@ -41,15 +41,13 @@ export function ShortcutHintToast() {
   }
 
   return (
-    <div
-      role="status"
+    <button
+      type="button"
       onClick={handleDismiss}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') handleDismiss()
-      }}
+      aria-label="Dismiss shortcut hint"
       className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 cursor-pointer rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground shadow-lg transition-opacity hover:opacity-80"
     >
       <span className="text-muted-foreground">{t('toast')}</span>
-    </div>
+    </button>
   )
 }
