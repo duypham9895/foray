@@ -195,6 +195,35 @@ describe('findStaleForays', () => {
     // Bob's seed application has lastActivityAt = now, so not stale
     expect(result.value).toHaveLength(0)
   })
+
+  it('excludes other users data (cross-tenant isolation)', async () => {
+    const eightDaysAgo = new Date(Date.now() - 8 * MS_PER_DAY)
+    // Create a stale foray for Bob
+    await withRls(BOB, async (tx) => {
+      const bobCompany = await tx.company.findFirst({
+        where: { userId: Number(BOB) },
+        select: { id: true },
+      })
+      await tx.application.create({
+        data: {
+          userId: Number(BOB),
+          companyId: bobCompany!.id,
+          roleTitle: 'Bob Stale Role',
+          canonicalStatus: 'applied',
+          appliedAt: eightDaysAgo,
+          lastActivityAt: eightDaysAgo,
+        },
+      })
+    })
+
+    const result = await findStaleForays(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    // Alice must NOT see Bob's stale foray
+    const match = result.value.find((s) => s.roleTitle === 'Bob Stale Role')
+    expect(match).toBeUndefined()
+  })
 })
 
 // --- findOfferForays ---
@@ -497,7 +526,7 @@ describe('getPipelineCounts', () => {
     // TodayTestCorp application is now archived, should not count
   })
 
-  it('returns all zeroes for user with no applications', async () => {
+  it('returns counts including seed application for user with only seed data', async () => {
     const result = await getPipelineCounts(BOB)
     expect(result.isOk()).toBe(true)
     if (result.isErr()) throw result.error
@@ -567,8 +596,8 @@ describe('findRecent24hActivity', () => {
     expect(result.isOk()).toBe(true)
     if (result.isErr()) throw result.error
 
-    expect(result.value.statusChanges.length).toBeGreaterThanOrEqual(1)
-    const match = result.value.statusChanges.find((s) => s.id === testApplicationId)
+    expect(result.value.activeApplications.length).toBeGreaterThanOrEqual(1)
+    const match = result.value.activeApplications.find((s) => s.id === testApplicationId)
     expect(match).toBeDefined()
   })
 
@@ -585,7 +614,7 @@ describe('findRecent24hActivity', () => {
     expect(result.isOk()).toBe(true)
     if (result.isErr()) throw result.error
 
-    const match = result.value.statusChanges.find((s) => s.id === testApplicationId)
+    const match = result.value.activeApplications.find((s) => s.id === testApplicationId)
     expect(match).toBeUndefined()
   })
 
@@ -610,7 +639,7 @@ describe('findRecent24hActivity', () => {
     if (result.isErr()) throw result.error
 
     expect(result.value.emails).toHaveLength(0)
-    expect(result.value.statusChanges).toHaveLength(0)
+    expect(result.value.activeApplications).toHaveLength(0)
   })
 })
 
@@ -701,7 +730,7 @@ describe('findThisWeekCounts', () => {
     expect(totalThisWeek).toBeGreaterThanOrEqual(1)
   })
 
-  it('returns all zeroes for user with no applications', async () => {
+  it('returns this-week counts including seed application', async () => {
     const result = await findThisWeekCounts(BOB)
     expect(result.isOk()).toBe(true)
     if (result.isErr()) throw result.error

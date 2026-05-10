@@ -170,14 +170,16 @@ export async function findTodaysInterviews(
         },
       },
     })
-    return rows.map<TodaysInterview>((r) => ({
-      stageId: r.id,
-      applicationId: r.application.id,
-      roleTitle: r.application.roleTitle,
-      companyName: r.application.company.name,
-      stageName: r.name,
-      scheduledAt: r.scheduledAt!,
-    }))
+    return rows
+      .filter((r): r is typeof r & { scheduledAt: Date } => r.scheduledAt !== null)
+      .map<TodaysInterview>((r) => ({
+        stageId: r.id,
+        applicationId: r.application.id,
+        roleTitle: r.application.roleTitle,
+        companyName: r.application.company.name,
+        stageName: r.name,
+        scheduledAt: r.scheduledAt,
+      }))
   })
 }
 
@@ -216,7 +218,7 @@ export type RecentEmail = {
   applicationId: number | null
 }
 
-export type RecentStatusChange = {
+export type RecentlyActiveApplication = {
   id: number
   canonicalStatus: CanonicalStatus
   updatedAt: Date
@@ -224,7 +226,7 @@ export type RecentStatusChange = {
 
 export type Recent24hActivity = {
   emails: RecentEmail[]
-  statusChanges: RecentStatusChange[]
+  activeApplications: RecentlyActiveApplication[]
 }
 
 export async function findRecent24hActivity(
@@ -233,7 +235,7 @@ export async function findRecent24hActivity(
   const since = new Date(Date.now() - MS_PER_DAY)
 
   return withRls(userId, async (tx) => {
-    const [emails, statusChanges] = await Promise.all([
+    const [emails, activeApplications] = await Promise.all([
       tx.email.findMany({
         where: {
           userId: Number(userId),
@@ -265,7 +267,7 @@ export async function findRecent24hActivity(
       }),
     ])
 
-    return { emails, statusChanges }
+    return { emails, activeApplications }
   })
 }
 
