@@ -57,7 +57,7 @@ export async function addTag(
   const cleaned = tag.toLowerCase().trim()
   if (!cleaned) return err(errors.validation([{ code: 'custom', path: ['tag'], message: 'Tag cannot be empty' }]))
 
-  return withRls(userId, async (tx) => {
+  const result = await withRls(userId, async (tx) => {
     const appId = Number(applicationId)
     const app = await tx.application.findUnique({
       where: { id: appId },
@@ -82,6 +82,8 @@ export async function addTag(
 
     return { tags: updated.tags }
   })
+
+  return translateBridge(result)
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +97,7 @@ export async function removeTag(
 ): Promise<Result<{ tags: string[] }, AppError>> {
   const cleaned = tag.toLowerCase().trim()
 
-  return withRls(userId, async (tx) => {
+  const result = await withRls(userId, async (tx) => {
     const appId = Number(applicationId)
     const app = await tx.application.findUnique({
       where: { id: appId },
@@ -118,6 +120,8 @@ export async function removeTag(
 
     return { tags: updated.tags }
   })
+
+  return translateBridge(result)
 }
 
 // ---------------------------------------------------------------------------
@@ -156,4 +160,22 @@ export async function findApplicationsByTag(
       archivedAt: r.archivedAt,
     }))
   })
+}
+
+// ---------------------------------------------------------------------------
+// Throw-bridge translator (same pattern as stages-service.ts:translateBridge).
+// Maps tagged Db errors to the intended AppError variant.
+// ---------------------------------------------------------------------------
+
+function translateBridge<T>(result: Result<T, AppError>): Result<T, AppError> {
+  if (!result.isErr()) return result
+  if (result.error._tag !== 'Db') return result
+  const cause = result.error.cause
+  if (!(cause instanceof Error)) return result
+
+  if (cause.message.startsWith('NOT_FOUND:')) {
+    const [, resource, id] = cause.message.split(':')
+    return err(errors.notFound(resource ?? 'Unknown', id ?? ''))
+  }
+  return result
 }

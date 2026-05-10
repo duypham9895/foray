@@ -349,10 +349,15 @@ export async function updateTagsAction(
   })
 
   if (result.isErr()) {
-    const formError =
-      result.error._tag === 'NotFound'
-        ? 'Foray not found.'
-        : 'Could not save tags.'
+    // Translate throw-bridge: withRls wraps thrown errors as Db; unwrap
+    // NOT_FOUND: prefix to produce the correct _tag for the check below.
+    const err = result.error
+    const isNotFound =
+      err._tag === 'NotFound' ||
+      (err._tag === 'Db' && err.cause instanceof Error && err.cause.message.startsWith('NOT_FOUND:'))
+    const formError = isNotFound
+      ? 'Foray not found.'
+      : 'Could not save tags.'
     return { ok: false, errors: {}, formError }
   }
 
