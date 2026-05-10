@@ -265,7 +265,7 @@ describe('uploadDocument', () => {
     expect(mockTx.document.create).not.toHaveBeenCalled()
   })
 
-  it('Test 4: stores file at data/documents/{applicationId}/{docId}/{sanitized-filename}', async () => {
+  it('Test 4: stores file at data/documents/{applicationId}/{tempId}/{sanitized-filename}', async () => {
     const file = mockFile('resume.pdf', PDF_HEADER)
 
     const result = await uploadDocument(ALICE, APP_ID, file, 'resume')
@@ -276,17 +276,19 @@ describe('uploadDocument', () => {
     const mkdirPath = mockMkdir.mock.calls[0]![0] as string
     expect(mkdirPath).toContain('data/documents')
     expect(mkdirPath).toContain('100')
-    expect(mkdirPath).toContain('42')
+    // tempId is a UUID v4 (36 chars with hyphens)
+    const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/
+    expect(mkdirPath).toMatch(uuidPattern)
 
     // writeFile was called with the storage path.
     expect(mockWriteFile).toHaveBeenCalledTimes(1)
     const writePath = mockWriteFile.mock.calls[0]![0] as string
     expect(writePath).toContain('resume.pdf')
 
-    // Document was updated with storagePath.
-    expect(mockTx.document.update).toHaveBeenCalledTimes(1)
-    const updateArg = mockTx.document.update.mock.calls[0]![0]
-    expect(updateArg.data.storagePath).toContain('data/documents')
+    // Document was created with storagePath.
+    expect(mockTx.document.create).toHaveBeenCalledTimes(1)
+    const createArg = mockTx.document.create.mock.calls[0]![0]
+    expect(createArg.data.storagePath).toContain('data/documents')
   })
 
   it('Test 5: path traversal attempt (../ in filename) sanitizes to safe characters', async () => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Integration tests for document API routes.
 //
 // Tests the full HTTP request-response cycle for:
@@ -21,7 +22,6 @@ vi.mock('node:fs/promises', () => ({
 }))
 
 // Mock auth — return a test user by default
-const mockUserId = '1'
 vi.mock('@/core/auth/session', () => ({
   requireUser: vi.fn().mockResolvedValue({ isOk: () => true, value: { id: '1' }, isErr: () => false }),
 }))
@@ -298,7 +298,6 @@ describe('DELETE /api/documents/[id]', () => {
 
     const req = makeDeleteRequest('999')
     const res = await DELETE(req, { params: Promise.resolve({ id: '999' }) })
-    const data = await res.json()
 
     expect(res.status).toBe(404)
   })

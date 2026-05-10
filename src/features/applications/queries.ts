@@ -32,6 +32,7 @@ export type ApplicationListItem = {
   canonicalStatus: CanonicalStatus
   currentStage: string | null
   lastActivityAt: Date
+  daysQuiet: number
   appliedAt: Date
   archivedAt: Date | null
 }
@@ -72,6 +73,7 @@ const DEFAULT_HIDDEN_STATUSES: ReadonlySet<CanonicalStatus> = new Set([
   'rejected',
   'withdrawn',
 ])
+const MS_PER_DAY = 1000 * 60 * 60 * 24
 
 /**
  * URL-driven application list. Filters default to excluding rejected +
@@ -93,6 +95,7 @@ export async function findApplicationsForList(
   const tag = opts.tag?.toLowerCase().trim()
 
   return withRls(userId, async (tx) => {
+    const now = Date.now()
     const rows = await tx.application.findMany({
       where: {
         userId: Number(userId),
@@ -111,6 +114,7 @@ export async function findApplicationsForList(
       canonicalStatus: r.canonicalStatus,
       currentStage: r.currentStage,
       lastActivityAt: r.lastActivityAt,
+      daysQuiet: Math.floor((now - r.lastActivityAt.getTime()) / MS_PER_DAY),
       appliedAt: r.appliedAt,
       archivedAt: r.archivedAt,
     }))

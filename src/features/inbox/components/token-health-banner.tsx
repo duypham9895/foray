@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import { useTranslations } from 'next-intl'
 
 type Props = {

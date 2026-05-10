@@ -161,7 +161,7 @@ export function ApplicationList({
                       <p className="text-sm text-muted-foreground">{item.companyName}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
-                      <StaleIndicator lastActivityAt={item.lastActivityAt} />
+                      <StaleIndicator daysQuiet={item.daysQuiet} />
                       <StatusBadge status={item.canonicalStatus} />
                       <span className="font-mono text-xs text-muted-foreground">
                         {formatDistanceToNow(item.lastActivityAt, { addSuffix: true })}
