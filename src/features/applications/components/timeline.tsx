@@ -46,6 +46,11 @@ function describeEvent(event: Event): string {
       return 'Note updated'
     case 'email_received':
       return 'Email received'
+    case 'document_uploaded': {
+      const filename = String(data.filename ?? 'document')
+      const kind = String(data.kind ?? 'other')
+      return `Document uploaded: ${filename} (${kind})`
+    }
     default:
       return `Event #${event.id}`
   }

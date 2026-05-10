@@ -18,6 +18,7 @@ import type { ApplicationId, UserId } from '@/core/types/ids'
 import type {
   Application,
   CanonicalStatus,
+  Document,
   Email,
   Event,
   Stage,
@@ -42,6 +43,7 @@ export type ApplicationDetail = {
   stages: Stage[]
   events: Event[]
   emails: Email[]
+  documents: Document[]
 }
 
 // URL-driven sort param. Validated at the page boundary via `safeParse` so
@@ -135,12 +137,13 @@ export async function findApplicationDetail(
     })
     if (!application || application.userId !== Number(userId)) return null
 
-    const [stages, events, emails] = await Promise.all([
+    const [stages, events, emails, documents] = await Promise.all([
       tx.stage.findMany({ where: { applicationId: numericId }, orderBy: { order: 'asc' } }),
       tx.event.findMany({ where: { applicationId: numericId }, orderBy: { occurredAt: 'desc' } }),
       tx.email.findMany({ where: { applicationId: numericId }, orderBy: { receivedAt: 'desc' } }),
+      tx.document.findMany({ where: { applicationId: numericId }, orderBy: { createdAt: 'desc' } }),
     ])
-    return { application, stages, events, emails }
+    return { application, stages, events, emails, documents }
   })
 }
 

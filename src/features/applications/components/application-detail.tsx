@@ -7,6 +7,8 @@ import { format } from 'date-fns'
 import { useTranslations } from 'next-intl'
 
 import { StatusBadge } from '@/components/status-badge'
+import { DocumentList } from '@/features/documents/components/document-list'
+import { UploadForm } from '@/features/documents/components/upload-form'
 
 import type { ApplicationDetail } from '../queries'
 import { ClassifierBreadcrumb } from './classifier-breadcrumb'
@@ -25,7 +27,7 @@ export function ApplicationDetail({
   allTags?: string[]
 }) {
   const t = useTranslations('forayDetail')
-  const { application, stages, events, emails } = detail
+  const { application, stages, events, emails, documents } = detail
   const company = application.company
 
   return (
@@ -76,6 +78,21 @@ export function ApplicationDetail({
           applicationId={application.id}
           initialTags={application.tags}
           allTags={allTags}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Documents</h2>
+        <UploadForm applicationId={application.id} />
+        <DocumentList
+          documents={documents.map((d) => ({
+            id: d.id,
+            kind: d.kind,
+            filename: d.filename,
+            mimeType: d.mimeType,
+            sizeBytes: d.sizeBytes,
+            createdAt: d.createdAt,
+          }))}
         />
       </section>
 

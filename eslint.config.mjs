@@ -48,6 +48,13 @@ const eslintConfig = defineConfig([
                 ['feature', { slice: 'applications' }],
               ],
             },
+            // Application detail page renders document components.
+            {
+              from: [['feature', { slice: 'applications' }]],
+              allow: [
+                ['feature', { slice: 'documents' }],
+              ],
+            },
           ],
         },
       ],
