@@ -26,6 +26,7 @@ import {
   getPipelineCounts,
   findRecent24hActivity,
   findThisWeekCounts,
+  findOverdueFollowUps,
 } from './queries'
 
 // --- Constants ---
@@ -738,5 +739,154 @@ describe('findThisWeekCounts', () => {
     // Bob's seed application was created today (this week)
     expect(result.value.thisWeek.applied).toBeGreaterThanOrEqual(1)
     expect(result.value.lastWeek.applied).toBe(0)
+  })
+})
+
+// --- findOverdueFollowUps ---
+
+describe('findOverdueFollowUps', () => {
+  it('returns applications where followUpAt <= now()', async () => {
+    const yesterday = new Date(Date.now() - MS_PER_DAY)
+    await withRls(ALICE, async (tx) => {
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: yesterday },
+      })
+    })
+
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    expect(result.value.length).toBeGreaterThanOrEqual(1)
+    const match = result.value.find((f) => f.id === testApplicationId)
+    expect(match).toBeDefined()
+    expect(match!.companyName).toBe('TodayTestCorp')
+    expect(match!.daysOverdue).toBeGreaterThanOrEqual(1)
+  })
+
+  it('excludes applications with followUpAt in the future', async () => {
+    const tomorrow = new Date(Date.now() + MS_PER_DAY)
+    await withRls(ALICE, async (tx) => {
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: tomorrow },
+      })
+    })
+
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    const match = result.value.find((f) => f.id === testApplicationId)
+    expect(match).toBeUndefined()
+  })
+
+  it('excludes applications with null followUpAt', async () => {
+    // followUpAt defaults to null
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    const match = result.value.find((f) => f.id === testApplicationId)
+    expect(match).toBeUndefined()
+  })
+
+  it('excludes archived applications', async () => {
+    const yesterday = new Date(Date.now() - MS_PER_DAY)
+    await withRls(ALICE, async (tx) => {
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: yesterday, archivedAt: new Date() },
+      })
+    })
+
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    const match = result.value.find((f) => f.id === testApplicationId)
+    expect(match).toBeUndefined()
+  })
+
+  it('sorts by followUpAt ascending (oldest first)', async () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * MS_PER_DAY)
+    const oneDayAgo = new Date(Date.now() - MS_PER_DAY)
+
+    await withRls(ALICE, async (tx) => {
+      // Create a second application with older followUpAt
+      await tx.application.create({
+        data: {
+          userId: Number(ALICE),
+          companyId: testCompanyId,
+          roleTitle: 'Older Follow-up',
+          canonicalStatus: 'applied',
+          appliedAt: new Date(),
+          lastActivityAt: new Date(),
+          followUpAt: threeDaysAgo,
+        },
+      })
+      // Update existing with newer followUpAt
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: oneDayAgo },
+      })
+    })
+
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    expect(result.value.length).toBeGreaterThanOrEqual(2)
+    // First should be the older one
+    expect(result.value[0]!.daysOverdue).toBeGreaterThanOrEqual(result.value[1]!.daysOverdue)
+  })
+
+  it('returns empty array for user with no overdue follow-ups', async () => {
+    const result = await findOverdueFollowUps(BOB)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    // Bob has no follow-up dates set
+    expect(result.value).toHaveLength(0)
+  })
+
+  it('excludes other users data (cross-tenant isolation)', async () => {
+    const yesterday = new Date(Date.now() - MS_PER_DAY)
+    // Set follow-up on Alice's application
+    await withRls(ALICE, async (tx) => {
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: yesterday },
+      })
+    })
+
+    // Bob should NOT see Alice's overdue follow-up
+    const result = await findOverdueFollowUps(BOB)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    const match = result.value.find((f) => f.roleTitle === 'Today Test Role')
+    expect(match).toBeUndefined()
+  })
+
+  it('result includes roleTitle, companyName, daysOverdue fields', async () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * MS_PER_DAY)
+    await withRls(ALICE, async (tx) => {
+      await tx.application.update({
+        where: { id: testApplicationId },
+        data: { followUpAt: twoDaysAgo },
+      })
+    })
+
+    const result = await findOverdueFollowUps(ALICE)
+    expect(result.isOk()).toBe(true)
+    if (result.isErr()) throw result.error
+
+    const match = result.value.find((f) => f.id === testApplicationId)
+    expect(match).toBeDefined()
+    expect(match!.roleTitle).toBe('Today Test Role')
+    expect(match!.companyName).toBe('TodayTestCorp')
+    expect(match!.daysOverdue).toBeGreaterThanOrEqual(2)
   })
 })

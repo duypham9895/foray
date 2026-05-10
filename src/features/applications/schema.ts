@@ -147,6 +147,13 @@ export const notesInputSchema = z.object({
 })
 export type NotesInput = z.infer<typeof notesInputSchema>
 
+// Follow-up date input -------------------------------------------------
+
+export const followUpInputSchema = z.object({
+  followUpAt: z.coerce.date(),
+})
+export type FollowUpInput = z.infer<typeof followUpInputSchema>
+
 // Event.data per EventType (Phase 4 hard contract) ----------------------
 //
 // emailId is part of the strict() shape so callers MUST include it before

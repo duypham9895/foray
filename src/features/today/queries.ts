@@ -183,6 +183,44 @@ export async function findTodaysInterviews(
   })
 }
 
+// --- Overdue follow-ups ---
+
+export type OverdueFollowUp = {
+  id: number
+  roleTitle: string
+  companyName: string
+  followUpAt: Date
+  daysOverdue: number
+}
+
+export async function findOverdueFollowUps(
+  userId: UserId,
+): Promise<Result<OverdueFollowUp[], AppError>> {
+  const now = new Date()
+
+  return withRls(userId, async (tx) => {
+    const rows = await tx.application.findMany({
+      where: {
+        userId: Number(userId),
+        archivedAt: null,
+        followUpAt: { lte: now, not: null },
+      },
+      orderBy: { followUpAt: 'asc' },
+      include: { company: { select: { name: true } } },
+    })
+
+    return rows
+      .filter((r) => r.followUpAt !== null)
+      .map<OverdueFollowUp>((r) => ({
+        id: r.id,
+        roleTitle: r.roleTitle,
+        companyName: r.company.name,
+        followUpAt: r.followUpAt!,
+        daysOverdue: Math.floor((now.getTime() - r.followUpAt!.getTime()) / MS_PER_DAY),
+      }))
+  })
+}
+
 export async function getPipelineCounts(
   userId: UserId,
 ): Promise<Result<PipelineCounts, AppError>> {
