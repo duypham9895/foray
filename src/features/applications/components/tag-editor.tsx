@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 
 import { updateTagsAction, type ActionState } from '../actions'
 import { TagInput } from './tag-input'
@@ -27,13 +27,6 @@ export function TagEditor({
   const [tags, setTags] = useState(initialTags)
   const boundAction = updateTagsAction.bind(null, applicationId)
   const [state, formAction] = useActionState(boundAction, { ok: true } as ActionState)
-
-  // Sync tags from server on successful save
-  useEffect(() => {
-    if (state.ok) {
-      // Tags already up to date from local state
-    }
-  }, [state])
 
   const handleChange = (newTags: string[]) => {
     setTags(newTags)
