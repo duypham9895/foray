@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { StatusBadge } from '@/components/status-badge'
 
 import type { ApplicationDetail } from '../queries'
+import { ClassifierBreadcrumb } from './classifier-breadcrumb'
 import { NotesEditor } from './notes-editor'
 import { StageEditor } from './stage-editor'
 import { StatusDropdown } from './status-dropdown'
@@ -37,6 +38,7 @@ export function ApplicationDetail({ detail }: { detail: ApplicationDetail }) {
             currentStatus={application.canonicalStatus}
           />
         </div>
+        <ClassifierBreadcrumb emails={emails} />
       </header>
 
       <section className="space-y-3">

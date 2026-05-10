@@ -57,7 +57,13 @@
     "stages": "Vòng phỏng vấn",
     "notes": "Ghi chú",
     "timeline": "Dòng thời gian",
-    "loadError": "Không tải được foray này."
+    "loadError": "Không tải được foray này.",
+    "unreviewedEmails": "{n} chưa xem",
+    "unreviewedEmailsOne": "1 chưa xem",
+    "lastReply": "trả lời cuối {n} ngày trước",
+    "lastReplyOne": "trả lời cuối 1 ngày trước",
+    "lastReplyToday": "trả lời cuối hôm nay",
+    "noEmails": "chưa có email nào"
   },
   "newForay": {
     "title": "Thêm foray",

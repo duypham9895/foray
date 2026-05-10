@@ -57,7 +57,13 @@
     "stages": "Tahap",
     "notes": "Catatan",
     "timeline": "Linimasa",
-    "loadError": "Gagal memuat foray ini."
+    "loadError": "Gagal memuat foray ini.",
+    "unreviewedEmails": "{n} belum dicek",
+    "unreviewedEmailsOne": "1 belum dicek",
+    "lastReply": "balasan terakhir {n} hari lalu",
+    "lastReplyOne": "balasan terakhir 1 hari lalu",
+    "lastReplyToday": "balasan terakhir hari ini",
+    "noEmails": "belum ada email"
   },
   "newForay": {
     "title": "Tambah foray",

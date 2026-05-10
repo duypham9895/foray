@@ -57,7 +57,13 @@
     "stages": "Stages",
     "notes": "Notes",
     "timeline": "Timeline",
-    "loadError": "Could not load this foray."
+    "loadError": "Could not load this foray.",
+    "unreviewedEmails": "{n} unreviewed",
+    "unreviewedEmailsOne": "1 unreviewed",
+    "lastReply": "last reply {n} days ago",
+    "lastReplyOne": "last reply 1 day ago",
+    "lastReplyToday": "last reply today",
+    "noEmails": "no emails yet"
   },
   "newForay": {
     "title": "Capture a foray",
