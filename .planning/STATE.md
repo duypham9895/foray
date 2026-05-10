@@ -1,34 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1
-milestone_name: milestone
-status: unknown
-last_updated: "2026-05-10T06:21:52.902Z"
+milestone: v0.3
+milestone_name: Full
+status: defining_requirements
+last_updated: "2026-05-10T13:30:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# State: foray (Global Phase Tracking)
+# State: foray (v0.3 Full)
 
-**Version**: 2.0 (Global continuous numbering: phases 1–17+)
+**Version**: 2.0 (Global continuous numbering: phases 1–16+)
 **Last updated**: 2026-05-10
 **Mode**: autonomous (auto-advance enabled)
 
 ---
 
-## 🎯 Quick Status
+## Quick Status
 
 | Metric | Value |
 |---|---|
-| **Milestone** | Standard (v0.2) — phases 6–10 |
-| **Current Phase** | 6 of 10 (Bookmarklet + Capture API) |
-| **Phase Status** | ⏳ Starting |
-| **Next Phase** | 7 (Today Dashboard) |
-| **Milestone Progress** | 5/10 complete; Phase 6 starting |
+| **Milestone** | Full (v0.3) — phases 11–16 |
+| **Current Phase** | Not started (defining requirements) |
+| **Phase Status** | — |
+| **Milestone Progress** | 0/6 phases |
 
 ---
 
@@ -44,61 +43,46 @@ progress:
 | **4** | Gmail Ingestion + Pipeline | ✅ Complete | 2026-05-09 |
 | **5** | Review Queue + Acceptance | ✅ Complete | 2026-05-09 |
 
-### ⏳ Standard Milestone (v0.2) — Phases 6–10
-
-**Goal**: Zero-friction capture from anywhere + daily check-in experience.
+### ✅ Standard Milestone (v0.2) — Phases 6–10 — SHIPPED 2026-05-10
 
 | Phase | Name | Status | Completed |
 |-------|------|--------|-----------|
-| **6** | Bookmarklet + Capture API | ⏳ Pending | — |
-| **7** | Today Dashboard | ⏳ Pending | — |
-| **8** | Tags + Search | ⏳ Pending | — |
-| **9** | UX Polish + Keyboard Shortcuts | ⏳ Pending | — |
-| **10** | E2E Tests + Acceptance | ⏳ Pending | — |
+| **6** | Bookmarklet + Capture API | ✅ Complete | 2026-05-10 |
+| **7** | Today Dashboard | ✅ Complete | 2026-05-10 |
+| **8** | Tags + Search | ✅ Complete | 2026-05-10 |
+| **9** | UX Polish + Keyboard Shortcuts | ✅ Complete | 2026-05-10 |
+| **10** | E2E Tests + Acceptance | ✅ Complete | 2026-05-10 |
 
 ### ⏳ Full Milestone (v0.3) — Phases 11–16
 
+**Goal:** Transform foray into a complete job-search command center.
+
 | Phase | Name | Status | Completed |
 |-------|------|--------|-----------|
-| **11** | Chrome MV3 Extension | ⏳ Pending | — |
-| **12** | Document Storage | ⏳ Pending | — |
-| **13** | Recruiter Entity | ⏳ Pending | — |
-| **14** | Google Calendar Integration | ⏳ Pending | — |
-| **15** | Analytics Dashboard | ⏳ Pending | — |
-| **16** | Reminders + Polish | ⏳ Pending | — |
+| **TBD** | Chrome MV3 Extension | ⏳ Pending | — |
+| **TBD** | Document Storage | ⏳ Pending | — |
+| **TBD** | Recruiter Entity | ⏳ Pending | — |
+| **TBD** | Google Calendar Integration | ⏳ Pending | — |
+| **TBD** | Analytics Dashboard | ⏳ Pending | — |
+| **TBD** | Reminders + Polish | ⏳ Pending | — |
 
 ---
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-
-### Phase 6: Bookmarklet + Capture API (Standard-1)
-
-**Objective**: One-click job capture from any webpage — bookmarklet extracts page info, POSTs to `/api/capture`, redirects to prefilled form.
-
-**Dependencies**: Phase 5 complete (Lean milestone shipped)
-
-**Progress**: Not started
-
-**Blocking**: None
-**Next phase after completion**: Phase 7 (Today Dashboard — Standard-2)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-10 — Milestone v0.3 Full started
 
 ---
 
 ## Transition Points
 
-### Lean → Standard (After Phase 5)
-
-**Trigger**: Phase 5 complete ✅
-**Status**: Transition complete — starting Phase 6
-
 ### Standard → Full (After Phase 10)
 
-**Trigger**: Phase 10 automation completes
-**Verification**: Pre-commit gate + E2E tests passing
-**Auto-advance**: Yes
+**Trigger**: Phase 10 complete ✅
+**Status**: Transition complete — starting v0.3 Full
 
 ---
 
@@ -106,6 +90,7 @@ Plan: Not started
 
 **Authoritative source**: `.planning/PHASE-MANIFEST.md`
 **Lean roadmap** (phases 1–5): `.planning/milestones/v0.1-ROADMAP.md`
+**Standard roadmap** (phases 6–10): `.planning/milestones/v0.2-ROADMAP.md`
 **Phase details**:
 
 - Plans: `.planning/phases/NN-*/NN-0N-PLAN.md`
@@ -116,24 +101,22 @@ Plan: Not started
 
 ## How to Resume Work
 
-### From Phase 6 (starting Standard milestone)
+### From v0.3 (starting Full milestone)
 
 ```bash
-
 # See what's next
-
-cat .planning/phases/06-bookmarklet-capture-api/06-01-PLAN.md
+cat .planning/REQUIREMENTS.md
+cat .planning/ROADMAP.md
 
 # Check phase details
-
-cat .planning/phases/06-bookmarklet-capture-api/RESEARCH.md
+cat .planning/phases/11-*/11-01-PLAN.md
 ```
 
 ---
 
 ## Key Decisions
 
-- **Global phase numbering** (1–17+, not per-milestone) for clarity in automation
+- **Global phase numbering** (1–16+, not per-milestone) for clarity in automation
 - **Continuous execution** with auto-advance
 - **Category-based test coverage** (replaces gameable "≥30 tests" target)
 - **RLS via `withRls()` helper** (per ADR-0011, until SaaS flip)
@@ -154,4 +137,4 @@ cat .planning/phases/06-bookmarklet-capture-api/RESEARCH.md
 
 ---
 
-*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.2 Standard milestone*
+*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.3 Full milestone*
