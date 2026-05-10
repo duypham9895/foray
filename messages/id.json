@@ -69,6 +69,18 @@
     "title": "Tambah foray",
     "subtitle": "Catat peran yang sudah kamu lamar atau akan kamu lamar."
   },
+  "quickCapture": {
+    "title": "Tambah foray",
+    "subtitle": "Tambah cepat. Detail bisa diisi nanti.",
+    "companyLabel": "Perusahaan",
+    "roleLabel": "Nama peran",
+    "urlLabel": "URL lowongan",
+    "urlOptional": "(opsional)",
+    "submit": "Tambah",
+    "submitting": "Menambahkan…",
+    "shortcutHint": "⌘K dari mana saja",
+    "errorGeneric": "Gagal menambahkan. Coba lagi."
+  },
   "inbox": {
     "title": "Kotak masuk",
     "subtitleEmpty": "Email yang sudah jelas klasifikasinya sudah otomatis dirutekan.",

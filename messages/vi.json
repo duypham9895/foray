@@ -69,6 +69,18 @@
     "title": "Thêm foray",
     "subtitle": "Ghi nhận vị trí bạn đã ứng tuyển hoặc sắp ứng tuyển."
   },
+  "quickCapture": {
+    "title": "Thêm foray",
+    "subtitle": "Thêm nhanh. Bạn có thể điền chi tiết sau.",
+    "companyLabel": "Công ty",
+    "roleLabel": "Tên vị trí",
+    "urlLabel": "URL bài tuyển dụng",
+    "urlOptional": "(không bắt buộc)",
+    "submit": "Thêm",
+    "submitting": "Đang thêm…",
+    "shortcutHint": "⌘K từ mọi nơi",
+    "errorGeneric": "Không thêm được. Thử lại."
+  },
   "inbox": {
     "title": "Hộp thư",
     "subtitleEmpty": "Các email đã được phân loại tự động vào đúng foray.",

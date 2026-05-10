@@ -69,6 +69,18 @@
     "title": "Capture a foray",
     "subtitle": "Log a role you applied to or are about to apply to."
   },
+  "quickCapture": {
+    "title": "Capture a foray",
+    "subtitle": "Quick add. You can fill in the rest later.",
+    "companyLabel": "Company",
+    "roleLabel": "Role title",
+    "urlLabel": "Job URL",
+    "urlOptional": "(optional)",
+    "submit": "Capture",
+    "submitting": "Capturing…",
+    "shortcutHint": "⌘K from anywhere",
+    "errorGeneric": "Could not capture. Try again."
+  },
   "inbox": {
     "title": "Inbox",
     "subtitleEmpty": "Classified emails the matcher was confident about have already been routed.",

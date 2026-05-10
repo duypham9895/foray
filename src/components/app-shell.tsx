@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { logout } from '@/features/auth/actions'
 
 import { NavLinks } from './nav-links'
+import { QuickCapture } from './quick-capture'
 
 export async function AppShell({
   children,
@@ -12,6 +13,7 @@ export async function AppShell({
   aside?: React.ReactNode
 }) {
   const t = await getTranslations('nav')
+  const tQuick = await getTranslations('quickCapture')
 
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-[240px_1fr]">
@@ -27,6 +29,10 @@ export async function AppShell({
           <div className="hidden border-t border-border pt-6 lg:block">{aside}</div>
         ) : null}
 
+        <div className="hidden text-xs text-muted-foreground/70 lg:block">
+          <span className="font-mono">{tQuick('shortcutHint')}</span>
+        </div>
+
         <form action={logout} className="lg:mt-auto">
           <button
             type="submit"
@@ -38,6 +44,8 @@ export async function AppShell({
       </aside>
 
       <main className="min-w-0">{children}</main>
+
+      <QuickCapture />
     </div>
   )
 }
