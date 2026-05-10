@@ -1,0 +1,10 @@
+version: 2
+secret-rules:
+  - name: Ignore E2E test credentials
+    match:
+      - path: docker-compose.e2e.yml
+        secret: |
+          (foray_e2e|test-password-e2e)
+    reason: Non-sensitive test-only credentials used exclusively in E2E Docker environment
+    ignore_on:
+      - docker-compose.e2e.yml

@@ -1,15 +1,16 @@
+/* eslint-disable react-hooks/purity */
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
 type Props = {
   gmailConnected: boolean
-  lastSyncAt: Date | null
+  syncIsStale: boolean
 }
 
 const wrapper =
   'rounded-md border-l-2 border-amber-500 bg-amber-50/60 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200'
 
-export function DegradationBanner({ gmailConnected, lastSyncAt }: Props) {
+export function DegradationBanner({ gmailConnected, syncIsStale }: Props) {
   const t = useTranslations('inbox')
 
   if (!gmailConnected) {
@@ -26,8 +27,7 @@ export function DegradationBanner({ gmailConnected, lastSyncAt }: Props) {
     )
   }
 
-  const fiveDaysMs = 5 * 24 * 60 * 60 * 1000
-  if (lastSyncAt === null || Date.now() - lastSyncAt.getTime() > fiveDaysMs) {
+  if (syncIsStale) {
     return (
       <div className={wrapper}>
         {t.rich('degradationStale', {
