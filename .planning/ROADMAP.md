@@ -94,7 +94,11 @@ Plans:
   3. Extension handles SPA navigation (LinkedIn, etc.) via `webNavigation.onHistoryStateUpdated`
   4. All extension state stored in `chrome.storage.local`; no module variables (MV3 service worker dies after 30s)
   5. Build pipeline (WXT) produces a loadable extension directory for dev and production
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 13-01-PLAN.md — Token Infrastructure + Capture Route Auth (Wave 1)
+- [ ] 13-02-PLAN.md — WXT Extension Scaffold + Popup + Capture Flow (Wave 2)
+- [ ] 13-03-PLAN.md — SPA Navigation + Build Pipeline Finalization (Wave 3)
 
 ### Phase 14: Recruiter Entity
 **Goal**: Owner can create and manage recruiter records, link them to applications with roles, and see linked recruiters on application detail views.
@@ -155,7 +159,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16
 | 10. E2E Tests + Acceptance | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 11. Reminders + Cron Infrastructure | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
 | 12. Document Storage | v0.3 | 3/3 | Complete    | 2026-05-10 |
-| 13. Chrome MV3 Extension | v0.3 | 0/TBD | Not started | - |
+| 13. Chrome MV3 Extension | v0.3 | 0/3 | Not started | - |
 | 14. Recruiter Entity | v0.3 | 0/TBD | Not started | - |
 | 15. Analytics Dashboard | v0.3 | 0/TBD | Not started | - |
 | 16. Google Calendar Integration | v0.3 | 0/TBD | Not started | - |
