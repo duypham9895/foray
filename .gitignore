@@ -63,3 +63,7 @@ scripts/dev/
 # (committing creates orphan gitlinks with no .gitmodules → CI checkout fails)
 .claude/worktrees/
 
+# Playwright E2E artifacts
+/playwright-report/
+/test-results/
+
