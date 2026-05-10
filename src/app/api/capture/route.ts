@@ -17,6 +17,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAtsDomain } from '@/core/domains/ats-domains'
 import { logger } from '@/core/logger'
 
+// TODO(edward, 2026-05-10): Add Bearer token auth per PRINCIPLES.md §Security baseline.
+// Deferred for Lean — bookmarklet is single-user, local-only deployment.
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -32,6 +34,8 @@ function jsonResponse(
   return NextResponse.json(body, { status, headers: CORS_HEADERS })
 }
 
+// Known limitation: multi-part TLDs (.co.uk, .com.au) extract incorrectly.
+// TODO(edward, 2026-06-01): Replace with psl library when internationalized job sites are relevant.
 function extractApexDomain(hostname: string): string {
   const parts = hostname.split('.')
   if (parts.length <= 2) return hostname
@@ -49,9 +53,9 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'Content-Type must be application/json' }, 415)
   }
 
-  // Body size guard
+  // Body size guard (measure bytes, not UTF-16 code units)
   const rawBody = await req.text()
-  if (rawBody.length > MAX_BODY_BYTES) {
+  if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
     return jsonResponse({ error: 'Request body too large' }, 413)
   }
 
