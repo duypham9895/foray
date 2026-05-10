@@ -4,6 +4,7 @@
     "forays": "Forays",
     "inbox": "Kotak masuk",
     "settings": "Pengaturan",
+    "guide": "Panduan",
     "signOut": "Keluar"
   },
   "actions": {
@@ -115,7 +116,10 @@
     "pipelineTitle": "Pipeline",
     "pipelineClosed": "ditutup",
     "globalEmptyTitle": "Hari ini tidak ada yang mendesak.",
-    "globalEmptyBody": "Tambah foray (⌘K) atau buka pipeline."
+    "globalEmptyBody": "Tambah foray (⌘K) atau buka pipeline.",
+    "readGuide": "Baca panduan →",
+    "recentActivity": "24 jam terakhir",
+    "thisWeek": "Minggu ini"
   },
   "settings": {
     "title": "Pengaturan",
@@ -151,6 +155,20 @@
       "vietnamese": "Tiếng Việt",
       "indonesian": "Bahasa Indonesia",
       "save": "Simpan"
+    },
+    "shortcuts": {
+      "title": "Pintasan Keyboard",
+      "intro": "Navigasi lebih cepat dengan keyboard. Pintasan nonaktif saat mengetik di kolom text.",
+      "singleKey": "Tombol tunggal",
+      "combo": "Go-to (tekan g, lalu tombol kedua)",
+      "newForay": "Foray baru",
+      "search": "Fokus pencarian",
+      "goForays": "Ke Forays",
+      "goInbox": "Ke Kotak masuk",
+      "goSettings": "Ke Pengaturan"
     }
+  },
+  "shortcutHint": {
+    "toast": "Tekan / untuk mencari, n untuk menambah foray"
   }
 }

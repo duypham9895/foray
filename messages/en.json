@@ -4,6 +4,7 @@
     "forays": "Forays",
     "inbox": "Inbox",
     "settings": "Settings",
+    "guide": "Guide",
     "signOut": "Sign out"
   },
   "actions": {
@@ -115,7 +116,10 @@
     "pipelineTitle": "Pipeline",
     "pipelineClosed": "closed",
     "globalEmptyTitle": "Nothing pressing today.",
-    "globalEmptyBody": "Capture a foray (⌘K) or open your pipeline."
+    "globalEmptyBody": "Capture a foray (⌘K) or open your pipeline.",
+    "readGuide": "Read the guide →",
+    "recentActivity": "Last 24 hours",
+    "thisWeek": "This week"
   },
   "settings": {
     "title": "Settings",
@@ -151,6 +155,20 @@
       "vietnamese": "Tiếng Việt",
       "indonesian": "Bahasa Indonesia",
       "save": "Save"
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "intro": "Navigate faster with your keyboard. Shortcuts are disabled while typing in text fields.",
+      "singleKey": "Single key",
+      "combo": "Go-to (press g, then the second key)",
+      "newForay": "New foray",
+      "search": "Focus search",
+      "goForays": "Go to Forays",
+      "goInbox": "Go to Inbox",
+      "goSettings": "Go to Settings"
     }
+  },
+  "shortcutHint": {
+    "toast": "Press / to search, n to add a foray"
   }
 }

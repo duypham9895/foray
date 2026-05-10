@@ -4,6 +4,7 @@
     "forays": "Forays",
     "inbox": "Hộp thư",
     "settings": "Cài đặt",
+    "guide": "Hướng dẫn",
     "signOut": "Đăng xuất"
   },
   "actions": {
@@ -115,7 +116,10 @@
     "pipelineTitle": "Pipeline",
     "pipelineClosed": "đã đóng",
     "globalEmptyTitle": "Hôm nay không có việc gấp.",
-    "globalEmptyBody": "Thêm foray (⌘K) hoặc mở pipeline."
+    "globalEmptyBody": "Thêm foray (⌘K) hoặc mở pipeline.",
+    "readGuide": "Đọc hướng dẫn →",
+    "recentActivity": "24 giờ qua",
+    "thisWeek": "Tuần này"
   },
   "settings": {
     "title": "Cài đặt",
@@ -151,6 +155,20 @@
       "vietnamese": "Tiếng Việt",
       "indonesian": "Bahasa Indonesia",
       "save": "Lưu"
+    },
+    "shortcuts": {
+      "title": "Phím tắt",
+      "intro": "Di chuyển nhanh hơn bằng bàn phím. Phím tắt bị tắt khi đang nhập vào ô text.",
+      "singleKey": "Phím đơn",
+      "combo": "Go-to (nhấn g, rồi nhấn phím thứ hai)",
+      "newForay": "Thêm foray mới",
+      "search": "Tìm kiếm",
+      "goForays": "Đến Forays",
+      "goInbox": "Đến Hộp thư",
+      "goSettings": "Đến Cài đặt"
     }
+  },
+  "shortcutHint": {
+    "toast": "Nhấn / để tìm kiếm, n để thêm foray"
   }
 }
