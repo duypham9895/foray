@@ -29,7 +29,7 @@ Zero-friction job capture from anywhere (bookmarklet, extension) + a daily check
 - [ ] **Phase 7: Today Dashboard** — Daily check-in view: today's interviews, stale forays, unreviewed emails, week summary
 - [ ] **Phase 8: Tags + Search** — User-defined tags, full-text search, advanced filtering across applications
 - [ ] **Phase 9: UX Polish + Keyboard Shortcuts** — Keyboard navigation, animations, responsive refinements, accessibility
-- [ ] **Phase 10: E2E Tests + Acceptance** — Playwright E2E tests, Standard milestone acceptance criteria verification
+- [x] **Phase 10: E2E Tests + Acceptance** — Playwright E2E tests, Standard milestone acceptance criteria verification (completed 2026-05-10)
 
 ---
 
@@ -133,7 +133,7 @@ Zero-friction job capture from anywhere (bookmarklet, extension) + a daily check
 | 7. Today Dashboard | v0.2 | 0/3 | ⏳ Pending | — |
 | 8. Tags + Search | v0.2 | 0/3 | ⏳ Pending | — |
 | 9. UX Polish + Keyboard Shortcuts | v0.2 | 0/3 | ⏳ Pending | — |
-| 10. E2E Tests + Acceptance | v0.2 | 0/3 | ⏳ Pending | — |
+| 10. E2E Tests + Acceptance | v0.2 | 3/3 | Complete    | 2026-05-10 |
 
 ## Archive
 
