@@ -204,3 +204,131 @@ export async function getPipelineCounts(
     return counts
   })
 }
+
+// --- Recent 24h activity ---
+
+export type RecentEmail = {
+  id: number
+  subject: string
+  from: string
+  classification: EmailClassification | null
+  receivedAt: Date
+  applicationId: number | null
+}
+
+export type RecentStatusChange = {
+  id: number
+  canonicalStatus: CanonicalStatus
+  updatedAt: Date
+}
+
+export type Recent24hActivity = {
+  emails: RecentEmail[]
+  statusChanges: RecentStatusChange[]
+}
+
+export async function findRecent24hActivity(
+  userId: UserId,
+): Promise<Result<Recent24hActivity, AppError>> {
+  const since = new Date(Date.now() - MS_PER_DAY)
+
+  return withRls(userId, async (tx) => {
+    const [emails, statusChanges] = await Promise.all([
+      tx.email.findMany({
+        where: {
+          userId: Number(userId),
+          receivedAt: { gte: since },
+        },
+        select: {
+          id: true,
+          subject: true,
+          from: true,
+          classification: true,
+          receivedAt: true,
+          applicationId: true,
+        },
+        orderBy: { receivedAt: 'desc' },
+        take: 10,
+      }),
+      tx.application.findMany({
+        where: {
+          userId: Number(userId),
+          updatedAt: { gte: since },
+        },
+        select: {
+          id: true,
+          canonicalStatus: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
+      }),
+    ])
+
+    return { emails, statusChanges }
+  })
+}
+
+// --- Week-over-week counts ---
+
+export type WeekCounts = {
+  thisWeek: PipelineCounts
+  lastWeek: PipelineCounts
+}
+
+export async function findThisWeekCounts(
+  userId: UserId,
+): Promise<Result<WeekCounts, AppError>> {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - dayOfWeek)
+  weekStart.setHours(0, 0, 0, 0)
+
+  const lastWeekStart = new Date(weekStart)
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+
+  return withRls(userId, async (tx) => {
+    const [thisWeekRows, lastWeekRows] = await Promise.all([
+      tx.application.groupBy({
+        by: ['canonicalStatus'],
+        where: {
+          userId: Number(userId),
+          archivedAt: null,
+          appliedAt: { gte: weekStart },
+        },
+        _count: { _all: true },
+      }),
+      tx.application.groupBy({
+        by: ['canonicalStatus'],
+        where: {
+          userId: Number(userId),
+          archivedAt: null,
+          appliedAt: { gte: lastWeekStart, lt: weekStart },
+        },
+        _count: { _all: true },
+      }),
+    ])
+
+    const emptyCounts: PipelineCounts = {
+      applied: 0,
+      screening: 0,
+      interviewing: 0,
+      offer: 0,
+      rejected: 0,
+      withdrawn: 0,
+    }
+
+    const thisWeek = { ...emptyCounts }
+    for (const r of thisWeekRows) {
+      thisWeek[r.canonicalStatus] = r._count._all
+    }
+
+    const lastWeek = { ...emptyCounts }
+    for (const r of lastWeekRows) {
+      lastWeek[r.canonicalStatus] = r._count._all
+    }
+
+    return { thisWeek, lastWeek }
+  })
+}
