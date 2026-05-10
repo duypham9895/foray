@@ -334,7 +334,6 @@ model Document {
   mimeType      String       @map("mime_type")
   storagePath   String       @map("storage_path")
   sizeBytes     Int          @map("size_bytes")
-  version       Int          @default(1)
   notes         String?
 
   createdAt DateTime @default(now()) @map("created_at")

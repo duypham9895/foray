@@ -187,6 +187,11 @@ const emailReceivedData = z.strictObject({
   emailId: z.coerce.number().int().positive(),
 })
 const noteAddedData = z.strictObject({})
+const documentUploadedData = z.strictObject({
+  documentId: z.coerce.number().int().positive(),
+  filename: z.string().min(1).max(255),
+  kind: z.enum(['resume', 'cover_letter', 'jd_pdf', 'take_home', 'other']),
+})
 // Generic loose-passthrough fallback for events that don't carry typed data
 // in Phase 2 — timeline rendering can fall back to "Event #{id}" gracefully.
 const genericPassthrough = z.looseObject({})
@@ -201,7 +206,7 @@ export const eventDataSchemas = {
   email_received: emailReceivedData,
   note_added: noteAddedData,
   manual_classification: genericPassthrough,
-  document_uploaded: genericPassthrough,
+  document_uploaded: documentUploadedData,
   recruiter_linked: genericPassthrough,
   archived: genericPassthrough,
   unarchived: genericPassthrough,
