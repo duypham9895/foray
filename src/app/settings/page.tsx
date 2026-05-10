@@ -13,6 +13,7 @@ import { ConnectGmailButton } from '@/features/inbox/components/connect-gmail-bu
 import { DisconnectGmailButton } from '@/features/inbox/components/disconnect-gmail-button'
 import { SyncNowButton } from '@/features/inbox/components/sync-now-button'
 import { TokenHealthBanner } from '@/features/inbox/components/token-health-banner'
+import { KeyboardShortcutsSection } from '@/features/shortcuts/keyboard-shortcuts-section'
 
 function getBookmarkletUrl(): string | null {
   try {
@@ -154,6 +155,9 @@ export default async function SettingsPage() {
               <LanguagePicker />
             </div>
           </section>
+
+          {/* Keyboard Shortcuts */}
+          <KeyboardShortcutsSection />
         </div>
       </div>
     </AppShell>
