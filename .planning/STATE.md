@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2
-milestone_name: Standard
-status: executing
-last_updated: "2026-05-10T00:00:00.000Z"
+milestone: v0.1
+milestone_name: milestone
+status: unknown
+last_updated: "2026-05-10T03:39:29.627Z"
 progress:
-  total_phases: 10
-  completed_phases: 5
-  total_plans: 37
-  completed_plans: 22
-  percent: 50
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 15
+  completed_plans: 3
+  percent: 20
 ---
 
 # State: foray (Global Phase Tracking)
@@ -71,6 +71,9 @@ progress:
 
 ## Current Position
 
+Phase: 07
+Plan: Not started
+
 ### Phase 6: Bookmarklet + Capture API (Standard-1)
 
 **Objective**: One-click job capture from any webpage — bookmarklet extracts page info, POSTs to `/api/capture`, redirects to prefilled form.
@@ -104,6 +107,7 @@ progress:
 **Authoritative source**: `.planning/PHASE-MANIFEST.md`
 **Lean roadmap** (phases 1–5): `.planning/milestones/v0.1-ROADMAP.md`
 **Phase details**:
+
 - Plans: `.planning/phases/NN-*/NN-0N-PLAN.md`
 - Research: `.planning/phases/NN-*/RESEARCH.md`
 - Requirements: `.planning/phases/NN-*/REQUIREMENTS.md`
@@ -115,10 +119,13 @@ progress:
 ### From Phase 6 (starting Standard milestone)
 
 ```bash
+
 # See what's next
+
 cat .planning/phases/06-bookmarklet-capture-api/06-01-PLAN.md
 
 # Check phase details
+
 cat .planning/phases/06-bookmarklet-capture-api/RESEARCH.md
 ```
 
