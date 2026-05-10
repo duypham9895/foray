@@ -66,8 +66,25 @@ fi
 
 [ -z "$TARGET" ] && exit 0
 
+# ── Escape hatch: FORAY_ALLOW_PUSH_MAIN=1 ──────────────────────────
+# Allows direct push to a protected branch when the user has explicitly
+# authorized it. Reads both the hook process env AND the command string
+# (Claude Code's hook may not propagate inline VAR=val env to children).
+# --force is still blocked above — this only relaxes the protected-branch
+# check, never force-push.
+ALLOW=0
+[ "${FORAY_ALLOW_PUSH_MAIN:-0}" = "1" ] && ALLOW=1
+case "$COMMAND" in
+  *"FORAY_ALLOW_PUSH_MAIN=1"*) ALLOW=1 ;;
+  *"FORAY_ALLOW_PUSH_MAIN=true"*) ALLOW=1 ;;
+esac
+
 for b in $PROTECTED_BRANCHES; do
   if [ "$TARGET" = "$b" ]; then
+    if [ "$ALLOW" = "1" ]; then
+      hook_log "$HOOK" allowed "push to $b via FORAY_ALLOW_PUSH_MAIN"
+      exit 0
+    fi
     REASON="Direct push to protected branch \"$b\" is forbidden.
 Command: $COMMAND
 
@@ -75,7 +92,8 @@ Foray workflow: changes to main go through a PR.
   1. Push your feature branch:  git push -u origin <your-branch>
   2. Open PR targeting main:    gh pr create
 
-If there's a legitimate emergency, the engineer (not the agent) should run the push manually."
+To override (only when the user explicitly asks):
+  FORAY_ALLOW_PUSH_MAIN=1 git push origin $b"
     hook_log "$HOOK" blocked "direct push to $b"
     emit_pretooluse_deny "$REASON"
     exit 0
