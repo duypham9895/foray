@@ -42,7 +42,7 @@
 **Milestone Goal:** Transform foray from a capture-and-classify tool into a complete job-search command center with browser extension, document management, calendar integration, and analytics.
 
 - [x] **Phase 11: Reminders + Cron Infrastructure** - Follow-up dates, Today dashboard integration, CronRegistry upgrade (completed 2026-05-10)
-- [ ] **Phase 12: Document Storage** - File upload/download/delete for resumes, cover letters, and artifacts
+- [x] **Phase 12: Document Storage** - File upload/download/delete for resumes, cover letters, and artifacts (completed 2026-05-10)
 - [ ] **Phase 13: Chrome MV3 Extension** - One-click capture from job posting pages via browser extension
 - [ ] **Phase 14: Recruiter Entity** - Structured recruiter records linked to applications
 - [ ] **Phase 15: Analytics Dashboard** - Funnel visualization, response rates, weekly activity, source effectiveness
@@ -77,11 +77,11 @@ Plans:
   3. Owner can delete a document; file removed from disk and DB row removed in one transaction
   4. Document list in application detail view shows kind, filename, size, and upload date
   5. Upload validates MIME type via magic bytes (not extension), rejects files over 10MB, and creates a `document_uploaded` event in the timeline
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 12-01-PLAN.md — Document Schema + Service Layer (Wave 1)
-- [ ] 12-02-PLAN.md — Document API Routes + Integration Tests (Wave 1)
-- [ ] 12-03-PLAN.md — Document UI Components + Wiring (Wave 2)
+- [x] 12-02-PLAN.md — Document API Routes + Integration Tests (Wave 1)
+- [x] 12-03-PLAN.md — Document UI Components + Wiring (Wave 2)
 **UI hint**: yes
 
 ### Phase 13: Chrome MV3 Extension
@@ -154,7 +154,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16
 | 9. UX Polish + Keyboard Shortcuts | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 10. E2E Tests + Acceptance | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 11. Reminders + Cron Infrastructure | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
-| 12. Document Storage | v0.3 | 1/3 | In Progress|  |
+| 12. Document Storage | v0.3 | 3/3 | Complete    | 2026-05-10 |
 | 13. Chrome MV3 Extension | v0.3 | 0/TBD | Not started | - |
 | 14. Recruiter Entity | v0.3 | 0/TBD | Not started | - |
 | 15. Analytics Dashboard | v0.3 | 0/TBD | Not started | - |
