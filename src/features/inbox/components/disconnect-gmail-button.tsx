@@ -11,9 +11,9 @@ export function DisconnectGmailButton() {
     <button
       onClick={() => startTransition(() => { void disconnectGmail() })}
       disabled={isPending}
-      className="inline-flex items-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+      className="inline-flex items-center rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {isPending ? 'Disconnecting...' : 'Disconnect'}
+      {isPending ? 'Disconnecting…' : 'Disconnect'}
     </button>
   )
 }
