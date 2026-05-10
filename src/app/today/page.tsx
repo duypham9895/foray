@@ -6,10 +6,12 @@ import { AppShell } from '@/components/app-shell'
 import { PipelineStrip } from '@/components/pipeline-strip'
 import { requireUser } from '@/core/auth/session'
 import { DecisionsCard } from '@/features/today/components/decisions-card'
+import { FollowUpsCard } from '@/features/today/components/follow-ups-card'
 import { InterviewsCard } from '@/features/today/components/interviews-card'
 import { QuietCard } from '@/features/today/components/quiet-card'
 import {
   findOfferForays,
+  findOverdueFollowUps,
   findRecent24hActivity,
   findReviewQueueTopN,
   findStaleForays,
@@ -30,7 +32,7 @@ export default async function TodayPage() {
   const userId = userResult.value.id
   const locale = await getLocale()
 
-  const [staleResult, offerResult, reviewResult, interviewsResult, countsResult, recentResult, weekResult] =
+  const [staleResult, offerResult, reviewResult, interviewsResult, countsResult, recentResult, weekResult, followUpsResult] =
     await Promise.all([
       findStaleForays(userId),
       findOfferForays(userId),
@@ -39,6 +41,7 @@ export default async function TodayPage() {
       getPipelineCounts(userId),
       findRecent24hActivity(userId),
       findThisWeekCounts(userId),
+      findOverdueFollowUps(userId),
     ])
 
   const stale = staleResult.isOk() ? staleResult.value : []
@@ -48,6 +51,7 @@ export default async function TodayPage() {
   const counts = countsResult.isOk() ? countsResult.value : null
   const recent = recentResult.isOk() ? recentResult.value : { emails: [], activeApplications: [] }
   const weekCounts = weekResult.isOk() ? weekResult.value : null
+  const followUps = followUpsResult.isOk() ? followUpsResult.value : []
   const t = await getTranslations('today')
 
   const totalForays = counts
@@ -73,6 +77,7 @@ export default async function TodayPage() {
           <DecisionsCard offers={offers} reviewQueue={review} />
           <InterviewsCard interviews={interviews} />
           <QuietCard forays={stale} />
+          <FollowUpsCard followUps={followUps} />
 
           {(recent.emails.length > 0 || recent.activeApplications.length > 0) && (
             <section className="rounded-lg border bg-card p-5">

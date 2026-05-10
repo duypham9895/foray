@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/status-badge'
 
 import type { ApplicationDetail } from '../queries'
 import { ClassifierBreadcrumb } from './classifier-breadcrumb'
+import { FollowUpEditor } from './follow-up-editor'
 import { NotesEditor } from './notes-editor'
 import { StageEditor } from './stage-editor'
 import { StatusDropdown } from './status-dropdown'
@@ -51,6 +52,14 @@ export function ApplicationDetail({
       <section className="space-y-3">
         <h2 className="text-xl font-medium">{t('stages')}</h2>
         <StageEditor applicationId={application.id} stages={stages} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Follow-up</h2>
+        <FollowUpEditor
+          applicationId={application.id}
+          followUpAt={application.followUpAt}
+        />
       </section>
 
       <section className="space-y-3">
