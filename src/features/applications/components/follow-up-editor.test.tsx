@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the actions module — each action is a no-op that returns initialOk.
 vi.mock('../actions', () => ({
-  setFollowUpAction: vi.fn(async (_appId: number, _prev: unknown, _fd: FormData) => ({
+  setFollowUpAction: vi.fn(async () => ({
     ok: true,
   })),
-  clearFollowUpAction: vi.fn(async (_appId: number, _prev: unknown) => ({
+  clearFollowUpAction: vi.fn(async () => ({
     ok: true,
   })),
 }))

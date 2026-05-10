@@ -15,6 +15,8 @@ import { SyncNowButton } from '@/features/inbox/components/sync-now-button'
 import { TokenHealthBanner } from '@/features/inbox/components/token-health-banner'
 import { KeyboardShortcutsSection } from '@/features/shortcuts/keyboard-shortcuts-section'
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
 function getBookmarkletUrl(): string | null {
   try {
     const filePath = path.join(process.cwd(), 'public', 'foray-bookmarklet-url.json')
@@ -42,6 +44,9 @@ export default async function SettingsPage() {
 
   const isConnected = !!user?.gmailRefreshTokenEncrypted
   const bookmarkletUrl = getBookmarkletUrl()
+  const daysSinceSync = user?.gmailLastSyncAt
+    ? Math.floor((new Date().getTime() - user.gmailLastSyncAt.getTime()) / MS_PER_DAY)
+    : null
 
   return (
     <AppShell>
@@ -60,7 +65,7 @@ export default async function SettingsPage() {
             </div>
 
             <div className="mt-4">
-              <TokenHealthBanner gmailLastSyncAt={user?.gmailLastSyncAt ?? null} />
+              <TokenHealthBanner daysSinceSync={daysSinceSync} />
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">

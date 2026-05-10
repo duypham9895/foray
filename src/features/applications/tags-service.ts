@@ -130,6 +130,8 @@ export async function removeTag(
 
 import type { ApplicationListItem } from './queries'
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
 export async function findApplicationsByTag(
   userId: UserId,
   tag: string,
@@ -138,6 +140,7 @@ export async function findApplicationsByTag(
   if (!cleaned) return err(errors.validation([{ code: 'custom', path: ['tag'], message: 'Tag filter required' }]))
 
   return withRls(userId, async (tx) => {
+    const now = Date.now()
     const rows = await tx.application.findMany({
       where: {
         userId: Number(userId),
@@ -156,6 +159,7 @@ export async function findApplicationsByTag(
       canonicalStatus: r.canonicalStatus,
       currentStage: r.currentStage,
       lastActivityAt: r.lastActivityAt,
+      daysQuiet: Math.floor((now - r.lastActivityAt.getTime()) / MS_PER_DAY),
       appliedAt: r.appliedAt,
       archivedAt: r.archivedAt,
     }))

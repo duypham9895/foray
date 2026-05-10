@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/purity */
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 

@@ -14,7 +14,6 @@ import { createApplication } from './service'
 import { setFollowUp, clearFollowUp } from './follow-up-service'
 
 const ALICE = UserId(1)
-const BOB = UserId(2)
 const SEED_ROLE_TITLE = 'Alice Test Role'
 const SEED_COMPANY_NAME = 'Alice Corp'
 

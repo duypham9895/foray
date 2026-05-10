@@ -329,7 +329,6 @@ export async function updateTagsAction(
 
   // Fetch current tags to compute diff
   const { withRls } = await import('@/core/db/with-rls')
-  const { ApplicationId: AppId } = await import('@/core/types/ids')
 
   const result = await withRls(userId, async (tx) => {
     const appId = Number(applicationId)
@@ -412,6 +411,8 @@ export async function clearFollowUpAction(
   applicationId: number,
   _prev: ActionState,
 ): Promise<ActionState> {
+  void _prev
+
   const userResult = await requireUser()
   if (userResult.isErr()) return authError()
   const userId = userResult.value.id

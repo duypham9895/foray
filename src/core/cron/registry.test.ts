@@ -12,7 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // --- Mocks ---
 
 const mockStop = vi.fn()
-const mockSchedule = vi.fn((_schedule: string, _handler: (...args: unknown[]) => Promise<void>) => ({
+const mockSchedule = vi.fn((schedule: string, handler: (...args: unknown[]) => Promise<void>) => ({
+  schedule,
+  handler,
   stop: mockStop,
 }))
 
