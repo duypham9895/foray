@@ -46,14 +46,21 @@ export function UndoToast({
   }, [onUndo])
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-4 rounded-lg bg-foreground px-4 py-3 text-sm text-background shadow-lg">
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="fixed bottom-4 right-4 z-50 flex items-center gap-4 rounded-lg bg-foreground px-4 py-3 text-sm text-background shadow-lg"
+    >
       <span>{message}</span>
-      <span className="tabular-nums text-background/60">{remaining}s</span>
+      <span className="tabular-nums text-background/60" aria-label={`${remaining} seconds remaining`}>
+        {remaining}s
+      </span>
       <Button
         variant="secondary"
         size="sm"
         onClick={handleUndo}
         className="font-semibold"
+        aria-label={`Undo: ${message}`}
       >
         Undo
       </Button>
