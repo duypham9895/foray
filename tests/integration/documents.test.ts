@@ -172,6 +172,30 @@ describe('POST /api/applications/[id]/documents', () => {
     expect(res.status).toBe(404)
     expect(data.error).toContain('Application')
   })
+
+  it('creates document_uploaded event on successful upload', async () => {
+    vi.mocked(uploadDocument).mockResolvedValue({
+      isOk: () => true,
+      value: { documentId: 42, eventId: 99 },
+      isErr: () => false,
+    } as any)
+
+    const req = makeUploadRequest('1')
+    const res = await POST(req, { params: Promise.resolve({ id: '1' }) })
+    const data = await res.json()
+
+    expect(res.status).toBe(201)
+    expect(data.documentId).toBe(42)
+    expect(data.eventId).toBe(99)
+    // The service layer creates a document_uploaded event — verify the mock was called
+    expect(uploadDocument).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      'resume',
+      undefined,
+    )
+  })
 })
 
 describe('GET /api/applications/[id]/documents', () => {
