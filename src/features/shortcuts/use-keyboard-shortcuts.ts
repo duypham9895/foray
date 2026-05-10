@@ -9,9 +9,7 @@ import { useCallback, useEffect, useRef } from 'react'
  */
 function isInTextInput(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false
-  if (['INPUT', 'TEXTAREA'].includes(el.tagName)) return true
-  if (el.isContentEditable) return true
-  return false
+  return el.closest('input, textarea, [contenteditable="true"]') !== null
 }
 
 /**

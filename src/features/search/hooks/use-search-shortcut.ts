@@ -26,7 +26,5 @@ export function useSearchShortcut(
 }
 
 function isInTextInput(el: HTMLElement): boolean {
-  if (['INPUT', 'TEXTAREA'].includes(el.tagName)) return true
-  if (el.isContentEditable) return true
-  return false
+  return el.closest('input, textarea, [contenteditable="true"]') !== null
 }
