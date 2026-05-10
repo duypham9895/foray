@@ -70,6 +70,8 @@ export async function fullTextSearch(
             { roleTitle: { contains: q, mode: 'insensitive' } },
             { notes: { contains: q, mode: 'insensitive' } },
             { searchText: { contains: q, mode: 'insensitive' } },
+            { company: { name: { contains: q, mode: 'insensitive' } } },
+            { tags: { has: q.toLowerCase() } },
           ],
         },
         select: {

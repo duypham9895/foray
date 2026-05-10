@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/app-shell'
 import { requireUser } from '@/core/auth/session'
 import { fullTextSearch } from '@/core/queries/search'
+import { HighlightText } from '@/features/search/components/highlight-text'
 import { UserId } from '@/core/types/ids'
 
 export default async function SearchPage({
@@ -74,9 +75,9 @@ export default async function SearchPage({
                         className="flex items-center justify-between px-4 py-3 transition hover:bg-accent"
                       >
                         <div>
-                          <span className="font-medium">{app.roleTitle}</span>
+                          <span className="font-medium"><HighlightText text={app.roleTitle} query={query} /></span>
                           <span className="ml-2 text-sm text-muted-foreground">
-                            at {app.companyName}
+                            at <HighlightText text={app.companyName} query={query} />
                           </span>
                         </div>
                         <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs capitalize">
@@ -110,7 +111,7 @@ export default async function SearchPage({
                         className="flex items-center justify-between px-4 py-3 transition hover:bg-accent"
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{email.subject}</p>
+                          <p className="truncate font-medium"><HighlightText text={email.subject} query={query} /></p>
                           <p className="text-sm text-muted-foreground">
                             from {email.from}
                           </p>
@@ -142,7 +143,7 @@ export default async function SearchPage({
                         className="flex items-center justify-between px-4 py-3 transition hover:bg-accent"
                       >
                         <div>
-                          <span className="font-medium">{stage.name}</span>
+                          <span className="font-medium"><HighlightText text={stage.name} query={query} /></span>
                           <span className="ml-2 text-sm text-muted-foreground">
                             in {stage.applicationRoleTitle}
                           </span>
