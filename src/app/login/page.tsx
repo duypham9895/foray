@@ -26,7 +26,7 @@ export default async function LoginPage() {
             <h2 className="text-xl font-medium">{t('title')}</h2>
             <p className="text-sm text-muted-foreground">
               {t.rich('passwordHint', {
-                file: (chunks) => (
+                code: (chunks) => (
                   <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
                     {chunks}
                   </code>

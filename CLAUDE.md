@@ -211,7 +211,43 @@ Since RTK caches intelligently:
 
 ---
 
-## 10. When in doubt
+## 10. Automated hooks (`.claude/hooks/`)
+
+The project ships hooks that enforce rules in this CLAUDE.md automatically. They fire on every `Bash` / `Write` / `Edit` tool call. See `docs/harness-learnings.md` for the design rationale.
+
+| Hook | Triggers when | Enforces |
+|---|---|---|
+| `block-credential-writes` | `Write`/`Edit` to `.env*`, `*.pem`, `*.key`, `~/.ssh/`, `data/classifier-log.jsonl` | §7 |
+| `pre-commit-security` | `git commit ...` | §7 — scans staged files for hardcoded secrets (Anthropic, OpenAI, AWS, GCP, GitHub keys) |
+| `validate-branch-name` | `git checkout -b X` / `git switch -c X` | §5 — `^(feat\|fix\|chore\|docs)/[a-z0-9._-]+$` |
+| `validate-commit-msg` | `git commit -m ...` | §6 — ≤72 chars, lowercase first, no trailing period, no AI `Co-Authored-By` |
+| `block-protected-push` | `git push ...` | Block direct push to `main` and any `--force` push |
+| `block-dangerous-bash` | Any `Bash` | Block `sudo`, `curl \| sh`, `git reset --hard`, `git clean -f`, `rm -rf` outside allowlist, `pnpm db:reset`, `prisma migrate reset` |
+| `pre-push-tests` | `git push ...` | Run `pnpm test:run` (90s timeout). Block on failure. |
+| `post-write-lint` | After `Write`/`Edit` of `*.ts`, `*.tsx`, `*.js`, `*.jsx` | Run `npx eslint --max-warnings 0` on the file |
+
+### Escape hatches (when a hook is wrong, fix the hook — don't bypass casually)
+
+| Variable / flag | Effect |
+|---|---|
+| `DEVKIT_PREPUSH_SKIP=1` | Skip `pre-push-tests` for this push |
+| `touch .claude/.devkit/prepush-skip` | Persistent skip of `pre-push-tests` for this project |
+| `FORAY_ALLOW_DB_RESET=1` | Allow one `pnpm db:reset` / `prisma migrate reset` |
+| `FORAY_ALLOW_COAUTHOR=1` | Allow `Co-Authored-By: Claude` in commit (use only when user explicitly asks) |
+| `DEVKIT_STATUSLINE_ANIMATE=0` | Disable statusline animation |
+
+### Diagnostics
+
+```bash
+.claude/bin/devkit-doctor.sh        # full health check + last 20 hook decisions
+tail .claude/.devkit/hook-log.jsonl  # raw audit trail (capped at 500 entries)
+```
+
+The statusline shows live `[project] branch · model · ctx % · sess % · week %` — fall-back budgets configurable in `.claude/devkit-plan.json`.
+
+---
+
+## 11. When in doubt
 
 - Read [PRINCIPLES.md](./PRINCIPLES.md) for "how should this be shaped" (architecture, error handling, security)
 - Read [AGENTS.md](./AGENTS.md) for "where things live"

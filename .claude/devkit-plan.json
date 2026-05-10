@@ -1,0 +1,10 @@
+{
+  "_comment": "Token budgets for the foray statusline (sess/week %). Approximations — Anthropic does not publish exact limits. Adjust if numbers drift from /usage.",
+  "_plans": {
+    "max_5x":  { "session_tokens":  44000000, "weekly_tokens":  880000000 },
+    "max_20x": { "session_tokens": 176000000, "weekly_tokens": 3520000000 },
+    "team":    { "session_tokens":  22000000, "weekly_tokens":  440000000 }
+  },
+  "session_tokens": 44000000,
+  "weekly_tokens": 880000000
+}

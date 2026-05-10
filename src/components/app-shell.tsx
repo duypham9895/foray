@@ -4,7 +4,13 @@ import { logout } from '@/features/auth/actions'
 
 import { NavLinks } from './nav-links'
 
-export async function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({
+  children,
+  aside,
+}: {
+  children: React.ReactNode
+  aside?: React.ReactNode
+}) {
   const t = await getTranslations('nav')
 
   return (
@@ -16,6 +22,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </span>
           <NavLinks />
         </div>
+
+        {aside ? (
+          <div className="hidden border-t border-border pt-6 lg:block">{aside}</div>
+        ) : null}
 
         <form action={logout} className="lg:mt-auto">
           <button
