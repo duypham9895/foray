@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/ui/button'
 
@@ -18,6 +18,7 @@ export function UndoToast({
   timeoutMs = 10_000,
 }: UndoToastProps) {
   const [remaining, setRemaining] = useState(Math.ceil(timeoutMs / 1000))
+  const hasTimedOut = useRef(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -34,7 +35,8 @@ export function UndoToast({
   }, [])
 
   useEffect(() => {
-    if (remaining <= 0) {
+    if (remaining <= 0 && !hasTimedOut.current) {
+      hasTimedOut.current = true
       onTimeout()
     }
   }, [remaining, onTimeout])
