@@ -82,7 +82,7 @@ export default async function TodayPage() {
           {(recent.emails.length > 0 || recent.activeApplications.length > 0) && (
             <section className="rounded-lg border bg-card p-5">
               <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-                {t('recentActivity', { defaultValue: 'Last 24 hours' })}
+                {t('recentActivity')}
               </h2>
               <ul className="space-y-2 text-sm">
                 {recent.emails.map((email) => (
@@ -106,7 +106,7 @@ export default async function TodayPage() {
           {weekCounts && (
             <section className="rounded-lg border bg-card p-5">
               <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-                {t('thisWeek', { defaultValue: 'This week' })}
+                {t('thisWeek')}
               </h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {Object.entries(weekCounts.thisWeek).map(([status, count]) => {

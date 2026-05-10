@@ -1,20 +1,5 @@
 // Chronological timeline merging Stages + Events + Emails (APP-02). Server
 // Component — pure rendering, no client interactivity.
-//
-// Auto-update Event styling (DESIGN.md exact spec, locked in CONTEXT §"Area 3"):
-//   - Tinted background row: bg-cyan-50 (light), dark:bg-cyan-950/30 (dark)
-//   - 2px left rail: border-l-2 border-cyan-600
-//   - Label "Auto-updated from email" — text-sm text-stone-500 — NO icon
-//   - Conditional "View source email" link when data.emailId is non-null
-//     (Phase 2 won't exercise this branch; emailId is always null on real data
-//     until Phase 4 wires Gmail. The branch must exist in code so Phase 4 can
-//     wire /inbox/[emailId] without re-editing this file.)
-//
-// Undone events render with line-through + muted text per CONTEXT §"Area 3"
-// reference to status_undone semantics from Plan 02.
-//
-// Per DESIGN.md: rejection rendered in muted gray (NOT red), no decorative
-// icons anywhere, calm tone of voice.
 
 import { format } from 'date-fns'
 
@@ -103,11 +88,11 @@ export function Timeline({
   ].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())
 
   if (rows.length === 0) {
-    return <p className="text-sm text-stone-500">No activity yet.</p>
+    return <p className="text-sm text-muted-foreground">No activity yet.</p>
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-1">
       {rows.map((row) => (
         <li key={row.key}>
           {row.kind === 'event' ? renderEventRow(row.event) : null}
@@ -122,15 +107,7 @@ export function Timeline({
 function renderEventRow(event: Event) {
   const isAuto = event.type === 'auto_status_changed' && event.undoneAt === null
   const isUndone = event.undoneAt !== null
-  const baseClass = 'pl-3 py-2 rounded'
-  const autoClass = isAuto
-    ? 'bg-cyan-50 dark:bg-cyan-950/30 border-l-2 border-cyan-600'
-    : ''
-  const undoneClass = isUndone ? 'text-stone-400 line-through' : ''
 
-  // Conditional "View source email" link — Phase 2 path always renders nothing
-  // because no real data carries emailId yet (Phase 4 wires Gmail). The branch
-  // exists so Phase 4 can flip /inbox/[emailId] live without re-editing this file.
   let sourceEmailHref: string | null = null
   if (event.type === 'auto_status_changed') {
     const parsed = eventDataSchemaFor('auto_status_changed').safeParse(event.data)
@@ -143,20 +120,28 @@ function renderEventRow(event: Event) {
   }
 
   return (
-    <div className={`${baseClass} ${autoClass} ${undoneClass}`.trim()}>
-      <p className="text-base">{describeEvent(event)}</p>
-      <p className="text-xs text-stone-500 mt-1">
+    <div
+      className={[
+        'rounded-md px-3 py-2.5',
+        isAuto ? 'border-l-2 border-primary/50 bg-accent/50' : '',
+        isUndone ? 'text-muted-foreground/50 line-through' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <p className="text-sm text-foreground">{describeEvent(event)}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">
         {format(event.occurredAt, 'MMM d, yyyy · HH:mm')}
       </p>
       {isAuto ? (
-        <p className="text-sm text-stone-500 mt-1">
+        <p className="mt-1 text-xs text-muted-foreground">
           Auto-updated from email
           {sourceEmailHref ? (
             <>
               {' · '}
               <a
                 href={sourceEmailHref}
-                className="text-sm text-stone-500 hover:text-stone-700 underline"
+                className="underline underline-offset-4 hover:text-foreground transition"
               >
                 View source email
               </a>
@@ -171,12 +156,12 @@ function renderEventRow(event: Event) {
 function renderStageRow(stage: Stage) {
   const outcome = outcomeLabel(stage.outcome)
   return (
-    <div className="pl-3 py-2 rounded">
-      <p className="text-base">
+    <div className="rounded-md px-3 py-2.5">
+      <p className="text-sm text-foreground">
         Stage: {stage.name}
-        {outcome ? <span className="text-sm text-stone-500"> ({outcome})</span> : null}
+        {outcome ? <span className="text-muted-foreground"> ({outcome})</span> : null}
       </p>
-      <p className="text-xs text-stone-500 mt-1">
+      <p className="mt-0.5 text-xs text-muted-foreground">
         {format(stageOccurredAt(stage), 'MMM d, yyyy · HH:mm')}
       </p>
     </div>
@@ -185,11 +170,11 @@ function renderStageRow(stage: Stage) {
 
 function renderEmailRow(email: Email) {
   return (
-    <div className="pl-3 py-2 rounded">
-      <p className="text-base">
+    <div className="rounded-md px-3 py-2.5">
+      <p className="text-sm text-foreground">
         Email from {email.fromDomain}: {email.subject}
       </p>
-      <p className="text-xs text-stone-500 mt-1">
+      <p className="mt-0.5 text-xs text-muted-foreground">
         {format(email.receivedAt, 'MMM d, yyyy · HH:mm')}
       </p>
     </div>

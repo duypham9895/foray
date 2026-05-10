@@ -11,6 +11,7 @@ const links = [
   { href: '/applications', key: 'forays' as const },
   { href: '/inbox', key: 'inbox' as const },
   { href: '/settings', key: 'settings' as const },
+  { href: '/guide', key: 'guide' as const },
 ]
 
 export function NavLinks({ overdueCount = 0 }: { overdueCount?: number }) {

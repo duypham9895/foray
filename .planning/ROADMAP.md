@@ -77,10 +77,11 @@ Plans:
   3. Owner can delete a document; file removed from disk and DB row removed in one transaction
   4. Document list in application detail view shows kind, filename, size, and upload date
   5. Upload validates MIME type via magic bytes (not extension), rejects files over 10MB, and creates a `document_uploaded` event in the timeline
-**Plans:** 2 plans
+**Plans:** 3 plans
 Plans:
-- [ ] 12-01-PLAN.md — Document Backend: Schema + Service + API Routes
-- [ ] 12-02-PLAN.md — Document UI: Components + Application Integration
+- [ ] 12-01-PLAN.md — Document Schema + Service Layer (Wave 1)
+- [ ] 12-02-PLAN.md — Document API Routes + Integration Tests (Wave 1)
+- [ ] 12-03-PLAN.md — Document UI Components + Wiring (Wave 2)
 **UI hint**: yes
 
 ### Phase 13: Chrome MV3 Extension
@@ -152,8 +153,8 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16
 | 8. Tags + Search | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 9. UX Polish + Keyboard Shortcuts | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 10. E2E Tests + Acceptance | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
-| 11. Reminders + Cron Infrastructure | v0.3 | 0/4 | Complete    | 2026-05-10 |
-| 12. Document Storage | v0.3 | 0/TBD | Not started | - |
+| 11. Reminders + Cron Infrastructure | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
+| 12. Document Storage | v0.3 | 0/3 | Not started | - |
 | 13. Chrome MV3 Extension | v0.3 | 0/TBD | Not started | - |
 | 14. Recruiter Entity | v0.3 | 0/TBD | Not started | - |
 | 15. Analytics Dashboard | v0.3 | 0/TBD | Not started | - |

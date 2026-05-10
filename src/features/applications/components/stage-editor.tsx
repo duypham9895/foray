@@ -1,14 +1,5 @@
 'use client'
 
-// Stage editor island (APP-04). Per CONTEXT §"Specifics" — inline-edit on
-// stage name (click to edit, blur saves), three small "Mark passed/failed/no
-// response" buttons that submit completeStageAction, and an "Add stage"
-// affordance that toggles a small inline form.
-//
-// Each sub-form gets its own useActionState wrapper for independent submission
-// state. Per CLAUDE.md §1.2 the per-row sub-forms intentionally duplicate the
-// useActionState scaffolding — extraction would obscure the contract.
-
 import { useActionState, useRef, useState } from 'react'
 import { format } from 'date-fns'
 
@@ -25,6 +16,9 @@ import {
 
 const initial: ActionState = { ok: true }
 
+const inputClass =
+  'w-full rounded-md border border-input bg-card px-2 py-1.5 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20'
+
 export function StageEditor({
   applicationId,
   stages,
@@ -37,13 +31,13 @@ export function StageEditor({
   return (
     <div className="space-y-3">
       {stages.length === 0 ? (
-        <p className="text-sm text-stone-500">No stages yet.</p>
+        <p className="text-sm text-muted-foreground">No stages yet.</p>
       ) : (
         <ul className="space-y-2">
           {stages.map((stage) => (
             <li
               key={stage.id}
-              className="rounded border border-stone-200 dark:border-stone-800 px-4 py-3"
+              className="rounded-md border border-border bg-card/40 px-4 py-3"
             >
               <StageRow applicationId={applicationId} stage={stage} />
             </li>
@@ -52,15 +46,12 @@ export function StageEditor({
       )}
 
       {showAdd ? (
-        <AddStageForm
-          applicationId={applicationId}
-          onDone={() => setShowAdd(false)}
-        />
+        <AddStageForm applicationId={applicationId} onDone={() => setShowAdd(false)} />
       ) : (
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="text-sm underline text-stone-500 hover:text-stone-700"
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition"
         >
           Add stage
         </button>
@@ -94,9 +85,6 @@ function StageRow({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         {editing ? (
-          // Inline edit per CONTEXT §"Specifics" → "Inline stage edit": blur or
-          // Enter saves; Escape cancels without writing. Mirrors the
-          // notes-editor.tsx requestSubmit() pattern.
           <form
             ref={formRef}
             action={(fd: FormData) => {
@@ -114,14 +102,14 @@ function StageRow({
               onKeyDown={(e) => {
                 if (e.key === 'Escape') setEditing(false)
               }}
-              className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-2 py-1 text-base"
+              className={inputClass}
             />
           </form>
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-base text-left flex-1 hover:underline"
+            className="flex-1 text-left text-sm text-foreground hover:underline underline-offset-4"
           >
             {stage.name}
           </button>
@@ -133,28 +121,16 @@ function StageRow({
         ) : null}
       </div>
 
-      <div className="text-xs text-stone-500">
-        {stage.scheduledAt
-          ? `Scheduled ${format(stage.scheduledAt, 'MMM d, yyyy')}`
-          : null}
+      <div className="text-xs text-muted-foreground">
+        {stage.scheduledAt ? `Scheduled ${format(stage.scheduledAt, 'MMM d, yyyy')}` : null}
         {stage.scheduledAt && stage.completedAt ? ' · ' : ''}
-        {stage.completedAt
-          ? `Completed ${format(stage.completedAt, 'MMM d, yyyy')}`
-          : null}
+        {stage.completedAt ? `Completed ${format(stage.completedAt, 'MMM d, yyyy')}` : null}
       </div>
 
       {!stage.completedAt ? (
         <div className="flex flex-wrap gap-2">
-          <CompleteButton
-            label="Mark passed"
-            outcome="passed"
-            formAction={completeFormAction}
-          />
-          <CompleteButton
-            label="Mark failed"
-            outcome="failed"
-            formAction={completeFormAction}
-          />
+          <CompleteButton label="Mark passed" outcome="passed" formAction={completeFormAction} />
+          <CompleteButton label="Mark failed" outcome="failed" formAction={completeFormAction} />
           <CompleteButton
             label="Mark no response"
             outcome="no_response"
@@ -164,12 +140,12 @@ function StageRow({
       ) : null}
 
       {updateError ? (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        <p role="alert" className="text-xs text-destructive">
           {updateError}
         </p>
       ) : null}
       {completeError ? (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        <p role="alert" className="text-xs text-destructive">
           {completeError}
         </p>
       ) : null}
@@ -191,7 +167,7 @@ function CompleteButton({
       <input type="hidden" name="outcome" value={outcome} />
       <button
         type="submit"
-        className="rounded border border-stone-300 dark:border-stone-700 px-3 py-1 text-sm hover:bg-stone-100 dark:hover:bg-stone-900"
+        className="rounded-md border border-border px-3 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
       >
         {label}
       </button>
@@ -219,10 +195,10 @@ function AddStageForm({
         formAction(fd)
         onDone()
       }}
-      className="rounded border border-stone-200 dark:border-stone-800 px-4 py-3 space-y-2"
+      className="space-y-3 rounded-md border border-border bg-card/40 px-4 py-3"
     >
-      <div className="space-y-1">
-        <label htmlFor="stage-name" className="block text-sm">
+      <div className="space-y-1.5">
+        <label htmlFor="stage-name" className="block text-sm text-muted-foreground">
           Stage name
         </label>
         <input
@@ -230,38 +206,39 @@ function AddStageForm({
           name="name"
           required
           autoFocus
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-2 py-1 text-base"
+          className={inputClass}
         />
         {nameFieldError ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+          <p role="alert" className="text-xs text-destructive">
             {nameFieldError}
           </p>
         ) : null}
       </div>
-      <div className="space-y-1">
-        <label htmlFor="stage-scheduled" className="block text-sm">
-          Scheduled <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="stage-scheduled" className="block text-sm text-muted-foreground">
+          Scheduled{' '}
+          <span className="text-muted-foreground/60">(optional)</span>
         </label>
         <input
           id="stage-scheduled"
           name="scheduledAt"
           type="date"
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-2 py-1 text-base"
+          className={inputClass}
         />
       </div>
       {error ? (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
       ) : null}
-      <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>
+      <div className="flex items-center gap-3">
+        <Button type="submit" disabled={pending} size="sm">
           {pending ? 'Adding…' : 'Add'}
         </Button>
         <button
           type="button"
           onClick={onDone}
-          className="text-sm text-stone-500 hover:text-stone-700 underline"
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition"
         >
           Cancel
         </button>

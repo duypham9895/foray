@@ -1,11 +1,5 @@
 'use client'
 
-// Notes editor island (APP-04). Autosave-on-blur via form.requestSubmit() —
-// matches CONTEXT §"Specifics" → "Notes field". The service is a no-op on
-// blank-to-blank (notes-service.ts), so idle blurs don't write rows.
-//
-// useActionState gives us the pending flag for the small "Saving…/Saved" hint.
-
 import { useActionState, useRef, useState } from 'react'
 
 import { updateNotesAction, type ActionState } from '../actions'
@@ -25,6 +19,7 @@ export function NotesEditor({
   )
   const formRef = useRef<HTMLFormElement>(null)
   const [touched, setTouched] = useState(false)
+  const [savedOnce, setSavedOnce] = useState(false)
 
   const error = !state.ok ? state.formError : undefined
 
@@ -32,6 +27,7 @@ export function NotesEditor({
     if (!touched) return
     formRef.current?.requestSubmit()
     setTouched(false)
+    setSavedOnce(true)
   }
 
   return (
@@ -44,13 +40,15 @@ export function NotesEditor({
         placeholder="Add a note about this foray…"
         onChange={() => setTouched(true)}
         onBlur={handleBlur}
-        className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+        className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground/50"
       />
-      <div className="text-xs text-stone-500">
-        {pending ? 'Saving…' : 'Saved'}
-      </div>
+      {(pending || savedOnce) ? (
+        <p className="text-xs text-muted-foreground/60">
+          {pending ? 'Saving…' : 'Saved'}
+        </p>
+      ) : null}
       {error ? (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
       ) : null}
