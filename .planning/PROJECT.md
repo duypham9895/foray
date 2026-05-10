@@ -8,6 +8,18 @@
 
 **One screen tells the owner what's actually happening today** — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance and without LLM hallucination changing the record without consent.
 
+## Current Milestone: v0.3 Full
+
+**Goal:** Transform foray from a capture-and-classify tool into a complete job-search command center with browser extension, document management, calendar integration, and analytics.
+
+**Target features:**
+- Chrome MV3 Extension — one-click capture directly from job posting pages
+- Document Storage — attach resumes, cover letters, and artifacts to forays
+- Recruiter Entity — structured recruiter records linked to forays
+- Google Calendar Integration — auto-sync interview events
+- Analytics Dashboard — funnel visualization, response rates, time-to-offer metrics
+- Reminders + Polish — follow-up nudges, notification system, final UX polish
+
 ## Requirements
 
 ### Validated
@@ -74,23 +86,19 @@
 
 ### Active
 
-<!-- Next milestone requirements will go here after /gsd-new-milestone -->
+<!-- Current milestone: v0.3 Full -->
 
-(None — run `/gsd-new-milestone` to define next milestone)
+- [ ] Chrome MV3 Extension — one-click capture from job posting pages
+- [ ] Document Storage — attach resumes, cover letters, artifacts to forays
+- [ ] Recruiter Entity — structured recruiter records linked to forays
+- [ ] Google Calendar Integration — auto-sync interview events
+- [ ] Analytics Dashboard — funnel visualization, response rates, time-to-offer metrics
+- [ ] Reminders + Polish — follow-up nudges, notification system, final UX polish
 
 ### Out of Scope
 
 <!-- Re-evaluated after each milestone. -->
 
-- **Bookmarklet** — Manual form is enough; may be added in Standard milestone
-- **"Today" dashboard** — `/applications` list serves the daily glance; may be added in Standard milestone
-- **Native Chrome MV3 extension** — Full milestone; bookmarklet + manual form cover current needs
-- **Document upload / storage** — Full milestone; resume PDFs live in Drive for now
-- **Recruiter entity UI** — Full milestone; recruiter is a free-text field currently
-- **Google Calendar sync** — Full milestone; calendar invites stay in Gmail/Calendar manually
-- **Analytics view** — Full milestone; no funnel/cohort metrics until ≥30 forays of real data
-- **Follow-up reminders** — Full milestone; manual nudge from `lastActivityAt` is enough
-- **Tags + cross-record search** — Standard milestone; canonicalStatus filter is enough
 - **Multi-user / SaaS deployment** — Multi-tenant patterns are baked in but only single-user is shipped
 
 ## Context
@@ -134,6 +142,7 @@
 | Multi-tenant scaffolding for single-user (ADR-0002) | Cheap to bake in early; expensive to retrofit | ✓ Good — RLS + tenantDb active |
 | Local-first (ADR-0003) | Privacy + zero cost + no vendor lock | ✓ Good |
 | GSD planning + autonomous execution | Bootstrapping `.planning/` for subsequent milestones | ✓ Good — 5 phases autonomously executed |
+| v0.2 Standard shipped (phases 6-10) | Bookmarklet, Today dashboard, Tags/Search, UX polish, E2E | ✓ Good — 371 tests, 15 plans |
 
 ## Evolution
 
@@ -146,4 +155,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 after v0.1 Lean milestone*
+*Last updated: 2026-05-10 after v0.2 Standard milestone*

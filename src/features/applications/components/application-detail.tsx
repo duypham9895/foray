@@ -7,17 +7,27 @@ import { format } from 'date-fns'
 import { useTranslations } from 'next-intl'
 
 import { StatusBadge } from '@/components/status-badge'
+import { DocumentList } from '@/features/documents/components/document-list'
+import { UploadForm } from '@/features/documents/components/upload-form'
 
 import type { ApplicationDetail } from '../queries'
 import { ClassifierBreadcrumb } from './classifier-breadcrumb'
+import { FollowUpEditor } from './follow-up-editor'
 import { NotesEditor } from './notes-editor'
 import { StageEditor } from './stage-editor'
 import { StatusDropdown } from './status-dropdown'
+import { TagEditor } from './tag-editor'
 import { Timeline } from './timeline'
 
-export function ApplicationDetail({ detail }: { detail: ApplicationDetail }) {
+export function ApplicationDetail({
+  detail,
+  allTags = [],
+}: {
+  detail: ApplicationDetail
+  allTags?: string[]
+}) {
   const t = useTranslations('forayDetail')
-  const { application, stages, events, emails } = detail
+  const { application, stages, events, emails, documents } = detail
   const company = application.company
 
   return (
@@ -47,10 +57,42 @@ export function ApplicationDetail({ detail }: { detail: ApplicationDetail }) {
       </section>
 
       <section className="space-y-3">
+        <h2 className="text-xl font-medium">Follow-up</h2>
+        <FollowUpEditor
+          applicationId={application.id}
+          followUpAt={application.followUpAt}
+        />
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-xl font-medium">{t('notes')}</h2>
         <NotesEditor
           applicationId={application.id}
           initialNotes={application.notes ?? ''}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Tags</h2>
+        <TagEditor
+          applicationId={application.id}
+          initialTags={application.tags}
+          allTags={allTags}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Documents</h2>
+        <UploadForm applicationId={application.id} />
+        <DocumentList
+          documents={documents.map((d) => ({
+            id: d.id,
+            kind: d.kind,
+            filename: d.filename,
+            mimeType: d.mimeType,
+            sizeBytes: d.sizeBytes,
+            createdAt: d.createdAt,
+          }))}
         />
       </section>
 

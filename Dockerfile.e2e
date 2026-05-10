@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# foray — E2E test image
+# Used by docker-compose.e2e.yml for reproducible Playwright test runs.
+# Includes Playwright browsers + full app build. Expects Postgres via compose.
+# =============================================================================
+
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install Playwright system deps (Chromium needs these on Debian slim)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+    libdrm2 libdbus-1-3 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
+    libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 \
+    libcairo2 libasound2 libwayland-client0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- deps ----
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# ---- build ----
+COPY . .
+RUN pnpm prisma generate
+RUN pnpm build
+
+# ---- playwright browsers ----
+RUN pnpm exec playwright install --with-deps chromium
+
+# ---- run e2e ----
+ENV NODE_ENV=test
+CMD ["pnpm", "exec", "playwright", "test"]

@@ -18,6 +18,7 @@ import type { ApplicationId, UserId } from '@/core/types/ids'
 import type {
   Application,
   CanonicalStatus,
+  Document,
   Email,
   Event,
   Stage,
@@ -31,6 +32,7 @@ export type ApplicationListItem = {
   canonicalStatus: CanonicalStatus
   currentStage: string | null
   lastActivityAt: Date
+  daysQuiet: number
   appliedAt: Date
   archivedAt: Date | null
 }
@@ -42,6 +44,7 @@ export type ApplicationDetail = {
   stages: Stage[]
   events: Event[]
   emails: Email[]
+  documents: Document[]
 }
 
 // URL-driven sort param. Validated at the page boundary via `safeParse` so
@@ -70,6 +73,7 @@ const DEFAULT_HIDDEN_STATUSES: ReadonlySet<CanonicalStatus> = new Set([
   'rejected',
   'withdrawn',
 ])
+const MS_PER_DAY = 1000 * 60 * 60 * 24
 
 /**
  * URL-driven application list. Filters default to excluding rejected +
@@ -79,7 +83,7 @@ const DEFAULT_HIDDEN_STATUSES: ReadonlySet<CanonicalStatus> = new Set([
  */
 export async function findApplicationsForList(
   userId: UserId,
-  opts: { statuses?: ReadonlyArray<CanonicalStatus>; sort?: ListSort } = {},
+  opts: { statuses?: ReadonlyArray<CanonicalStatus>; sort?: ListSort; tag?: string } = {},
 ): Promise<Result<ApplicationListItem[], AppError>> {
   const sort = opts.sort ?? 'lastActivityAt:desc'
   const [sortField, sortDir] = sort.split(':') as [
@@ -88,13 +92,16 @@ export async function findApplicationsForList(
   ]
   const statuses =
     opts.statuses ?? ALL_STATUSES.filter((s) => !DEFAULT_HIDDEN_STATUSES.has(s))
+  const tag = opts.tag?.toLowerCase().trim()
 
   return withRls(userId, async (tx) => {
+    const now = Date.now()
     const rows = await tx.application.findMany({
       where: {
         userId: Number(userId),
         archivedAt: null,
         canonicalStatus: { in: [...statuses] },
+        ...(tag ? { tags: { has: tag } } : {}),
       },
       orderBy: { [sortField]: sortDir },
       include: { company: { select: { id: true, name: true } } },
@@ -107,6 +114,7 @@ export async function findApplicationsForList(
       canonicalStatus: r.canonicalStatus,
       currentStage: r.currentStage,
       lastActivityAt: r.lastActivityAt,
+      daysQuiet: Math.floor((now - r.lastActivityAt.getTime()) / MS_PER_DAY),
       appliedAt: r.appliedAt,
       archivedAt: r.archivedAt,
     }))
@@ -133,12 +141,13 @@ export async function findApplicationDetail(
     })
     if (!application || application.userId !== Number(userId)) return null
 
-    const [stages, events, emails] = await Promise.all([
+    const [stages, events, emails, documents] = await Promise.all([
       tx.stage.findMany({ where: { applicationId: numericId }, orderBy: { order: 'asc' } }),
       tx.event.findMany({ where: { applicationId: numericId }, orderBy: { occurredAt: 'desc' } }),
       tx.email.findMany({ where: { applicationId: numericId }, orderBy: { receivedAt: 'desc' } }),
+      tx.document.findMany({ where: { applicationId: numericId }, orderBy: { createdAt: 'desc' } }),
     ])
-    return { application, stages, events, emails }
+    return { application, stages, events, emails, documents }
   })
 }
 

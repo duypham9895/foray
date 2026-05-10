@@ -1,157 +1,104 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1
-milestone_name: milestone
-status: unknown
-last_updated: "2026-05-10T03:39:29.627Z"
+milestone: v0.3
+milestone_name: Full
+status: executing
+stopped_at: Phase 11 context gathered
+last_updated: "2026-05-10T10:10:35.487Z"
+last_activity: 2026-05-10 -- Phase 13 execution started
 progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 15
-  completed_plans: 3
-  percent: 20
+  total_phases: 6
+  completed_phases: 2
+  total_plans: 9
+  completed_plans: 6
+  percent: 67
 ---
 
-# State: foray (Global Phase Tracking)
+# State: foray (v0.3 Full)
 
-**Version**: 2.0 (Global continuous numbering: phases 1–17+)
+**Version**: 2.0 (Global continuous numbering: phases 1-16)
 **Last updated**: 2026-05-10
 **Mode**: autonomous (auto-advance enabled)
 
 ---
 
-## 🎯 Quick Status
+## Project Reference
 
-| Metric | Value |
-|---|---|
-| **Milestone** | Standard (v0.2) — phases 6–10 |
-| **Current Phase** | 6 of 10 (Bookmarklet + Capture API) |
-| **Phase Status** | ⏳ Starting |
-| **Next Phase** | 7 (Today Dashboard) |
-| **Milestone Progress** | 5/10 complete; Phase 6 starting |
+See: .planning/PROJECT.md (updated 2026-05-10)
 
----
-
-## Milestone Overview
-
-### ✅ Lean Milestone (v0.1) — Phases 1–5 — SHIPPED 2026-05-09
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **1** | Foundation + Auth | ✅ Complete | 2026-05-09 |
-| **2** | Applications Slice | ✅ Complete | 2026-05-09 |
-| **3** | Classifier + Matcher | ✅ Complete | 2026-05-09 |
-| **4** | Gmail Ingestion + Pipeline | ✅ Complete | 2026-05-09 |
-| **5** | Review Queue + Acceptance | ✅ Complete | 2026-05-09 |
-
-### ⏳ Standard Milestone (v0.2) — Phases 6–10
-
-**Goal**: Zero-friction capture from anywhere + daily check-in experience.
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **6** | Bookmarklet + Capture API | ⏳ Pending | — |
-| **7** | Today Dashboard | ⏳ Pending | — |
-| **8** | Tags + Search | ⏳ Pending | — |
-| **9** | UX Polish + Keyboard Shortcuts | ⏳ Pending | — |
-| **10** | E2E Tests + Acceptance | ⏳ Pending | — |
-
-### ⏳ Full Milestone (v0.3) — Phases 11–16
-
-| Phase | Name | Status | Completed |
-|-------|------|--------|-----------|
-| **11** | Chrome MV3 Extension | ⏳ Pending | — |
-| **12** | Document Storage | ⏳ Pending | — |
-| **13** | Recruiter Entity | ⏳ Pending | — |
-| **14** | Google Calendar Integration | ⏳ Pending | — |
-| **15** | Analytics Dashboard | ⏳ Pending | — |
-| **16** | Reminders + Polish | ⏳ Pending | — |
+**Core value:** One screen tells the owner what's actually happening today — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance.
+**Current focus:** Phase 13 — chrome-mv3-extension
 
 ---
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
+Phase: 13 (chrome-mv3-extension) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 13
+Last activity: 2026-05-10 -- Phase 13 execution started
 
-### Phase 6: Bookmarklet + Capture API (Standard-1)
-
-**Objective**: One-click job capture from any webpage — bookmarklet extracts page info, POSTs to `/api/capture`, redirects to prefilled form.
-
-**Dependencies**: Phase 5 complete (Lean milestone shipped)
-
-**Progress**: Not started
-
-**Blocking**: None
-**Next phase after completion**: Phase 7 (Today Dashboard — Standard-2)
+Progress: [░░░░░░░░░░] 0%
 
 ---
 
-## Transition Points
+## Performance Metrics
 
-### Lean → Standard (After Phase 5)
+**Velocity:**
 
-**Trigger**: Phase 5 complete ✅
-**Status**: Transition complete — starting Phase 6
+- Total plans completed: 3 (v0.3)
+- Prior milestone plans: 15 (v0.1) + 15 (v0.2) = 30 total
 
-### Standard → Full (After Phase 10)
+**By Phase:**
 
-**Trigger**: Phase 10 automation completes
-**Verification**: Pre-commit gate + E2E tests passing
-**Auto-advance**: Yes
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 11. Reminders + Cron | TBD | Not started |
+| 12. Document Storage | TBD | Not started |
+| 13. Chrome MV3 Extension | TBD | Not started |
+| 14. Recruiter Entity | TBD | Not started |
+| 15. Analytics Dashboard | TBD | Not started |
+| 16. Google Calendar | TBD | Not started |
 
----
-
-## File Locations
-
-**Authoritative source**: `.planning/PHASE-MANIFEST.md`
-**Lean roadmap** (phases 1–5): `.planning/milestones/v0.1-ROADMAP.md`
-**Phase details**:
-
-- Plans: `.planning/phases/NN-*/NN-0N-PLAN.md`
-- Research: `.planning/phases/NN-*/RESEARCH.md`
-- Requirements: `.planning/phases/NN-*/REQUIREMENTS.md`
+*Updated after each plan completion*
 
 ---
 
-## How to Resume Work
+## Accumulated Context
 
-### From Phase 6 (starting Standard milestone)
+### Decisions
 
-```bash
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-# See what's next
+- [v0.3] Build order: Reminders → Documents → Extension → Recruiters → Analytics → Calendar (research-recommended dependency order)
+- [v0.3] Granularity: coarse (6 natural feature boundaries, each one phase)
+- [v0.3] Phase numbering continues from 10 (phases 11-16)
 
-cat .planning/phases/06-bookmarklet-capture-api/06-01-PLAN.md
+### Pending Todos
 
-# Check phase details
+None yet.
 
-cat .planning/phases/06-bookmarklet-capture-api/RESEARCH.md
-```
+### Blockers/Concerns
 
----
-
-## Key Decisions
-
-- **Global phase numbering** (1–17+, not per-milestone) for clarity in automation
-- **Continuous execution** with auto-advance
-- **Category-based test coverage** (replaces gameable "≥30 tests" target)
-- **RLS via `withRls()` helper** (per ADR-0011, until SaaS flip)
-- **LLM cost as control, not monitoring** (pre-call guard, fail closed at $0.50/day)
-- **Status-regression block** (auto-update refuses interviewing → rejected)
-- **Undo via `reviewedByUser` flag** (idempotency: cron won't re-act on already-triaged email)
+- Chrome extension (Phase 13) has highest friction — WXT framework, MV3 service worker lifecycle, Bearer token auth pattern
+- Google Calendar (Phase 16) requires separate OAuth token from existing Gmail token — must not invalidate Gmail session
+- Document storage introduces first file I/O pattern in the codebase — `data/documents/` path traversal protection critical
 
 ---
 
 ## Session Continuity
 
-**When resuming from idle**:
+Last session: 2026-05-10T07:01:53.485Z
+Stopped at: Phase 11 context gathered
+Resume file: .planning/phases/11-reminders-cron-infrastructure/11-CONTEXT.md
 
-1. Read this file (STATE.md) — always the first step
-2. Check current phase: `.planning/phases/0N-*/0N-0M-PLAN.md`
+**When resuming:**
+
+1. Read this file (STATE.md)
+2. Run `/gsd-plan-phase 11` to plan Reminders + Cron Infrastructure
 3. Verify pre-commit gate: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build`
-4. Continue execution or ask for next task
 
 ---
 
-*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.2 Standard milestone*
+*State file version 2.0 (global continuous numbering) — updated 2026-05-10 for v0.3 Full milestone roadmap creation*

@@ -178,6 +178,7 @@ model Application {
   priority       Int      @default(2)
   tags           String[] @default([])
   notes          String?  @db.Text
+  searchText     String?  @map("search_text") @db.Text // denormalized search corpus
 
   followUpAt DateTime? @map("follow_up_at") // Full milestone
 
@@ -333,7 +334,6 @@ model Document {
   mimeType      String       @map("mime_type")
   storagePath   String       @map("storage_path")
   sizeBytes     Int          @map("size_bytes")
-  version       Int          @default(1)
   notes         String?
 
   createdAt DateTime @default(now()) @map("created_at")

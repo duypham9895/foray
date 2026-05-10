@@ -1,15 +1,13 @@
-# Pitfalls Research — foray Lean milestone
+# Domain Pitfalls — foray v0.3 Full Milestone
 
-**Domain:** Single-user, local-first job-hunt CRM with Gmail OAuth + LLM email classifier
-**Researched:** 2026-05-09
-**Confidence:** HIGH on Gmail/Prisma/RLS items (verified against official docs + community issues); MEDIUM on UX-trust + scope-creep items (informed by ADRs + classifier research literature, but specific to this user's threshold).
+**Domain:** Chrome extension, file storage, Google Calendar sync, analytics dashboard added to existing Next.js 16 + Prisma 7 + PostgreSQL job-application tracker
+**Researched:** 2026-05-10
+**Confidence:** HIGH on Chrome MV3 / Next.js integration items (official docs + known breaking changes); MEDIUM on Google Calendar sync loop patterns (community-reported, not personally verified); HIGH on file storage and Prisma integration items (verified against existing schema and codebase patterns).
 
-This file goes deeper than the risk table in `docs/milestones/lean.md`. The five risks already documented there (OAuth verification, brittle rules, LLM cost, matcher misattribution, trust crisis) are real — what follows is the layer underneath them: *how* each one actually bites in week one, plus seven more pitfalls the existing table misses.
-
-Lean phases referenced below: `capture`, `gmail-ingestion`, `classifier`, `matcher`, `auto-update`, `review-queue`, `applications`, `auth`, `foundational-hardening`.
+This document covers pitfalls specific to adding the six v0.3 Full features to foray's existing system. For Lean-milestone pitfalls (OAuth token expiry, RLS, cron double-fire, classifier trust), see the separate Lean-era PITFALLS.md research.
 
 Severity legend:
-- **BLOCKING** — ship-stopper. Discover late and the milestone slips.
+- **BLOCKING** — ship-stopper or data-corruption risk. Discover late and the milestone slips.
 - **WOULD BITE EVENTUALLY** — works on day 1, breaks within first month of real use.
 - **NICE TO PREVENT** — annoyance / polish. Worth a comment but not a redesign.
 
@@ -17,487 +15,549 @@ Severity legend:
 
 ## Critical Pitfalls
 
-### Pitfall 1: Test-mode OAuth refresh token silently dies after 7 days
+### Pitfall 1: Chrome MV3 service worker dies silently, losing badge state and queued captures
 
 **What goes wrong:**
-You finish Gmail ingestion Wednesday, demo successfully Friday. The following Friday, polling silently stops working. Logs show `invalid_grant: Token has been expired or revoked`. No emails ingested for a week — you only notice because the inbox count looks suspiciously round.
+You build the extension popup + content scripts. Capture works when the popup is open. But the background service worker (which maintains the unreviewed-inbox badge count and queues captures when the foray server is unreachable) silently terminates after 30 seconds of inactivity per MV3 rules. The badge resets to 0. A queued capture vanishes. The owner thinks everything synced; it didn't.
 
 **Why it happens:**
-Google revokes refresh tokens after exactly 7 days when the OAuth consent screen publishing status is **Testing** (External user type). This is documented but not surfaced in the OAuth flow UI — there is no warning email, no event, just silent revocation. The `lean.md` risk table flags "stay in Test mode" as the *mitigation* for the verification headache, which is correct, but the 7-day refresh-token expiry is a separate consequence of being in Test mode that is not flagged.
+MV3 replaced persistent background pages with ephemeral service workers. Three concrete failure modes:
+1. **Service worker terminates after 30s of no events** ([Chrome docs: "Service worker lifecycle"](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)). Any state held in module-scope variables is lost. `chrome.alarms` can wake the worker, but the alarm itself doesn't carry data — the worker must re-derive state from `chrome.storage.local` on every wake.
+2. **`chrome.storage.local` is async** — reading it in the service worker's top-level `await` blocks worker activation. If the read takes >5s (large storage), Chrome kills the worker before it finishes.
+3. **Badge count requires `chrome.action.setBadgeText`** which must be called from the service worker. If the worker is dead when a new email arrives via push, the badge never updates.
 
-**Severity:** BLOCKING for "is this milestone usable past one week?" — the whole automation thesis dies after 7 days.
+**Severity:** WOULD BITE EVENTUALLY — the extension "works" during demo (popup is open, worker is alive). Breaks on day 2 of real use when the owner closes the popup and expects the badge to track inbox state.
 
 **Warning signs:**
-- `User.gmailLastSyncAt` stops advancing in DB (queryable in Studio)
-- `/api/gmail/poll` route returns 401 from Gmail API but cron swallows the error
-- Settings page shows "Connected as duypham9895@gmail.com" but a "Sync now" click silently fails
-- No new `Email` rows for >24 hours despite known activity in Gmail
+- Badge shows 0 after closing the popup, even though `/inbox` has unreviewed items
+- A capture initiated when the foray server was offline (laptop sleeping) never appears after reconnect
+- `chrome://serviceworker-internals` shows the worker in "STOPPED" state
+- Console logs from the service worker disappear between popup opens
 
 **Prevention (actionable):**
-1. **Surface token health in `/settings`** — store `gmailRefreshTokenLastValidatedAt` on the User row; show a red banner if it's >5 days old or the last poll returned `invalid_grant`.
-2. **Catch `invalid_grant` explicitly** in the gmail-ingestion service and write an `Event(type='gmail_disconnected', source='system')` so the timeline tells the truth.
-3. **Document the 7-day clock in SETUP.md** with the exact symptom and the re-auth steps. Do not rely on "I'll remember."
-4. **Cheap escape hatch:** flip the OAuth app to **In production** with the project owner as the only `accounts.google.com` listed user — verification is *not* required for sensitive scopes when the user count stays under the cap and you're the only consenter. The 7-day clock disappears. (Per Google: verification is required when scope is restricted *and* the app is publicly accessible; an unverified production app in single-user mode is allowed and stops the test-mode revocation.)
+1. **All mutable state lives in `chrome.storage.local`, never in module variables.** The service worker reads from storage on every activation, writes back on every change. Module-scope variables are a cache at best, gone at worst.
+2. **Use `chrome.alarms` for periodic badge sync** — wake every 5 minutes, fetch unreviewed count from `localhost:3000/api/inbox/count`, update badge. If the server is unreachable, keep the last-known count. This is the same pattern as the existing `node-cron` Gmail poll but in extension-land.
+3. **Queue failed captures in `chrome.storage.local`** with a retry-on-alarm pattern. On each alarm wake, drain the queue against `localhost:3000/api/capture`. Log successful sends, remove from queue. This is idempotent if the capture endpoint uses the existing bookmarklet dedup logic (roleUrl uniqueness).
+4. **Test the dead-worker scenario explicitly.** In the test plan: open popup, initiate capture, kill the service worker via `chrome://serviceworker-internals`, reopen popup, verify the queued capture is still there and eventually syncs.
 
-**Phase to address:** `gmail-ingestion` (token storage + health check) and `auth` (settings UI surface).
+**Phase to address:** Chrome extension phase (background service worker design + badge sync).
 
 ---
 
-### Pitfall 2: Prisma client extension for RLS doesn't preserve `SET LOCAL` across all query paths
+### Pitfall 2: Extension content scripts break on SPA navigation (LinkedIn, Greenhouse)
 
 **What goes wrong:**
-You write `tenantDb` + a Prisma client extension that runs `SET LOCAL app.user_id = $1` before each query. Tests pass. In dev with a single user it works. Then a code path calls `prisma.$queryRaw` directly, or a query escapes the extension via `Prisma.$transaction([...])` (sequential transaction array form), and no `app.user_id` is set — RLS policy uses `current_setting('app.user_id', true)` which returns `NULL`, and depending on policy syntax this either denies all rows (silent breakage) or returns all rows (silent multi-tenant leak — catastrophic if you ever onboard a second user).
+You write a content script that scrapes the job posting from `linkedin.com/jobs/view/*`. It works on initial page load. But LinkedIn is an SPA — navigating from search results to a job detail doesn't trigger a full page load, so the content script doesn't re-inject. The popup shows stale data from the previous page. Same issue on Greenhouse's embedded job boards.
 
 **Why it happens:**
-Three concrete failure modes documented in Prisma issues:
-1. **Sequential `$transaction([...])` (array form) does not call the extension's per-operation hook** the same way interactive `$transaction(async (tx) => …)` does. Connection state can be reused without re-setting the variable.
-2. **`$queryRaw` and `$executeRaw` bypass model-level extensions** — if the extension is registered on `application.findMany` and friends, raw SQL slips past it.
-3. **Even in interactive transactions, the extension wraps the *base* client** ([prisma/prisma#17948](https://github.com/prisma/prisma/issues/17948)) — the `tx` handed to the callback is the base client, not the extended one, unless you re-extend inside the transaction.
+Content scripts run once per page load per the `matches` pattern in `manifest.json`. SPAs that use `history.pushState` or client-side routing do not trigger new content script injections. Three specific failure points:
+1. **LinkedIn job detail pages** use client-side routing — clicking a job card in the feed doesn't reload the page, so the content script that was injected on `/jobs/search/*` doesn't re-run on `/jobs/view/*`.
+2. **Greenhouse embeds** (`boards.greenhouse.io`) load job content in iframes or dynamically — the content script may fire before the DOM has the job data.
+3. **The popup reads from the content script via `chrome.tabs.sendMessage`** — if the content script is stale or dead, the popup gets empty data and the user sees blank fields.
 
-**Severity:** BLOCKING for the "RLS as second line of defense" promise (PRINCIPLES.md §"Database — Postgres RLS"). The `tenantDb` wrapper still works because it filters in app-land, but the safety net has holes.
+**Severity:** WOULD BITE EVENTUALLY — the "one-click capture" promise breaks on the most common user flow (browse jobs, click one, capture).
 
 **Warning signs:**
-- A test that runs `prisma.$queryRaw` (instead of `tenantDb`) in a tenant-scoped context returns rows for the wrong user
-- An RLS policy debug query (`SELECT current_setting('app.user_id', true)`) returns `NULL` mid-request
-- `pg_stat_activity` shows the same backend serving consecutive requests with different `app.user_id` values
+- Popup shows data from the previous job posting, not the current one
+- Capture works on first page load but fails after SPA navigation
+- Greenhouse embeds show blank fields in the popup
+- `chrome.runtime.lastError` shows "Could not establish connection. Receiving end does not exist."
 
 **Prevention (actionable):**
-1. **Run RLS context-set inside the same transaction as the actual query**, always. Pattern:
-   ```ts
-   return prisma.$transaction(async (tx) => {
-     await tx.$executeRaw`SELECT set_config('app.user_id', ${String(userId)}, true)`
-     return tx.application.findMany({ where: { /* … */ } })
-   })
+1. **Use `chrome.webNavigation.onHistoryStateUpdated`** to detect SPA navigations and re-inject the content script. This fires on `pushState`/`replaceState` — exactly what LinkedIn and Greenhouse use.
+2. **Content script should self-report readiness.** After injection, send a message to the background worker: `{ type: 'content-script-ready', url: window.location.href }`. The popup queries the background worker for the latest ready state, not the content script directly.
+3. **Fallback: popup scrapes via `chrome.scripting.executeScript`** instead of relying on pre-injected content scripts. This is synchronous, runs in the current tab context, and doesn't depend on the content script being alive. Slightly slower (runs on popup open) but bulletproof.
+4. **Test with real SPA navigations, not just fresh page loads.** The test plan must include: load LinkedIn search, click a job card, open popup, verify data matches the clicked job (not the search page).
+
+**Phase to address:** Chrome extension phase (content script injection strategy).
+
+---
+
+### Pitfall 3: `localhost:3000` API calls from extension fail due to mixed-content or CORS
+
+**What goes wrong:**
+The extension popup calls `http://localhost:3000/api/capture`. On HTTP localhost this works in Chrome (localhost is exempt from mixed-content blocking). But the extension content script running on `https://linkedin.com` tries to call `http://localhost:3000` — this is a mixed-content request from an HTTPS page. Chrome blocks it silently. The capture fails with no error visible to the user.
+
+**Why it happens:**
+MV3 extensions have three execution contexts with different security rules:
+1. **Popup** (`chrome-extension://...`) — can call HTTP localhost freely. No mixed-content issue because the popup origin is `chrome-extension://`, not `https://`.
+2. **Content script** (running on `https://linkedin.com`) — bound by the page's Content Security Policy. Calling `http://localhost:3000` from `https://linkedin.com` is mixed-content; Chrome blocks it.
+3. **Service worker** — same as popup, can call localhost. But if you route the capture through the content script (scrape → content script → API), you hit the mixed-content wall.
+
+**Severity:** BLOCKING — if the capture flow routes through the content script, it silently fails on every HTTPS job site (which is all of them).
+
+**Warning signs:**
+- Capture works from the popup's manual-entry form but fails from the "auto-fill from page" button
+- DevTools console on the job site page shows "Mixed Content" or "blocked:mixed-content" errors
+- Network tab shows the fetch to localhost as "(blocked)"
+
+**Prevention (actionable):**
+1. **Content script scrapes data, sends to service worker via `chrome.runtime.sendMessage`. Service worker calls the API.** This is the standard MV3 pattern: content script never makes network requests to external servers, it only communicates with the service worker via the Chrome messaging API. The service worker (running in `chrome-extension://` context) calls `localhost:3000` freely.
+2. **Never call `fetch('http://localhost:...')` from a content script.** Add an ESLint rule or a comment-block at the top of every content script file: "NO FETCH CALLS HERE. Send to service worker."
+3. **Add `host_permissions: ["http://localhost:3000/*"]` in `manifest.json`** — required even for service worker fetch calls to localhost. Without it, Chrome blocks the request with a permissions error.
+4. **Test from an HTTPS page.** Don't test capture from `chrome://extensions` or the popup alone — navigate to `https://example.com`, open the popup, trigger auto-fill. If it works there, it works on LinkedIn.
+
+**Phase to address:** Chrome extension phase (manifest permissions + architecture decision: content-scrapes, worker-fetches).
+
+---
+
+### Pitfall 4: Document upload path traversal and MIME-type bypass
+
+**What goes wrong:**
+The milestone spec says "local file storage under `data/uploads/{userId}/{applicationId}/`." The upload endpoint accepts a filename from the client. An attacker (or a future multi-user scenario) sends `filename: "../../etc/passwd"` or `filename: "resume.pdf" + Content-Type: application/pdf` but the actual file is an executable. The path traversal writes outside the upload directory. The MIME bypass stores a malicious file that gets served with a PDF content-type.
+
+**Why it happens:**
+Three compounding mistakes:
+1. **Trusting the client-provided filename.** The browser's `File.name` is user-controlled. `path.join(uploadDir, file.name)` with `file.name = "../../evil.sh"` resolves to a path outside the upload directory.
+2. **Checking `Content-Type` header instead of file magic bytes.** The client can set any Content-Type. A `.exe` with `Content-Type: application/pdf` passes naive checks.
+3. **Serving files with `Content-Type` derived from the stored filename extension.** If the stored file is actually an HTML file with `<script>`, serving it as `text/html` enables XSS in the download context.
+
+**Severity:** BLOCKING for multi-user readiness (RLS is baked in per ADR-0002; file storage must match that safety level). For single-user, the path traversal is still a local privilege escalation risk.
+
+**Warning signs:**
+- Upload endpoint uses `file.name` directly in `path.join` or `fs.writeFile`
+- No file extension whitelist (accepting `.js`, `.html`, `.exe`)
+- Download endpoint infers Content-Type from the stored filename
+- No `Content-Disposition: attachment` header on downloads (allows inline rendering)
+
+**Prevention (actionable):**
+1. **Generate server-side filenames.** Store the original filename in DB (`Document.filename`), but the actual file on disk is `{documentId}.{ext}` where `ext` is derived from the MIME type whitelist, not the client filename. Path traversal is impossible because the filename is a DB-generated integer.
+2. **Validate MIME type via magic bytes**, not Content-Type header. Use `file-type` package (or equivalent) to read the first N bytes. Accept only: `application/pdf`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (.docx), `image/png`, `image/jpeg`. Reject everything else.
+3. **Serve all downloads with `Content-Disposition: attachment`** and `Content-Type: application/octet-stream` (force download, never inline rendering). This prevents XSS via uploaded HTML/SVG files.
+4. **Store uploads outside the Next.js `public/` directory.** Files in `public/` are served statically with their natural Content-Type — a stored `.html` file becomes an XSS vector. Use a dedicated API route (`/api/documents/[id]/download`) that checks auth, then streams the file with safe headers.
+5. **Per-document size cap (10MB)** enforced both client-side (for UX feedback) and server-side (reject before writing to disk). The 1GB total quota soft-warning from the milestone spec is a UX feature, not a security control.
+
+**Phase to address:** Document storage phase (upload endpoint + download endpoint).
+
+---
+
+### Pitfall 5: Google Calendar OAuth scope addition invalidates the existing Gmail refresh token
+
+**What goes wrong:**
+The existing Gmail integration stores a refresh token with `scope: ['gmail.readonly']`. The Calendar integration needs `calendar.events` + `calendar.events.readonly`. The milestone spec says "re-authentication required." What actually happens: when the user re-authenticates with the new scopes, Google issues a *new* refresh token and *invalidates the old one*. The Gmail integration, which is using the old refresh token, silently breaks. No emails are ingested until someone notices.
+
+**Why it happens:**
+Google's OAuth2 behavior: when a user re-consents with a different scope set, the previous refresh token is revoked ([Google OAuth docs: "Refresh token rotation"](https://developers.google.com/identity/protocols/oauth2/web-server#offline)). This is not documented as a "scope change" behavior specifically, but it's the observed behavior when `prompt: 'consent'` forces a new consent screen. The existing code in `src/app/api/gmail/auth/route.ts` uses `prompt: 'consent'` (line 17) which guarantees a new token on every auth.
+
+**Severity:** BLOCKING — adding Calendar silently breaks Gmail. The owner discovers the breakage 12+ hours later when no new emails appear.
+
+**Warning signs:**
+- After Calendar re-auth, `User.gmailRefreshTokenEncrypted` is overwritten with a new value
+- Gmail polling returns `invalid_grant` within minutes of Calendar auth
+- Settings page shows "Gmail connected" but `gmailLastSyncAt` is stale
+- The OAuth callback stores only one refresh token per user (single `gmailRefreshTokenEncrypted` column)
+
+**Prevention (actionable):**
+1. **Single OAuth flow, combined scopes.** When re-authenticating for Calendar, request BOTH `gmail.readonly` AND `calendar.events` + `calendar.events.readonly` in the same consent. One token, all scopes. The existing `gmailRefreshTokenEncrypted` column stores this combined token.
+2. **Update `env.GOOGLE_REDIRECT_URI` and the auth route** to use the combined scope set. The Calendar auth route should *not* be a separate endpoint — it should be the same `/api/gmail/auth` (or a renamed `/api/google/auth`) that requests all scopes at once.
+3. **After re-auth, immediately test both Gmail and Calendar access** in the callback handler. If either fails, roll back: don't overwrite the old refresh token. Store the new token tentatively, verify it works for both APIs, then commit.
+4. **Surface "re-authentication needed" proactively.** If the Calendar feature is enabled but the stored token doesn't have Calendar scopes, show a banner in Settings: "Calendar sync needs additional permissions. Re-connecting will not affect Gmail." (This is true only if you do the combined-scope approach.)
+5. **Consider separate refresh tokens per service.** Add a `calendarRefreshTokenEncrypted` column to `User`. This avoids the scope-conflict problem entirely but doubles the OAuth surface area. Trade-off: more columns, more auth flows, but zero risk of Calendar breaking Gmail. **Recommended approach for this project** — the single-user constraint means two auth flows is a one-time cost.
+
+**Phase to address:** Google Calendar integration phase (OAuth scope design). Must be decided BEFORE writing the Calendar auth route.
+
+---
+
+### Pitfall 6: Calendar sync creates duplicate events in a loop (foray → calendar → foray → calendar...)
+
+**What goes wrong:**
+Owner creates a Stage with `scheduledAt` → foray creates a Google Calendar event. The Calendar event gets a Google-generated ID stored in the Stage. The cron polls Calendar, sees the event, tries to update the Stage — but the update triggers a "Stage changed" event, which triggers a Calendar event update, which triggers the next poll cycle. Even with idempotent checks, subtle field differences (timezone formatting, description truncation) cause the sync to detect a "change" every cycle.
+
+**Why it happens:**
+Two-way sync is the canonical hard problem of integration. Three specific failure modes:
+1. **Field format mismatch.** Foray stores `scheduledAt` as UTC `DateTime` in Prisma. Google Calendar returns `dateTime` in RFC3339 with timezone (`2026-05-15T14:00:00+07:00`). Comparing these directly fails — `2026-05-15T07:00:00Z` !== `2026-05-15T14:00:00+07:00` even though they're the same instant. The sync detects a "difference" and updates, triggering the loop.
+2. **Description/notes drift.** Foray puts the Stage notes in the Calendar event description. On the next poll, the Calendar description has Google's formatting (HTML entities, line-break normalization). Foray detects a difference, updates the Calendar, Calendar re-normalizes, repeat.
+3. **`etag` / `updated` timestamp comparison is the right idempotency check**, but the Calendar API's `updated` field changes on *any* event mutation including attendee responses. If the owner declines their own test event, the `updated` timestamp changes, foray detects it, and the loop starts.
+
+**Severity:** WOULD BITE EVENTUALLY — works for the first event, loops on the second when any field has a formatting difference.
+
+**Warning signs:**
+- Google Calendar event shows "last modified" updating every 15 minutes (the cron interval)
+- The Stage's `updatedAt` column advances every cron tick even though no one touched it
+- Logs show the same `calendarEventId` being updated on every poll cycle
+- The Calendar event description accumulates duplicate content on each sync
+
+**Prevention (actionable):**
+1. **Store the Calendar `etag` on the Stage row.** Add `calendarEventEtag String? @map("calendar_event_etag")` to the Stage model. On poll: fetch event, compare etag. If unchanged, skip. If changed, update Stage. After writing to Calendar, store the new etag. Etag comparison is the only reliable idempotency check for Google Calendar.
+2. **Normalize before comparing.** Parse both sides to UTC `DateTime` before comparison. Strip HTML entities and normalize whitespace in descriptions. Write a `normalizeCalendarEvent()` utility that both the write-path and the read-path use.
+3. **One-way write with deferred read.** Foray writes to Calendar immediately on Stage create/update. Calendar polling is *read-only* and only updates Stage when the event was *externally modified* (declined, rescheduled by the organizer). Detect "externally modified" by checking if the `etag` changed AND the change wasn't initiated by foray (use a `lastSyncedEtag` field to distinguish).
+4. **Debounce Calendar writes.** Don't write to Calendar on every Stage field change — batch changes within a 5-second window and write once. This prevents rapid-fire updates during form editing.
+5. **Test the loop explicitly.** Create a Stage, let the sync run 3 times, assert the Calendar event was written exactly once and the Stage `updatedAt` didn't change on cycles 2 and 3.
+
+**Phase to address:** Google Calendar integration phase (sync architecture design). Must settle one-way vs two-way before writing any sync code.
+
+---
+
+### Pitfall 7: Analytics dashboard queries are O(n^2) on the events table
+
+**What goes wrong:**
+The funnel visualization needs: for each application, trace the sequence of `canonicalStatus` changes over time. The naive query joins `applications` with `events` grouped by status. With 100 applications and ~500 events, this runs in 200ms. With 500 applications and 5000 events (3 months of active job hunting), it takes 4 seconds. The analytics page becomes unusable.
+
+**Why it happens:**
+The `events` table is append-only (per PRINCIPLES.md) and stores every status change, stage addition, email receipt, and note edit. It grows linearly with usage. Three specific performance traps:
+1. **Funnel queries require window functions** (`ROW_NUMBER() OVER (PARTITION BY applicationId ORDER BY occurredAt)`) to find the *first* status change to each canonical state. Window functions on large event sets are expensive.
+2. **Time-in-stage requires self-joins** — for each application, pair consecutive status-change events and compute the delta. This is an O(n) self-join per application, O(n^2) total.
+3. **Filtering by date range + tags + source + industry** requires joining `applications` → `companies` → `events` with multiple WHERE clauses. Without composite indexes, Postgres does sequential scans.
+
+**Severity:** WOULD BITE EVENTUALLY — analytics "works" with seed data, becomes sluggish after 2 months of real use. The owner stops using it.
+
+**Warning signs:**
+- Analytics page load exceeds 1 second with ~200 applications
+- `EXPLAIN ANALYZE` on the funnel query shows `Seq Scan on events`
+- The events table has >5000 rows with no indexes beyond the existing ones
+- Browser network tab shows the analytics API response taking >2s
+
+**Prevention (actionable):**
+1. **Pre-compute daily aggregates in a materialized view.** Create `analytics_daily` table: `{ date, userId, applicationsCreated, statusChanges, source, canonicalStatus, count }`. Refresh on cron (daily) or on-demand. Analytics queries read from this 365-row-per-year table, not the raw events table.
+2. **Add composite indexes for analytics query patterns:**
+   ```sql
+   CREATE INDEX idx_events_user_type_occurred ON events(user_id, type, occurred_at);
+   CREATE INDEX idx_events_app_type_occurred ON events(application_id, type, occurred_at);
    ```
-   Note: `set_config(..., true)` is `SET LOCAL` — scoped to the transaction. **This is the only safe pattern under transaction-pool connection sharing**, even if foray is single-app-server today (per [pgBouncer docs on transaction pooling](https://www.pgbouncer.org/features.html)).
-2. **Write a test that explicitly tries to escape RLS:** as a non-superuser DB role, with `app.user_id = '1'`, attempt `SELECT * FROM applications WHERE user_id = 2` and assert zero rows. This is the pgTAP-style "deny by default" test. Two seeded users, two applications, one query — assert isolation.
-3. **Use a non-superuser role for the application's runtime DB connection**, configured via `DATABASE_URL`. RLS policies are *bypassed by default* for the table owner and superuser ([Postgres docs](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)). `FORCE ROW LEVEL SECURITY` (already in PRINCIPLES.md example) covers the table-owner case but not the superuser case.
-4. **Guard `$queryRaw`/`$executeRaw` callsites at code review** — every one is an audit point. Add a CI grep that flags new `$queryRaw` outside `core/db/` and requires a comment justification.
+   These cover the funnel query's WHERE + ORDER BY without sequential scans.
+3. **Compute time-in-stage in application code, not SQL.** Fetch all status-change events for the user (one query), compute durations in TypeScript. For 500 applications with ~3 status changes each, this is 1500 rows — trivial in memory, expensive as a SQL self-join.
+4. **Benchmark early.** Before writing any analytics queries, seed 500 applications with 5000 events and `EXPLAIN ANALYZE` the funnel query. If it's >500ms, redesign before building the UI.
+5. **Lazy-load analytics sections.** The page can show "Applications per week" (simple count query) immediately while the funnel and time-in-stage charts load asynchronously. Perceived performance matters more than actual query time.
 
-**Phase to address:** `foundational-hardening` (FND-02 RLS migration + tests). The RLS migration is non-trivially harder than the one-paragraph version in PRINCIPLES.md suggests; budget at least a day for it including the escape-test fixtures.
+**Phase to address:** Analytics dashboard phase (query design BEFORE UI). Benchmark with realistic data volumes.
 
 ---
 
-### Pitfall 3: `node-cron` in `instrumentation.ts` double-fires under hot reload (and the fix is non-obvious)
+### Pitfall 8: Document storage breaks `tenantDb` pattern because files aren't in Postgres
 
 **What goes wrong:**
-You wire up the 15-min polling cron in `src/instrumentation.ts` per PRINCIPLES.md §"Background jobs v1". It works. Every time you save a file, Next.js re-runs the instrumentation hook, registering a *second* cron. After 10 saves you have 10 crons all polling Gmail every 15 minutes. Quotas burn, logs duplicate, and on Friday's demo you can't reproduce a clean log line because of the noise.
+Every data access in foray goes through `tenantDb(userId)` which injects the userId filter. Documents are stored on the filesystem under `data/uploads/{userId}/{applicationId}/`. But the download API route needs to verify that the requesting user owns the document. The route reads `documentId` from the URL, looks up the `Document` row via Prisma (tenant-checked), then serves the file from `storagePath`. The pitfall: `storagePath` is a string column — if it's ever constructed from user input (e.g., the upload route), a crafted `storagePath` could serve arbitrary files from the filesystem.
 
 **Why it happens:**
-Three compounding facts:
-1. **Next.js calls `register()` in all environments, including Edge** ([Next.js instrumentation docs](https://nextjs.org/docs/app/guides/instrumentation)). The `if (process.env.NEXT_RUNTIME !== 'nodejs') return` guard is mandatory — Edge runtime cannot run `node-cron` at all.
-2. **In dev, `register()` re-runs after instrumentation.ts (and arguably any hot-reload trigger) changes**, but the previously-registered `cron.schedule` handle is *not* automatically destroyed. Each `cron.schedule(...)` call adds another scheduled task to the in-process scheduler — they accumulate.
-3. **Next.js dev server keeps the parent Node process alive across reloads**, so the accumulated tasks don't naturally die.
+The `Document.storagePath` column stores the filesystem path. Two failure modes:
+1. **Path traversal via `storagePath`.** If the upload handler writes `storagePath = '/etc/passwd'` (bug or injection), the download handler serves `/etc/passwd`. The tenantDb check on the `Document` row passes because the row is legitimately owned by the user — but the file it points to is not a document.
+2. **Orphaned files on application delete.** `Application` has `onDelete: Cascade` for documents, which deletes the `Document` row. But the file on disk is not deleted by Prisma. Over time, `data/uploads/` accumulates orphaned files. Not a security issue, but a disk-space issue that compounds the 1GB quota warning.
 
-**Severity:** WOULD BITE EVENTUALLY — invisible to acceptance tests, immediately visible during the first dev session that lasts >30 minutes.
+**Severity:** WOULD BITE EVENTUALLY — the path traversal requires a specific bug, but the orphaned files are guaranteed.
 
 **Warning signs:**
-- `pino` logs show the same `gmail.sync` operation starting 2-N times in the same minute
-- Anthropic API call count climbs faster than expected (each duplicate cron polls, each poll classifies)
-- You see `pg_try_advisory_lock` returning false in logs — that's the *defense* working, not a bug, but it confirms the multi-fire problem
-- The classifier-log.jsonl grows visibly during a single dev save-edit cycle
+- `storagePath` column contains absolute paths or paths with `..`
+- `data/uploads/` has files that don't correspond to any `Document` row
+- The download route uses `storagePath` directly in `fs.readFile` without resolving against the upload root
+- Application deletion doesn't log file cleanup
 
 **Prevention (actionable):**
-1. **Globalize the cron handle** the same way `prisma` is globalized for hot-reload safety:
-   ```ts
-   // src/instrumentation.ts
-   const g = globalThis as unknown as { __forayCron?: { stop: () => void } }
-   export async function register() {
-     if (process.env.NEXT_RUNTIME !== 'nodejs') return
-     g.__forayCron?.stop()
-     const cron = await import('node-cron')
-     g.__forayCron = cron.schedule('*/15 * * * *', pollGmailWithLock)
-   }
-   ```
-2. **Use the advisory lock anyway** (already in PRINCIPLES.md example) — it protects against races between scheduled ticks and a manual "Sync now" click in `/settings`. Belt + suspenders.
-3. **Log the `register()` boot once with a unique boot ID** so duplicate registration is greppable in the logs.
-4. **Disable the cron entirely in test runs** by checking `process.env.NODE_ENV !== 'test'` — vitest workers booting Next.js context will otherwise spawn crons inside test processes.
+1. **`storagePath` is always relative to a configured upload root.** Store only `{applicationId}/{documentId}.{ext}` in the column. The download route resolves: `path.join(UPLOAD_ROOT, storagePath)`. After resolution, verify the resolved path starts with `UPLOAD_ROOT` (`path.resolve(result).startsWith(path.resolve(UPLOAD_ROOT))`). This prevents traversal even if `storagePath` is corrupted.
+2. **Never construct `storagePath` from user input.** It's generated server-side from the `Document.id` (auto-increment) and the MIME-derived extension. The client never influences the path.
+3. **Cleanup orphaned files on application delete.** Add a Prisma middleware or a service-layer hook: when an Application is deleted, read its Documents' `storagePath` values and `fs.unlink` each file. Wrap in a try/catch — missing files are OK, errors are logged.
+4. **Add a `data/uploads/` cleanup script** to the backup/export feature (already in the Polish milestone). Run it monthly: find files not referenced by any `Document` row, log them, offer to delete.
 
-**Phase to address:** `gmail-ingestion` (GMAIL-04 cron + the cron-survives-hot-reload guard).
+**Phase to address:** Document storage phase (upload + download endpoint design).
 
 ---
 
-### Pitfall 4: First wrong auto-classification destroys trust before undo can save it
+### Pitfall 8b: Document storage doesn't extend `tenantDb` — new queries bypass tenant isolation
 
 **What goes wrong:**
-The first email foray auto-classifies as `rejection` is one where the classifier was wrong — it mis-read a "sorry to keep you waiting, the recruiter will reach out shortly" as a rejection because of the word "sorry". The owner sees their `Application.canonicalStatus` flip to `rejected` *for a role they were actively interviewing for*. Even if the toast undo works, the visceral "I cannot trust this with my real job hunt" reaction is now permanent. The owner reverts to spreadsheet within 48 hours.
+The existing `tenant.ts` has a TODO on line 254: `// TODO(duy, 2026-05-09): add tenantDb wrappers for recruiter, applicationRecruiter, document`. The Document, Recruiter, and ApplicationRecruiter models are in the schema but have no `tenantDb` wrappers. The new feature code queries these models directly via `prisma.document.findMany(...)` — bypassing the userId filter. In single-user mode this is invisible. In multi-user mode, it's a data leak.
 
 **Why it happens:**
-This is the central thesis-risk of foray. The `lean.md` risk table calls it the "trust crisis" risk and proposes two mitigations: (a) prominent undo, (b) first 50 emails bypass auto-update. Both are necessary; **neither is sufficient on their own.** Concrete reasons the existing mitigation isn't enough:
-1. **A 10-second toast is a 10-second window**, and people miss notifications constantly. The "permanent in event timeline" affordance is the durable safety net, not the toast.
-2. **First-50-bypass solves the cold-start case** but doesn't help once auto-update kicks in on email 51.
-3. **The asymmetry of cost matters**: a false-positive rejection on an active interview is *catastrophic* (might cause the owner to stop replying to the recruiter), while a false-negative (missed auto-classification, item lands in review queue) is *zero cost*. The classifier should be tuned for false-negative bias, hard.
+The TODO exists because the Lean milestone didn't need these models. The Full milestone wires them up, and the temptation is to use `prisma.document.*` directly (it works, tests pass, single-user). The `dependency-cruiser` rule "no-direct-prisma" may or may not cover these new models depending on how the rule is written.
 
-**Severity:** BLOCKING for product viability (not for milestone shipping — you can ship an unsafe classifier, you just can't trust it).
+**Severity:** WOULD BITE EVENTUALLY — invisible today, tenant-leak if multi-user ever happens (ADR-0002 says multi-tenant scaffolding is baked in for a reason).
 
 **Warning signs:**
-- Confidence scores cluster suspiciously close to threshold (lots of 0.84–0.86) — the threshold was tuned to a non-discriminating classifier
-- Rules in `rules.ts` rely on broad keywords ("sorry", "unfortunately", "regret") rather than templated phrases
-- LLM calls return high confidence on emails that, on inspection, are clearly ambiguous to a human
-- Owner uses the undo button more than once in the first week
-
-**Prevention (actionable beyond what lean.md already lists):**
-1. **Tune the rules for high precision over recall.** A rule that fires on *only* the literal phrase `"we have decided to move forward with other candidates"` is worth 100 noisy keyword rules. Rules should be templated-phrase matchers, not bag-of-words. Keep a fixture file (`tests/integration/classifier-fixtures/`) of real emails with expected labels — this is the ground truth, not the rules themselves.
-2. **Asymmetric thresholds per label.** `rejection` should require ≥0.92, `interview_invite` can run at 0.85, `noise` can be aggressive. The single `CLASSIFIER_AUTO_THRESHOLD` env var encodes the wrong assumption that all labels carry equal cost. Replace with a per-label threshold map at the boundary of `classifier/service.ts` or accept the env-var as a floor and have per-label overrides in code.
-3. **Block auto-update on a status *regression***. If `Application.canonicalStatus` is currently `interviewing`, never auto-flip to `rejected` without human confirmation regardless of confidence. The cost of a wrong rejection on a live interview dwarfs the cost of a one-extra-click review-queue entry.
-4. **The undo event must be *visually loud* in the timeline** — not a small icon. Per DESIGN.md "campaign room" tone, this is the moment to use color and weight. The visible-undo-affordance permanence is the actual mitigation, not the toast.
-5. **Log every auto-update decision** — `classifier-log.jsonl` should also include the *match* (which application + why) and the *prior status*, not just the classification. When the owner asks "why did you change this?", the answer must be reproducible from the log.
-
-**Phase to address:** `classifier` (per-label thresholds), `auto-update` (regression block + event design), `review-queue` (review-queue is the safe-default destination). Cross-cutting concern; probably warrants its own ADR ("ADR-0011: Asymmetric trust per classification label").
-
----
-
-### Pitfall 5: Sender-domain matching attributes Greenhouse / Lever / LinkedIn emails to the wrong company
-
-**What goes wrong:**
-The matcher in `MATCH-02` has tiebreak: thread continuity → sender domain match → unmatched. A new email arrives from `no-reply@us.greenhouse-mail.io`. There is no thread continuity (it's a fresh thread). Domain `greenhouse-mail.io` matches no `Company.domain` you've stored, so it falls through to "unmatched." Annoying but safe. The *bad* case: the owner stored `Company.domain = 'greenhouse.io'` for an earlier company that uses Greenhouse, and now every Greenhouse email from any company gets attributed to that one company. The status auto-update rule fires against the wrong application.
-
-**Why it happens:**
-ATS platforms — Greenhouse, Lever, Workday, Ashby, Rippling — send candidate emails from their own infrastructure domains, not from the hiring company's domain. Per [Greenhouse documentation](https://support.greenhouse.io/hc/en-us/articles/17675865619099-Greenhouse-Recruiting-no-reply-email-addresses), Greenhouse uses addresses like `no-reply@us.greenhouse-mail.io`. LinkedIn InMails come from `linkedin.com` regardless of who the recruiter works for. Workday emails come from Workday-shaped domains. **Sender domain is a near-useless signal for these emails.** The hiring company is in the *display name* of the From header (`"Acme Corp <no-reply@us.greenhouse-mail.io>"`) or in the email body — never in the domain.
-
-**Severity:** WOULD BITE EVENTUALLY (within the first 2-3 ATS emails of real use; majority of professional job applications hit at least one ATS).
-
-**Warning signs:**
-- A `Company.domain` value contains an ATS host (`greenhouse-mail.io`, `myworkdayjobs.com`, `lever.co`, `ashbyhq.com`, `mail.smartrecruiters.com`, `linkedin.com`)
-- The same `Company` row is being attached to applications from visibly different companies
-- The matcher returns `applicationId` for an email whose subject mentions a company that is not the matched application's company
+- `grep -r "prisma.document\." src/` returns hits outside `src/core/db/`
+- `grep -r "prisma.recruiter\." src/` returns hits outside `src/core/db/`
+- The `tenant.ts` TODO is still present after the feature is built
+- Tests for Document/Recruiter queries use `prisma.*` directly instead of `tenantDb`
 
 **Prevention (actionable):**
-1. **Ban known ATS domains from `Company.domain` storage** — block in the `applications` capture form Zod schema with a curated list. Even if the user types `greenhouse.io`, refuse it with a helpful error: "Greenhouse is an ATS, not a company. Enter the hiring company's website domain instead."
-2. **In the matcher, downrank or exclude ATS domains** — if `email.fromDomain` is in the ATS list, *skip* the domain-match tiebreak entirely and fall straight to unmatched. Better to land in the review queue than to misattribute.
-3. **Subject-line + display-name extraction** — Gmail API returns the From header parsed; the display name often contains the company name. Implement a *third* tiebreak: parse "Acme Corp <…>" → fuzzy-match "Acme Corp" against `Company.name`. Not for Lean, but design the matcher's `Result` type so this third strategy can be added without re-architecting.
-4. **Test fixtures must include ATS samples.** The classifier-fixtures folder should have at least one real email per major ATS (Greenhouse, Lever, Workday) so the matcher's behavior on these is visible in tests.
+1. **Extend `tenantDb` BEFORE writing any feature code for Document, Recruiter, ApplicationRecruiter.** Add the wrappers as the first commit of each feature phase. Pattern: copy the existing `application` wrapper structure, adjust the model name and unique-key fields.
+2. **For Document: the tenant check is via `application.userId`, not `document.userId`** (Document has no direct userId). The wrapper must join through Application: `prisma.document.findMany({ where: { application: { userId: numericUserId } } })`. This is the same pattern already used for `stage` (lines 171-179 of tenant.ts).
+3. **For Recruiter: direct userId exists.** Copy the `application` wrapper pattern.
+4. **For ApplicationRecruiter: tenant check via either application or recruiter.** Use the application path (more direct for the common query: "show recruiters for this application").
+5. **Run `dependency-cruiser` after adding wrappers** to confirm the "no-direct-prisma" rule catches any remaining direct access.
 
-**Phase to address:** `matcher` (MATCH-02 tiebreak), `capture` (CAPT-01 form validation rejecting ATS domains).
+**Phase to address:** Must be the FIRST commit of the Recruiter and Document storage phases.
 
 ---
 
-### Pitfall 6: LLM cost cap alert fires too late to matter
+### Pitfall 9: Recruiter email auto-link matches the wrong recruiter when multiple recruiters share an ATS domain
 
 **What goes wrong:**
-You add the `>$0.50/day → alert` mitigation per `CLASS-04`. A bug in the matcher causes one email to be classified 200 times in a single cron tick (no idempotency check on the email's `classification` column). The LLM bill hits $0.50 in 30 seconds. The "alert" — a `pino.warn` log line — fires after the budget is already blown, and there is no separate notification channel.
+The milestone spec says: "when an Email arrives from a known recruiter's email address, link both to Recruiter and Application." The recruiter's email is `jane@greenhouse.io` (an ATS relay, not the recruiter's real email). Another recruiter, Bob, also uses `bob@greenhouse.io`. Every email from `@greenhouse.io` matches both recruiters. The auto-link picks the wrong one.
 
 **Why it happens:**
-"Alert if daily total > $0.50" is monitoring, not control. It tells you what already happened. Three failure modes compound:
-1. The alert is a log line, not a kill-switch — nothing prevents the next call.
-2. Daily-total is computed at end-of-period, not before-each-call. A burst within a single cron tick can blow through the budget before the daily-total is even recomputed.
-3. There is no test for the *runaway* case — only for happy-path token counting.
+This is the same ATS-domain problem from the Lean matcher (Pitfall 5 in the earlier research), but now it surfaces in the recruiter auto-link feature. ATS platforms relay recruiter emails through their own domains. The recruiter's actual email (which the owner entered manually) may be `jane@acme.com`, but the email arrives from `jane@greenhouse.io`.
 
-**Severity:** WOULD BITE EVENTUALLY (when a bug runs the classifier in a loop, which is exactly when you most need the cap to work).
+**Severity:** WOULD BITE EVENTUALLY — any recruiter using an ATS relay email triggers this on the first email from that ATS.
 
 **Warning signs:**
-- Daily token count for a 24-hour window approaches `$0.50` without an unusual volume of emails
-- The same `Email.id` has been classified twice (visible from `classifier-log.jsonl` if logging includes the email ID)
-- A single cron tick logs >50 LLM calls
-- `Anthropic` SDK returns 529 Overloaded ([common upstream signal of high call rate](https://docs.anthropic.com/en/api/errors)) — *retry-with-backoff is your problem here*: dumb retry on 529 multiplies cost without solving the underlying bug
+- A recruiter's stored `email` field contains an ATS domain (`greenhouse.io`, `lever.co`, etc.)
+- Multiple recruiters share the same email domain and it's an ATS domain
+- Auto-linked recruiter doesn't match the email's display name
 
 **Prevention (actionable):**
-1. **Pre-call budget check, not post-call accounting.** Before each LLM call: read today's running cost from a small DB table or in-process counter; if `>= ENV.CLASSIFIER_DAILY_BUDGET_USD`, return `err({ _tag: 'RateLimited', retryAfterSeconds: secondsUntilMidnight })`. Trip at 80% of budget for a soft warning, hard-block at 100%.
-2. **Idempotency check before classification:** in `classifier/service.ts`, refuse to classify if `email.classifiedBy != null` and `email.classification != null` unless an explicit `force: true` is passed. Most classifier loops are upstream bugs that manifest as "classify the same email 100 times."
-3. **Per-batch hard cap.** A single cron tick should process at most N emails (e.g., 50) regardless of pending count. If more pending, log + carry over to next tick. Bounds the worst-case cost per tick to ≤50 × Haiku call ≈ $0.025.
-4. **Wrap Anthropic SDK calls in `Result`** with explicit handling of 529 (do not bubble through retry) and 429. The SDK's default retry behavior is `2 retries with exponential backoff` — fine for one-off calls, dangerous for loops. Set `maxRetries: 0` on calls inside a cron tick and let the cron's next tick be the retry.
-5. **Test the runaway scenario.** Write a vitest case that calls `classify()` 100 times on the same email and asserts ≤1 LLM call (idempotency) and that the budget guard rejects subsequent calls after N.
+1. **Ban ATS domains from `Recruiter.email` storage.** Same blocklist as the capture form (Pitfall 5 from Lean research). If the user enters `jane@greenhouse.io`, warn: "This looks like an ATS relay address. Enter the recruiter's direct email for accurate auto-linking."
+2. **Auto-link matches on full email address, not domain.** The existing matcher uses domain matching as a tiebreak; the recruiter auto-link should use exact email match only. `email.from === recruiter.email` — no fuzzy matching, no domain matching.
+3. **If the email is from an ATS domain, extract the display name and match against `Recruiter.name`.** `From: "Jane Smith <no-reply@us.greenhouse-mail.io>"` → parse "Jane Smith" → fuzzy match against recruiter names. Surface as a suggestion in the review queue, not an auto-link.
+4. **Auto-link is a suggestion, not a hard match.** Show "Did this email come from Jane Smith?" in the review queue. The owner confirms. This is the same trust model as the classifier: auto-suggest, human confirms.
 
-**Phase to address:** `classifier` (CLASS-02 LLM call wrapping + CLASS-04 logging) — extend CLASS-04 to be a *control* not just a *log*.
+**Phase to address:** Recruiter entity phase (auto-link design). Requires the ATS domain blocklist from the capture form.
 
 ---
 
-### Pitfall 7: Email body privacy rule conflicts with the review queue UX
+### Pitfall 10: Reminder cron competes with Gmail cron for the same advisory lock
 
 **What goes wrong:**
-Privacy rule says "≤500 char excerpt stored, full body fetched on demand for review queue display only." Day 8 of use: owner disconnects Gmail (or token expires per Pitfall 1) but still wants to review historical emails in `/inbox`. Body fetch fails because there's no valid token. Or: owner clicks an item in the review queue, the on-demand fetch hits Gmail's 250 quota-units-per-user-per-second limit because of a burst, and the page shows a stale excerpt with no error message.
+The existing Gmail polling uses `pg_try_advisory_lock` to prevent concurrent ticks. The new reminder cron (checking `followUpAt <= today`) also needs to run on a schedule. If both crons fire at the same time and share the same lock namespace, one blocks the other. Or: if the reminder cron doesn't use advisory locks at all, it fires concurrently with itself under hot reload (the same Pitfall 3 from Lean research).
 
 **Why it happens:**
-Three distinct edge cases the privacy rule didn't anticipate:
-1. **Token revocation orphans historical emails.** Once Gmail is disconnected, "fetch full body on demand" silently fails forever. The 500-char excerpt is the only thing left.
-2. **Gmail API rate limits are per-user-per-second**, not per-day — bursty review queue clicks (rapid arrow-key navigation) can trip the 250-quota-units limit even at low volume.
-3. **Gmail thread state changes**: if the user deletes the email from Gmail (or it's an auto-archive rule), `messages.get` returns 404 and the on-demand fetch can no longer find it.
+The existing cron infrastructure uses `node-cron` in `instrumentation.ts`. Adding a second cron job is architecturally simple but operationally tricky:
+1. **Both crons share the same `node-cron` scheduler instance.** If the globalThis guard (Pitfall 3 fix) stops one cron on hot-reload, it must stop both. A single `__forayCron` handle can only hold one cron job.
+2. **Advisory lock keys must be distinct.** If both crons use `pg_try_advisory_lock(hashtext('foray:cron'))`, one will block. The reminder cron needs its own key: `hashtext('foray:reminder')`.
+3. **The Calendar sync cron (if added) is a third concurrent job.** Three crons in one process, all potentially firing at the same time, all needing distinct locks.
 
-**Severity:** WOULD BITE EVENTUALLY (low frequency but high pain when it does — the user is most likely to disconnect Gmail in week 2-3 to debug something, and lose access to the review queue's full content).
+**Severity:** NICE TO PREVENT — the crons will eventually sort themselves out via advisory locks, but concurrent ticks waste resources and produce confusing logs.
 
 **Warning signs:**
-- The first time a user hits a 401 from `messages.get` after a successful initial OAuth flow
-- `/inbox` items in review queue show the 500-char excerpt only and the "View full email" button errors silently
-- Gmail API logs show 429 Resource Exhausted from review queue navigation
+- Two cron jobs fire in the same second, one blocks on the advisory lock
+- Hot reload in dev spawns duplicate crons (the Lean Pitfall 3 pattern)
+- The `instrumentation.ts` file has multiple `cron.schedule()` calls without a unified lifecycle manager
 
 **Prevention (actionable):**
-1. **Treat the 500-char excerpt as the source of truth for review-queue UX.** Display it prominently. The "view full body" affordance is a *bonus*, gated behind an explicit click, with a clear error state when it fails. Do not assume full-body fetch works.
-2. **Cache the full body for the duration of a review session.** When user opens a review-queue item, fetch once, hold in component state, throw away on page navigation. Don't persist (privacy), don't re-fetch on scroll.
-3. **Surface "Gmail disconnected — full bodies unavailable" in `/inbox` header** when token health check fails. The user should know what's degraded.
-4. **Rate-limit per-user-per-second on the on-demand fetch endpoint** (`/api/emails/[id]/full-body`) — token bucket of 5 req/sec. The server-side rate-limit guards against bursty clicks before Gmail does.
-5. **Reconsider the 500-char excerpt size.** 500 chars is ~80 words — often not enough to confidently confirm/override a classification. Empirically check 5-10 real emails: is 500 enough to triage, or is the stored excerpt actively pushing the user toward the full-body fetch? If the latter, the storage rule is a false economy. ADR territory if changed.
+1. **Create a `CronRegistry` in `src/core/cron/`.** A single object that manages all cron jobs: `registry.register('gmail-poll', '*/15 * * * *', pollFn)` and `registry.register('reminders', '0 9 * * *', reminderFn)`. On hot-reload, `registry.stopAll()` — one guard for all jobs.
+2. **Each cron function uses its own advisory lock key.** The lock key includes the job name: `hashtext('foray:gmail-poll')`, `hashtext('foray:reminders')`, `hashtext('foray:calendar-sync')`. No collisions.
+3. **Stagger cron schedules.** Gmail poll at `*/15 * * * *` (every 15 min), reminders at `0 9 * * *` (9 AM daily), Calendar sync at `5 */15 * * *` (5 min past each 15-min mark). This avoids simultaneous-fire contention.
+4. **Test the registry lifecycle.** Vitest: register 2 jobs, call `stopAll()`, assert both are stopped. Register, simulate hot-reload (call register again), assert old jobs are stopped and new ones are running.
 
-**Phase to address:** `gmail-ingestion` (excerpt size + token health), `review-queue` (UX-degrades-gracefully on token failure).
+**Phase to address:** Reminders phase (cron infrastructure upgrade). Should be done before Calendar sync adds a third cron.
 
 ---
 
-### Pitfall 8: Auto-update + undo race when classifier re-runs while user is undoing
+### Pitfall 11: Analytics data export CSV exposes raw event JSON payloads
 
 **What goes wrong:**
-At 10:14, the cron auto-classifies email A as rejection → `Application.canonicalStatus: applied → rejected`, writes `Event(type='auto_status_changed', undoable=true)`. At 10:14:30, the user clicks Undo (status flips back to `applied`, `Event(type='status_undone')` written). At 10:15, the next cron tick re-evaluates: `email.classifiedBy` is set so it skips classification (per Pitfall 6's idempotency guard), but the *act* stage doesn't have an idempotency guard — it sees a classified, matched email, confidence still ≥0.85 → reapplies the auto-update. The undo is undone. User loses faith.
+The milestone spec includes "Export CSV button for raw data." The export query fetches events with their `data` JSON column. The `data` column stores arbitrary payloads — for `auto_status_changed` events, it includes the email excerpt that triggered the classification. Exporting this to CSV leaks email content (body excerpts, subjects) into a file that the owner might share or upload to a job-search analytics tool.
 
 **Why it happens:**
-The 4-stage pipeline in PRINCIPLES.md (`ingest → match → classify → act`) has idempotency on the first three but not naturally on `act`. The `processing_status = acted` column would prevent re-acting, but only if it's checked before evaluating; and the user's undo writes a `status_undone` event but doesn't change the email's `processing_status`.
+The `Event.data` column is typed as `Json @default("{}")` in Prisma. It stores structured payloads per event type. The CSV export probably does `SELECT * FROM events` and serializes the JSON as a string column. The resulting CSV contains email body excerpts that the privacy rule (CLAUDE.md section 7) says should not be stored indefinitely.
 
-**Severity:** BLOCKING for user trust — the undo is the central trust mechanism per ADR-0006; if it can be silently re-undone the whole trust model collapses.
+**Severity:** NICE TO PREVENT — single-user today, but the export creates a persistent copy of data that the privacy model says should be ephemeral.
 
 **Warning signs:**
-- A user undoes a status change and the same status change reappears within 15 minutes
-- The Event timeline for one application shows: `auto_status_changed` → `status_undone` → `auto_status_changed` (with no human action between the second pair)
-- An email row has both `reviewedByUser=true` and a fresh `auto_status_changed` event newer than the review
+- CSV export includes a `data` column with raw JSON
+- The exported CSV file contains email body excerpts
+- The export doesn't have a column-selection UI or a "what will be exported" preview
 
 **Prevention (actionable):**
-1. **The undo writes to the email, not (just) the application.** When user clicks undo: set `email.reviewedByUser = true`, set `email.processing_status = 'reviewed'` (or `'opted_out'`), AND write the `Event(status_undone)`. The classifier/auto-update pipeline must check `reviewedByUser` before acting. One column + one check, prevents re-act.
-2. **Optimistic concurrency on the application row.** When auto-update runs, include a `WHERE updatedAt = $previousUpdatedAt` clause; if zero rows updated, abort and log conflict. Prisma supports this via `update({ where: { id, updatedAt: prev } })` returning 0.
-3. **Sequential undo + re-classify is OK; concurrent is not.** Use the existing `pg_try_advisory_lock` per email-id (not just per-job) for the act stage to serialize — `pg_try_advisory_lock(hashtext('act:' || email_id))`. If undo's transaction holds the lock, the cron's act stage skips. Cheap.
-4. **Test the race directly.** Vitest with `Promise.all([undoStatusChange(), runActStage(email)])` — assert the application's final canonicalStatus matches the user's undo, not the cron's act.
+1. **Define a CSV export schema.** Explicitly list which columns are exported. For events: `type, source, occurredAt, applicationId`. Exclude `data` by default. If the user wants the JSON payload, make it opt-in with a checkbox.
+2. **Redact email excerpts in the export.** If `data` includes `bodyExcerpt`, replace with `[REDACTED]` in the CSV. The owner can see the full content in the app; the export is for analytics, not archival.
+3. **Add a "Download includes email content" warning** if the user opts into including the `data` column.
 
-**Phase to address:** `auto-update` (AUTO-01 + AUTO-04 — undo must touch the email, not just the application).
+**Phase to address:** Analytics dashboard phase (export feature design).
 
 ---
 
-### Pitfall 9: RLS test that "passes" because both roles use superuser
+### Pitfall 12: Next.js `output: 'standalone'` doesn't include uploaded files
 
 **What goes wrong:**
-You write `tenantDb.test.ts` with two test users, two applications, asserting that `tenantDb(userA).application.findMany()` doesn't see userB's data. Test passes. You ship. RLS is enabled at the table level. Months later you onboard a second user (or hand the app to another dev) and discover that RLS was being *bypassed* by the test's DB connection because the connection was the table-owner / superuser, and `FORCE ROW LEVEL SECURITY` wasn't on the migration.
+The `next.config.ts` has `output: 'standalone'` for Docker. The standalone output copies only the files needed to run the server — `node_modules` are pruned, `public/` is included, but `data/uploads/` is not. After a Docker rebuild, all uploaded documents are gone. The owner's resumes and cover letters vanish.
 
 **Why it happens:**
-[Postgres RLS rules](https://www.postgresql.org/docs/current/ddl-rowsecurity.html): superusers and roles with `BYPASSRLS` attribute always bypass policies. Table owners bypass unless `FORCE ROW LEVEL SECURITY` is set. `tenantDb` provides app-layer filtering and *will pass the test even when RLS is off*, masking the missing safety net.
+Next.js standalone output traces `require()` and `import` calls to determine which files to include. Static files in `public/` are included because Next.js serves them. But `data/uploads/` is outside the traced dependency tree — it's runtime data, not build-time code. Docker rebuilds don't preserve it unless a volume mount is configured.
 
-**Severity:** WOULD BITE EVENTUALLY (only matters when SaaS multi-user happens, but the moment it matters it's a tenant-leak vulnerability).
+**Severity:** WOULD BITE EVENTUALLY — the owner won't notice until they rebuild the Docker image and check an old application's documents.
 
 **Warning signs:**
-- Migration uses `ALTER TABLE … ENABLE ROW LEVEL SECURITY` without the matching `FORCE ROW LEVEL SECURITY`
-- Tests connect to Postgres with the same role as the migration tool (typically a superuser)
-- `\dp applications` in psql shows policies but `current_user` is the table owner
+- `data/uploads/` is not in `.dockerignore` (should be ignored by Docker COPY, served via volume mount)
+- No Docker volume mount for `data/` in `docker-compose.yml`
+- The backup/export feature (Polish milestone) doesn't include `data/uploads/`
+- Document upload works in dev but files disappear after `docker compose down && docker compose up`
 
 **Prevention (actionable):**
-1. **Migration must include `FORCE ROW LEVEL SECURITY`** for every tenant-scoped table — this is the line that makes the policy apply to the table owner too.
-2. **Tests must run as a non-superuser app role.** Create a `foray_app` role in the seed/test setup that has `SELECT, INSERT, UPDATE, DELETE` on the tenant tables but is *not* the owner and does *not* have `BYPASSRLS`. Use this role's connection string in test setup.
-3. **The escape-attempt test must explicitly try to break out** (per Pitfall 2's pattern). And the test must include an assertion that *RLS is actually active*: `SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'applications'` returns `(t, t)`.
-4. **CI sanity check:** a one-line query that confirms RLS is enabled on every table that should have it. Fails the build if a future migration accidentally drops RLS.
+1. **Mount `data/` as a Docker volume.** In `docker-compose.yml`: `volumes: ['./data:/app/data']`. This persists uploads across container rebuilds.
+2. **Add `data/` to `.dockerignore`** so Docker doesn't COPY it into the image (it would bloat the image and still be lost on rebuild).
+3. **The backup/export feature must include `data/uploads/`.** The milestone spec says "downloads ZIP of pg_dump + uploaded documents." Verify this actually works by: upload a document, export backup, delete `data/uploads/`, import backup, verify document is restored.
+4. **Document the volume requirement in `SETUP.md`** or the Docker section of the README.
 
-**Phase to address:** `foundational-hardening` (FND-02 RLS migration + FND-03 tests).
+**Phase to address:** Document storage phase (Docker configuration) and Polish phase (backup/restore).
 
 ---
 
-### Pitfall 10: Prisma 7 generator output / config gotchas eat half a day
+## Moderate Pitfalls
+
+### Pitfall 13: Extension popup loses state when Chrome throttles it
 
 **What goes wrong:**
-You go to add a new model to `schema.prisma`, run `pnpm prisma migrate dev`, and the migrate fails with a confusing config error. The schema looks fine. Tests start failing with "Cannot find module `@prisma/client`" because someone in another file imported the old path. Or: the build succeeds in dev but breaks in production with `Module not found: Can't resolve '...generated/prisma/client'` because Webpack/Turbopack handle the new generator output path differently.
+The extension popup shows auto-filled job data from the content script. The owner reviews the data, types a note, then clicks away to check something on the job page. The popup closes. When they reopen it, all entered data is gone — the content script re-ran and overwrote the manual edits.
 
-**Why it happens:**
-Prisma 7 (already adopted per `prisma/schema.prisma:11-13`) introduced several breaking changes that are *easy to violate accidentally*:
-1. **`output` field is required** in the generator block (foray sets `../src/generated/prisma`, correct).
-2. **Connection URL moved from schema.prisma to `prisma.config.ts`** ([Prisma 7 upgrade docs](https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7)). The `datasource db { provider = "postgresql" }` in current schema does not specify `url` — that's correct for Prisma 7 but trips up anyone used to Prisma ≤6.
-3. **Import path changed** to `@/generated/prisma/client`. Old `@prisma/client` imports will look like they work in IDE (because the package is still installed transitively) but break at runtime.
-4. **Bundler issues with ESM `.js` imports** in Next.js / Turbopack ([prisma/prisma#28627](https://github.com/prisma/prisma/issues/28627)) — needs config tweaks.
-5. **Adapter is required at runtime** — `PrismaPg` from `@prisma/adapter-pg`. Forgetting this gives a confusing error on first query.
+**Prevention:**
+1. **Persist form state in `chrome.storage.local`** keyed by tab URL. On popup open, check storage first, then content script.
+2. **Clear storage on successful capture** (not on popup close).
+3. **Debounce content script data** — don't overwrite user edits. Track a `dirty` flag: if the user has typed anything, don't auto-fill.
 
-**Severity:** NICE TO PREVENT (you'll figure it out, but it's the kind of thing that eats half a day on Wednesday and you can't afford that in a 1-week milestone).
-
-**Warning signs:**
-- A new `import { PrismaClient } from '@prisma/client'` (wrong path) anywhere in the codebase — should always be `@/generated/prisma/client`
-- `pnpm prisma migrate dev` errors mentioning "DATABASE_URL not found"
-- Build succeeds in dev but fails in production with module-not-found on the prisma generated client
-- Anyone running `pnpm prisma generate` and getting output in `node_modules/` instead of `src/generated/prisma`
-
-**Prevention (actionable):**
-1. **ESLint rule blocking `from '@prisma/client'`** with auto-fix to `@/generated/prisma/client`. One line in eslint config, prevents the entire foot-gun class.
-2. **`AGENTS.md` Prisma 7 reminder section** (already referenced in CLAUDE.md §"Document map") — make this section concrete: list the 5 things above with the exact error each produces. When Wednesday happens, future-you greps "DATABASE_URL not found" and finds the answer in 30 seconds.
-3. **CI step `pnpm prisma generate && pnpm typecheck`** in the same step — catches generator-output issues at PR time.
-4. **The `globalForPrisma` singleton lives in `src/core/db/client.ts`** (already in PRINCIPLES.md). Do not recreate `PrismaClient` in tests; have a test helper that uses the same singleton wrapped in a transaction-rollback fixture.
-
-**Phase to address:** `foundational-hardening` (FND-01 tenantDb extension is the natural touchpoint — anyone working on it will hit Prisma 7).
+**Phase to address:** Chrome extension phase (popup state management).
 
 ---
 
-### Pitfall 11: "Just one more tiny field" scope creep within Lean
+### Pitfall 14: Recruiter entity introduces N+1 queries on the application list
 
 **What goes wrong:**
-Tuesday: "I should add a `tags` field to applications." (5 min change in schema, 30 min UI). Wednesday: "I should add a tag-filter to the list view." (1 hour). Thursday: "I should add a tag-based search bar." (3 hours, plus tag-suggestion UI). Friday: tests broken, build broken, Lean ships next week. The `tags` column was already on the schema — the UI was deferred to Standard.
+The `/applications` list page now shows linked recruiters per application. The query fetches applications, then for each application, fetches its recruiters via the `ApplicationRecruiter` join table. With 100 applications, this is 101 queries.
 
-**Why it happens:**
-The Lean → Standard → Full progression (ADR-0007) is an *engineering constraint*, but every "tiny" addition feels like it costs nothing because the schema already has the field. Three patterns:
-1. **The schema is more permissive than the UI scope** — `tags`, `recruiters`, `documents`, `followUpAt` are all in `prisma/schema.prisma` but explicitly out-of-scope for Lean per `PROJECT.md`. The feature looks "almost free."
-2. **Scope is checked at milestone start, not at PR time.** Once you're heads-down in a slice, "while I'm here" additions feel local.
-3. **The "Out of scope" list in `lean.md` is plain markdown, not enforced anywhere.** No PR template, no CODEOWNERS check, no test that fails.
+**Prevention:**
+1. **Use Prisma `include: { recruiters: true }` in the list query.** This generates a single query with a JOIN. The existing `tenantDb.application.findMany` wrapper accepts `args.include` — use it.
+2. **If the recruiter data is only needed for display (name, role), use `select` instead of `include`** to avoid fetching `Recruiter.notes` and other large fields.
+3. **Benchmark the list query with 200 applications and 300 recruiter links.** If >200ms, consider a denormalized `recruiterNames` text column on Application.
 
-**Severity:** WOULD BITE EVENTUALLY (each individual creep is small; the cumulative effect ships the milestone late).
-
-**Warning signs:**
-- A diff touches a slice that wasn't on the milestone task list
-- A new component uses a Prisma model field that the milestone doesn't expose anywhere else (e.g., `tags`, `recruiters`)
-- A commit message says "while I was here…"
-- The acceptance criteria in `lean.md` haven't budged but the LOC count has
-
-**Prevention (actionable):**
-1. **Open a "Standard intake" file** (`.planning/standard-backlog.md`) and dump every "tiny addition" idea there with one line of context. The act of writing it down is the deferral. Costs ~30 sec; preserves the idea.
-2. **Daily check against `lean.md`'s "In scope" checkboxes.** End-of-day grep: which boxes did I tick? Did I touch anything outside of those boxes? If yes, that work doesn't count toward today and either gets reverted or moved to Standard.
-3. **PR template question:** "Is this work covered by a `lean.md` checkbox? If not, link the deferral note." (Solo dev — but PR template is also a self-discipline tool.)
-4. **The acceptance criteria are the gate, not the schema.** The schema includes Recruiter / Document / Tags because they're cheap to model now; UI for them is *explicitly deferred*. Treat schema fields as inert until a milestone lights them up.
-
-**Phase to address:** Cross-cutting; primarily a `foundational-hardening` discipline + every other phase.
+**Phase to address:** Recruiter entity phase (query optimization).
 
 ---
 
-### Pitfall 12: Test count theater (≥30 tests passes; tenant isolation isn't actually tested)
+### Pitfall 15: Google Calendar event creation fails silently when the user's calendar is read-only
 
 **What goes wrong:**
-You hit the `≥30 tests` target by writing 25 unit tests on classifier rule patterns (cheap, fast, mostly testing regex behavior) and 5 integration tests on env validation. `pnpm test:run` shows 30 green. Acceptance criterion ticked. But there are zero tests for: (a) `tenantDb` tenant isolation, (b) RLS escape attempts, (c) matcher false-positive on ATS domain, (d) the auto-update + undo race (Pitfall 8), (e) the Anthropic 529 path. The most consequential code paths are untested, and the test count gates them through.
+The OAuth scope includes `calendar.events` (read/write). But the user's primary calendar might have restricted sharing settings, or the OAuth consent might not actually grant write access (scope vs. permission mismatch). The Stage is created in foray, the Calendar event creation fails, but the error is swallowed. The owner thinks the event was created; it wasn't.
 
-**Why it happens:**
-Counting tests is a proxy metric for confidence; it's gameable. Classifier rule tests are easy to write in volume (one fixture, 5 lines of test code, looks like real coverage). The high-value tests — multi-user isolation, RLS, race conditions, error paths — are individually slow to write, individually pull weight 10x more than a regex test, and naturally lose the race against an N-tests-passing gate.
+**Prevention:**
+1. **Test Calendar write access immediately after OAuth callback.** Create a test event, verify it exists, delete it. If any step fails, surface the error in Settings.
+2. **Store `calendarWriteEnabled: boolean` on the User row.** Set to `true` only after the post-OAuth write test passes. The Calendar sync feature checks this flag and degrades gracefully (read-only sync, no event creation) if `false`.
+3. **Show Calendar sync status in Settings** — connected, read-only, or disconnected.
 
-**Severity:** WOULD BITE EVENTUALLY (test count looks healthy; the actual safety properties aren't verified).
-
-**Warning signs:**
-- The test pyramid is inverted: lots of unit tests, near-zero integration tests
-- No test file in `tests/integration/` or it exists but has only happy-path tests
-- `tenantDb.test.ts` doesn't exist or only tests one user
-- Search the test suite for `expect(...rls...)` or `expect(...crossTenant...)` returns nothing
-
-**Prevention (actionable):**
-1. **Replace the "≥30 tests" criterion with a coverage-by-category list.** The acceptance criterion in `lean.md` should require:
-   - ≥1 test for tenant isolation per tenant-scoped model (`Application`, `Email`, `Event`, `Stage`, `Company`)
-   - ≥1 RLS escape-attempt test (per Pitfall 2)
-   - ≥1 matcher test per tiebreak path (thread / domain / unmatched / ATS-blocked)
-   - ≥1 classifier test per label (rejection / interview_invite / recruiter_outreach / noise / unmatched)
-   - ≥1 auto-update + undo race test (per Pitfall 8)
-   - ≥1 Anthropic 529 / runaway-loop test (per Pitfall 6)
-   - Plus the rule fixtures.
-   The total naturally clears 30, but the *shape* is the gate.
-2. **The acceptance criterion 11 in `lean.md` ("Every Server Action returns Result<T, AppError>")** should be a CI grep: `git grep -nE 'export (async )?function' src/features/*/actions.ts` then assert each export's return type contains `Result`. No test count substitutes for an actual structural check.
-3. **CI report by directory.** A per-directory test count + coverage report makes it visible that `src/core/db/` has 1 test and `src/features/classifier/rules.ts` has 25. Eyeball weekly.
-4. **The hardest tests to write are the ones to write first.** RLS escape, undo race, runaway loop. If you can't write the test, the production code probably can't survive the scenario either.
-
-**Phase to address:** `foundational-hardening` (FND-03 should be re-spec'd as the category list above) — and the principle applies to every slice's tests.
+**Phase to address:** Google Calendar integration phase (OAuth callback + health check).
 
 ---
 
-## Technical Debt Patterns
+### Pitfall 16: Analytics chart library bloats the client bundle
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Single `CLASSIFIER_AUTO_THRESHOLD` env var (one number for all labels) | Simple to set; tunable without code | Wrong threshold for any one label corrupts trust on that label class (Pitfall 4) | Only as a temporary floor; per-label override should land before owner uses on real campaign |
-| Polling interval hardcoded at 15 min | One value, no UI | Burst-noisy in dev (cron fires at fixed times that don't align with debugging); wastes Anthropic quota during inactive periods | Acceptable for Lean; revisit when token cost or perceived staleness becomes a complaint |
-| Storing email body excerpt as plain `Text` (no FTS index) | Schema is simple; no extension dependency | Cross-foray search (Standard milestone feature) requires retrofitting `tsvector` + reindex; not free | Acceptable for Lean (no search UI); add `@db.tsvector` migration when search lands |
-| Single `DATABASE_URL` for migrations + runtime + tests | One variable, no env confusion | Tests pass with superuser RLS bypass (Pitfall 9); migrations grant superuser to runtime; multi-tenant escape goes silent | Never. Two URLs: `DATABASE_URL` (app, non-superuser role), `DATABASE_MIGRATION_URL` (migrate-only, owner role) |
-| `Event.data` as untyped JSON | Flexible schema for event variants | Type errors only surface at runtime; no schema enforcement on `auto_status_changed` payload shape | Acceptable for Lean if a Zod schema per `EventType` is *parsed* on read. Just write it. |
-| Skipping `pnpm depcheck` because "no new deps this PR" | Save 5 sec at commit time | First missed module-boundary violation is easier to fix in this PR than the next; CI gate per PRINCIPLES.md exists for a reason | Never. The pre-commit hook is the spec. |
+**What goes wrong:**
+You add a charting library (Chart.js, Recharts, Victory, etc.) for the analytics dashboard. The library is 200-500KB minified. It's imported on every page because the analytics layout is shared. The main bundle grows by 300KB. Every page load, including the Today dashboard and application list, is 300KB heavier.
 
-## Integration Gotchas
+**Prevention:**
+1. **Dynamic import the chart library.** `const Chart = dynamic(() => import('recharts'), { ssr: false })`. Next.js code-splits this into a separate chunk that only loads on `/analytics`.
+2. **Choose a lightweight library.** For simple bar/line charts, `recharts` (~200KB) or `@tremor/react` is overkill. Consider `chart.js` (~60KB) with tree-shaking, or `nivo` for React-specific charts.
+3. **SSR the data, CSR the charts.** Fetch aggregate data server-side (fast), render charts client-only. The page shows data tables immediately; charts load async.
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Gmail OAuth | Storing `access_token` and re-using it across requests | Store only `refresh_token` (encrypted); fetch `access_token` per-batch via google-auth-library; never persist `access_token` |
-| Gmail history.list | Treating `historyId` as permanently valid | Catch 404 → fall back to `messages.list?q=after:N` for last N days; reset `User.gmailHistoryId` after a successful full sync |
-| Gmail messages.get | Calling per-email in a loop | Use `batchGet` (10x quota efficiency) or process in `Promise.all` chunks of 5; respect 250 quota-units/user/sec |
-| Anthropic SDK | Letting default `maxRetries: 2` apply inside loops | `maxRetries: 0` for cron-tick calls; let the cron's next tick be the retry; otherwise burst → 529 → retry → 529 storm |
-| Anthropic 529 vs 429 | Treating both the same | 429 = your quota; back off and slow. 529 = upstream capacity; retry safely (doesn't burn your quota) but don't retry-storm |
-| Google OAuth scopes | Requesting `gmail.modify` or `gmail.readonly` (broad) | Use the most narrow scope foray actually needs — `gmail.metadata` doesn't return body but is sufficient for matching/threading. Trade-off: classifier needs body, so `gmail.readonly` is the right call — but be explicit about why |
-| `pg` Pool sizing | Default `max: 10` everywhere | At single-user with 1 cron + 1 web request, `max: 10` is fine. If you flip to RLS via interactive transactions, each transaction holds a connection longer — bump `max` and watch `pg_stat_activity` |
+**Phase to address:** Analytics dashboard phase (library selection + dynamic import).
 
-## Performance Traps
+---
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| `findMany` without `take` | List view returns thousands of rows; React renders 5000 cards | `take: 50` default + cursor pagination; `URL` state for page | When `applications` count exceeds ~200 |
-| N+1 on application detail | One query for app, then one per stage, one per event, one per email | `include: { stages: true, events: true, emails: true }` in the queries.ts call | Visible immediately; first user with >5 stages |
-| Cron tick processes all unprocessed emails | Single tick takes 5 minutes; node-cron next tick overlaps; advisory lock holds; nothing happens for 30 min | Per-tick cap (e.g., 50 emails); resume from last-processed checkpoint | When unprocessed backlog grows past ~50 (first sync of a Gmail account with weeks of emails) |
-| Synchronous email-by-email Gmail fetches | First sync takes 20 minutes for 500 emails | Use `batchGet` or `Promise.all(chunks)`; respect quota | First sync of any account with >100 unprocessed emails |
-| Loading the full `bodyExcerpt` Text column on list queries | `/applications` page payload is huge | `select: { id: true, ..., bodyExcerpt: false }` in list queries | Visible at ~50 emails; degrades smoothly so easy to miss |
-| `revalidatePath('/applications')` on every event write | Every classification triggers a page revalidation; SSR cost spikes | Batch revalidate at end of cron tick; or `revalidateTag` with a single tag per user | When cron processes >5 emails per tick |
+## Minor Pitfalls
 
-## Security Mistakes
+### Pitfall 17: Extension version mismatch between dev and production
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Logging Anthropic prompts including email body excerpts to a file (`classifier-log.jsonl`) | The `.jsonl` file is gitignored but lives on disk indefinitely; a backup or sync (iCloud, Dropbox) leaks sensitive email content | Rotate `classifier-log.jsonl` daily; add `data/` to system Time Machine excludes; document in SETUP.md |
-| Encrypting `gmail_refresh_token` with a key that lives in `.env.local` | Key + ciphertext on the same disk = no protection from disk theft | Acceptable for local-first single-user; document that disk-encryption (FileVault) is part of the threat model. Move to OS keychain when SaaS happens |
-| `APP_PASSWORD`-derived HMAC secret with no rotation path | Compromised password means re-derivation invalidates all sessions including yours; no graceful rotation | Salt the HMAC with a separate `SESSION_SECRET` env var; rotate by changing the secret; document the cookie-invalidation behavior |
-| Using `requireUser()` only in Server Actions (skipping Route Handlers) | The OAuth callback Route Handler at `/api/gmail/callback` is the canonical example — if it doesn't `requireUser()` first, a malicious link could attach a stranger's Gmail to your account | Every Route Handler in `src/app/api/**` begins with `requireUser()` unless it's an explicitly-public endpoint (auth/login). PRINCIPLES.md §"Security baseline" already says this; verify by grep. |
-| Trusting `email.from` for sender identity | Email From headers are trivially spoofable; accepting "from: hr@google.com" as authoritative for a Google application is naive | Use `From` for matching (best-effort) but not for auth decisions; never grant any privilege based on email content |
-| OAuth `redirect_uri` mismatch between dev and any future deploy | Locked-in `localhost:3000` means flipping to a domain breaks OAuth without a Google Cloud Console change | Use `env.PUBLIC_URL` for the redirect URI; keep `localhost:3000` and the future domain both in the OAuth client's allowed redirects from day one |
+**What goes wrong:**
+The extension is built from TypeScript via esbuild/Vite. The `manifest.json` has a `version` field. During development, you increment it manually. After a few iterations, the dev version (loaded via "Load unpacked") and the committed version diverge. A bug report references "extension v0.3.2" but the committed code is at v0.3.0.
 
-## UX Pitfalls
+**Prevention:**
+1. **Derive extension version from `package.json` version.** The build script reads `package.json` version and writes it to `manifest.json` at build time. One source of truth.
+2. **Add the extension version to the popup's settings/about section.** Visible to the owner without digging into Chrome's extension manager.
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Toast-only undo for a 10-second window | Owner misses the toast; status change is irreversible-feeling even though the timeline event still allows undo | Permanent undo button on the timeline event for 24h after auto-action; toast is a *bonus* notification |
-| Showing the LLM confidence as `0.83` (a number) in the review queue | Owner anchors on the number; doesn't develop intuition for what 0.83 means relative to 0.91 | Show as a 3-bar visual or "low / medium / high" with the precise number on hover; the number is for debugging, the bar is for triage |
-| Status filter defaults to "All" | Stale-rejected applications dominate the list; today's-action items are buried | Default filter excludes `rejected` + `withdrawn`; add a count badge showing "+12 archived" so the user knows what's hidden |
-| Sync-status hidden in `/settings` | Owner doesn't know polling is broken until they go looking | Persistent thin banner in main nav when `User.gmailLastSyncAt` is >2× the polling interval old (>30 min) |
-| Auto-update event styled the same as manual events | Owner skims the timeline, can't tell which changes were system vs self | Auto-update events get distinct visual treatment (icon + color per DESIGN.md) — they are the *audit trail*, not just history |
-| The capture form re-asks for company every time (no autocomplete) | 30-second goal gets blown to 90 seconds for the 5th application at the same company | Company autocomplete is in CAPT-01's spec; *test* it with 10 applications across 3 companies; if autocomplete UX is slow, it's not done |
+**Phase to address:** Chrome extension phase (build pipeline).
 
-## "Looks Done But Isn't" Checklist
+---
 
-- [ ] **Gmail OAuth flow**: Often missing token-revocation handling — verify by manually revoking access in https://myaccount.google.com/permissions and confirming foray surfaces the disconnection in `/settings`
-- [ ] **Auto-update + undo**: Often missing the "next cron tick re-acts" path — verify by clicking undo, then triggering the cron immediately, and asserting the status stays undone
-- [ ] **`tenantDb` wrapper**: Often missing one of `update`, `delete`, `upsert`, `count`, `aggregate` — verify by `grep "tenantDb(" src/features` and confirming every Prisma operation in scope is wrapped
-- [ ] **RLS migration**: Often missing `FORCE ROW LEVEL SECURITY` — verify by `\dp <table>` in psql, looking for both `relrowsecurity` and `relforcerowsecurity`
-- [ ] **Classifier rules**: Often missing the "noise" cases (newsletters, automated digests) which generate the most volume — verify by syncing a real Gmail and counting how many emails land in `unmatched` that should have been `noise`
-- [ ] **Matcher**: Often missing the ATS-domain block — verify by syncing a Gmail with at least one Greenhouse / Lever / Workday email and confirming it doesn't false-attribute
-- [ ] **Settings page sync state**: Often missing the "last sync at" timestamp — verify by reading `/settings` and confirming the on-screen value matches `User.gmailLastSyncAt` in DB
-- [ ] **`/inbox` review queue**: Often missing the empty state — verify by acceptance-testing a fresh user with zero emails and confirming the page is welcoming, not a console error
-- [ ] **Pre-commit hook**: Often missing one of the four checks — verify by running `cat .husky/pre-commit` (or whatever the hook file is) and confirming all four (`lint && typecheck && test:run && build`) plus `depcheck` are present
-- [ ] **`.env.example`**: Often *includes* secrets accidentally — verify by `git diff main -- .env.example` and checking nothing has a real value
+### Pitfall 18: Follow-up reminders fire for archived/completed applications
 
-## Recovery Strategies
+**What goes wrong:**
+The owner sets a follow-up reminder on an application. The application gets rejected (canonicalStatus: rejected). The cron checks `followUpAt <= today` without filtering by status. The reminder fires for a dead application. Annoying.
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Test-mode token expired (Pitfall 1) | LOW | Re-run OAuth flow from `/settings`; if 7-day clock will re-expire, flip OAuth to In Production with single-user audience |
-| RLS not actually enforcing (Pitfall 2/9) | MEDIUM | Audit every `prisma.$queryRaw`; rewrite as `tenantDb`; add `FORCE ROW LEVEL SECURITY`; add escape-attempt test; re-run isolation tests as non-superuser role |
-| Wrong auto-classification on real application (Pitfall 4) | LOW per-incident, HIGH cumulative | Use the timeline-permanent undo; raise the threshold for `rejection` specifically; add the offending email to `classifier-fixtures/should-not-have-fired.jsonl`; add a status-regression block |
-| Cron double-firing (Pitfall 3) | LOW | Add the `globalThis.__forayCron` guard; restart dev server; confirm logs show one `register()` boot |
-| Classifier ran in a loop (Pitfall 6) | MEDIUM | Add idempotency check on `email.classifiedBy`; add per-tick cap; check Anthropic dashboard for actual cost incurred; manually delete duplicate `classifier-log.jsonl` entries |
-| Auto-update undone-then-redone (Pitfall 8) | MEDIUM | Add `email.reviewedByUser` check to act-stage; replay the affected event log; manually re-undo the application status |
-| Scope crept past Lean (Pitfall 11) | HIGH (time) | Branch the in-progress feature, defer to Standard, revert main to last-Lean-passing state, ship Lean, re-merge feature work into Standard branch |
-| Test count target met but real coverage missing (Pitfall 12) | MEDIUM | Re-spec FND-03 to category-based coverage list; write the missing tests *before* the next feature; treat it as Lean ship-blocking |
+**Prevention:**
+1. **Filter reminders by active statuses only.** `WHERE followUpAt <= NOW() AND canonicalStatus NOT IN ('rejected', 'withdrawn') AND archivedAt IS NULL`.
+2. **Clear `followUpAt` when application is archived or withdrawn.** Belt and suspenders with the query filter.
 
-## Pitfall-to-Phase Mapping
+**Phase to address:** Reminders phase (cron query design).
 
-| Pitfall | Severity | Prevention Phase | Verification |
-|---------|----------|------------------|--------------|
-| 1 — Test-mode 7-day token expiry | BLOCKING | `gmail-ingestion`, `auth` | `/settings` shows token-health banner; revoke + reauth flow exercised in QA |
-| 2 — Prisma extension misses transaction context | BLOCKING | `foundational-hardening` | Escape-attempt test passes; pattern of `tx.$executeRaw` then `tx.<model>` is used everywhere |
-| 3 — `node-cron` double-fires under hot reload | WOULD BITE EVENTUALLY | `gmail-ingestion` | One boot ID per dev session; advisory lock log shows no overlap |
-| 4 — Trust crisis on first wrong auto-classification | BLOCKING (product) | `classifier`, `auto-update`, `review-queue` | Per-label thresholds in code; status-regression block tested; permanent undo on timeline |
-| 5 — ATS sender-domain false positives | WOULD BITE EVENTUALLY | `matcher`, `capture` | ATS domains banned in capture validation; matcher test fixtures include Greenhouse/Lever/Workday samples |
-| 6 — LLM cost cap is monitoring not control | WOULD BITE EVENTUALLY | `classifier` | Pre-call budget guard returns `RateLimited`; idempotency test asserts ≤1 LLM call per email |
-| 7 — Privacy rule conflicts with review queue | WOULD BITE EVENTUALLY | `gmail-ingestion`, `review-queue` | Excerpt-only review works; degraded-mode banner appears on token failure |
-| 8 — Auto-update + undo race | BLOCKING (product) | `auto-update` | Race test (`Promise.all(undo, act)`) asserts undo wins; `reviewedByUser` blocks re-act |
-| 9 — RLS test passes via superuser bypass | WOULD BITE EVENTUALLY | `foundational-hardening` | Test connection uses non-superuser role; CI check asserts `relforcerowsecurity = true` |
-| 10 — Prisma 7 generator/config gotchas | NICE TO PREVENT | `foundational-hardening` | ESLint rule blocks `from '@prisma/client'`; AGENTS.md has Prisma 7 troubleshooting section |
-| 11 — "Just one more tiny field" scope creep | WOULD BITE EVENTUALLY | All phases (process discipline) | `.planning/standard-backlog.md` exists and accumulates entries; daily check against `lean.md` checkboxes |
-| 12 — Test count theater | WOULD BITE EVENTUALLY | `foundational-hardening` | FND-03 re-spec'd as category list; per-directory coverage report; structural CI checks (Result return type, RLS enabled) |
+---
+
+## Integration Pitfalls (Cross-Feature)
+
+### Pitfall 19: Extension capture bypasses the Zod validation that the web form enforces
+
+**What goes wrong:**
+The web capture form at `/applications/new` runs Zod validation client-side and server-side. The extension sends data directly to `/api/capture`. If the API route doesn't run the same Zod schema, the extension can submit invalid data (missing company name, negative salary, XSS in roleTitle). The existing bookmarklet may already have this issue.
+
+**Prevention:**
+1. **The `/api/capture` route must run the exact same Zod schema as the server action.** Import `schema.ts` from the `applications` or `capture` slice. Don't duplicate validation logic.
+2. **Test the capture API with invalid payloads directly** (curl, not via the extension). Assert Zod errors are returned, not Prisma errors.
+
+**Phase to address:** Chrome extension phase (API route validation).
+
+---
+
+### Pitfall 20: Multiple features add `Event` types without updating the timeline component
+
+**What goes wrong:**
+Document upload creates `Event(type='document_uploaded')`. Recruiter link creates `Event(type='recruiter_linked')`. Calendar sync creates a new event type. The timeline component in the application detail page (`/applications/[id]`) only renders known event types. New event types show as blank rows or crash the component.
+
+**Prevention:**
+1. **The timeline component must have a default renderer for unknown event types.** Show the event type as a label, the timestamp, and the `data` JSON as a collapsible raw view. Never crash on unknown types.
+2. **When adding a new `EventType` enum value, add the corresponding timeline renderer in the same PR.** Make it a PR checklist item.
+
+**Phase to address:** Every feature phase that adds an EventType. Enforce via PR checklist.
+
+---
+
+## Phase-Specific Warnings
+
+| Phase | Likely Pitfall | Mitigation |
+|-------|---------------|------------|
+| Chrome Extension | Service worker dies, losing state (Pitfall 1) | All state in `chrome.storage.local`, alarm-based badge sync |
+| Chrome Extension | SPA navigation breaks content script (Pitfall 2) | `webNavigation.onHistoryStateUpdated` re-injection |
+| Chrome Extension | Mixed-content blocks API calls from content script (Pitfall 3) | Content script scrapes, service worker fetches |
+| Document Storage | Path traversal via client filename (Pitfall 4) | Server-generated filenames, MIME validation via magic bytes |
+| Document Storage | Orphaned files on application delete (Pitfall 8) | Cleanup hook on delete, volume-mounted storage |
+| Document Storage | `tenantDb` not extended for Document (Pitfall 8b) | Add wrappers as first commit, before any feature code |
+| Document Storage | Standalone Docker output loses uploads (Pitfall 12) | Volume mount `data/`, add to `.dockerignore` |
+| Recruiter Entity | ATS domain auto-link misattribution (Pitfall 9) | Exact email match only, ATS domain ban, display-name suggestion |
+| Recruiter Entity | N+1 queries on application list (Pitfall 14) | Prisma `include` with JOIN |
+| Google Calendar | Scope addition invalidates Gmail token (Pitfall 5) | Separate refresh tokens per service, or combined-scope single token |
+| Google Calendar | Sync loop from field format mismatch (Pitfall 6) | Store `etag`, normalize before compare, one-way write |
+| Google Calendar | Silent failure on read-only calendar (Pitfall 15) | Post-OAuth write test, `calendarWriteEnabled` flag |
+| Analytics | O(n^2) funnel queries on events table (Pitfall 7) | Materialized views, composite indexes, benchmark early |
+| Analytics | CSV export leaks email content (Pitfall 11) | Column-selection UI, redact excerpts by default |
+| Analytics | Chart library bloats bundle (Pitfall 16) | Dynamic import, lightweight library |
+| Reminders | Cron competes with Gmail cron (Pitfall 10) | CronRegistry with per-job advisory locks |
+| Reminders | Reminders fire for dead applications (Pitfall 18) | Filter by active status, clear on archive |
+| Cross-Feature | Extension bypasses Zod validation (Pitfall 19) | Same schema import in API route |
+| Cross-Feature | New EventTypes crash timeline (Pitfall 20) | Default renderer for unknown types |
+
+---
+
+## "Looks Done But Isn't" Checklist (v0.3 Specific)
+
+- [ ] **Chrome extension**: Test on SPA navigation (LinkedIn search → click job → capture). Not just fresh page loads.
+- [ ] **Chrome extension**: Test with service worker killed (`chrome://serviceworker-internals` → Stop). Verify badge and queue survive.
+- [ ] **Chrome extension**: Test from HTTPS page. Verify no mixed-content errors.
+- [ ] **Document upload**: Test path traversal (`filename: "../../etc/passwd"`). Verify server rejects or sanitizes.
+- [ ] **Document upload**: Test with non-PDF file (`.html`, `.exe`). Verify MIME validation rejects.
+- [ ] **Document download**: Test with `Content-Disposition: attachment`. Verify no inline rendering.
+- [ ] **Document storage**: Upload → delete application → verify file is cleaned up from disk.
+- [ ] **Document storage**: Verify `tenantDb` wrappers exist for Document, Recruiter, ApplicationRecruiter.
+- [ ] **Calendar sync**: Test scope addition doesn't break Gmail. Verify both APIs work after re-auth.
+- [ ] **Calendar sync**: Create event → poll 3 times → verify no duplicate updates (etag check).
+- [ ] **Calendar sync**: Test with declined event. Verify foray handles external modification without looping.
+- [ ] **Analytics**: Benchmark funnel query with 500 applications / 5000 events. Verify <500ms.
+- [ ] **Analytics**: Test CSV export. Verify email content is not included by default.
+- [ ] **Reminders**: Test that reminder cron doesn't block Gmail cron (distinct advisory locks).
+- [ ] **Reminders**: Set follow-up on application → reject application → verify reminder doesn't fire.
+- [ ] **Cross-feature**: Add `document_uploaded` event → verify timeline renders it correctly.
+- [ ] **Docker**: Verify `data/uploads/` survives `docker compose down && docker compose up`.
 
 ---
 
 ## Sources
 
-- [Google Cloud — Manage App Audience (test mode 100-user cap and 7-day token revocation)](https://support.google.com/cloud/answer/15549945?hl=en)
-- [Google Cloud — Unverified apps screen + 100-user cap](https://support.google.com/cloud/answer/7454865?hl=en)
-- [Nango — Google OAuth invalid_grant: Token has been expired or revoked](https://nango.dev/blog/google-oauth-invalid-grant-token-has-been-expired-or-revoked/)
-- [Gmail API — Method: users.history.list (404 + full-sync fallback)](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.history/list)
-- [Greenhouse Support — no-reply email addresses](https://support.greenhouse.io/hc/en-us/articles/17675865619099-Greenhouse-Recruiting-no-reply-email-addresses)
-- [Underdog.io — Stop Using No-Reply Emails for Recruiting (ATS sender-domain pattern)](https://underdog.io/blog/stop-using-noreply-emails-for-recruiting-messages)
+- [Chrome Developers — Service worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
+- [Chrome Developers — Content scripts](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)
+- [Chrome Developers — Manifest V3 migration: Background service workers](https://developer.chrome.com/docs/extensions/develop/migrate/improve-perf)
+- [Google OAuth — Refresh token behavior](https://developers.google.com/identity/protocols/oauth2/web-server#offline)
+- [Google Calendar API — Events](https://developers.google.com/calendar/api/v3/reference/events)
+- [Google Calendar API — Sync](https://developers.google.com/calendar/api/guides/sync)
+- [Next.js Docs — Output standalone](https://nextjs.org/docs/app/api-reference/next-config-js/output)
 - [Prisma Docs — Client extensions](https://www.prisma.io/docs/orm/prisma-client/client-extensions)
-- [prisma/prisma#17948 — Client extensions in interactive transactions are bound to base client](https://github.com/prisma/prisma/issues/17948)
-- [prisma/prisma#23583 — Interactive transactions with extended client for RLS in postgres causes blocking queries](https://github.com/prisma/prisma/issues/23583)
-- [Prisma Docs — Upgrade to Prisma 7 (breaking changes)](https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7)
-- [prisma/prisma#28627 — Prisma Client 7 generated code breaks when bundling with Webpack](https://github.com/prisma/prisma/issues/28627)
-- [PostgreSQL Docs — Row Security Policies (FORCE ROW LEVEL SECURITY, owner bypass)](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
-- [pgBouncer — Features (transaction pooling and SET LOCAL caveats)](https://www.pgbouncer.org/features.html)
-- [Daniel Imfeld — PostgreSQL Row Level Security notes (RLS + transaction pooling pitfalls)](https://imfeld.dev/notes/postgresql_row_level_security)
-- [Blair Jordan — Testing RLS Policies in PostgreSQL with pgTAP](https://blair-devmode.medium.com/testing-row-level-security-rls-policies-in-postgresql-with-pgtap-a-supabase-example-b435c1852602)
-- [Next.js Docs — Instrumentation hook (NEXT_RUNTIME guard, hot reload behavior)](https://nextjs.org/docs/app/guides/instrumentation)
-- [Anthropic API Docs — Errors (529 vs 429 distinction)](https://docs.anthropic.com/en/api/errors)
-- [TokenMix — Anthropic Overloaded Error workarounds 2026](https://tokenmix.ai/blog/anthropic-overloaded-error-why-workarounds-2026)
-- foray internal: `PRINCIPLES.md`, `docs/milestones/lean.md`, `docs/decisions/0006-hybrid-trust-classifier.md`, `docs/decisions/0009-docker-and-postgres.md`, `prisma/schema.prisma`, `.planning/PROJECT.md`
+- [PostgreSQL Docs — Row Security Policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- [OWASP — Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
+- foray internal: `PRINCIPLES.md`, `CLAUDE.md`, `docs/milestones/full.md`, `prisma/schema.prisma`, `src/core/db/tenant.ts`, `src/features/inbox/gmail-client.ts`, `.planning/PROJECT.md`
 
 ---
-*Pitfalls research for: foray Lean milestone (single-user job-hunt CRM with Gmail OAuth + LLM classifier on Next.js 15 + Prisma 7 + Postgres)*
-*Researched: 2026-05-09*
+
+*Pitfalls research for: foray v0.3 Full milestone (Chrome extension, document storage, recruiter entity, Google Calendar, analytics, reminders)*
+*Researched: 2026-05-10*

@@ -1,43 +1,34 @@
-// Global declaration for hot-reload safety
-const g = globalThis as unknown as { __forayCron?: { stop: () => void } }
-
 export async function register() {
-  // Guard 1: Skip on Edge runtime (node-cron requires Node.js)
-  // prisma is dynamically imported below — keeping it out of the Edge bundle.
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return
+  const { registerCronJobs } = await import('@/core/cron/registry')
 
-  // Guard 2: Skip in test environment
-  if (process.env.NODE_ENV === 'test') return
-
-  const cron = await import('node-cron')
-  const { prisma } = await import('@/core/db/client')
-
-  // Guard 3: Stop previous cron on hot reload
-  g.__forayCron?.stop()
-
-  g.__forayCron = cron.schedule('*/15 * * * *', async () => {
-    // Guard 4: Advisory lock prevents overlap
-    const lockResult = await prisma.$queryRaw<{ locked: boolean }[]>`
-      SELECT pg_try_advisory_lock(hashtext('poll-gmail')) AS locked`
-    if (!lockResult[0]?.locked) return
-
-    try {
-      const { pollOnce } = await import('@/features/inbox/service')
-
-      // Get sole user ID (single-user app)
-      const user = await prisma.user.findFirst({ select: { id: true } })
-      if (!user) return
-
-      const { UserId } = await import('@/core/types/ids')
-      const userId = UserId(user.id)
-
-      const result = await pollOnce(userId)
-      if (result.isErr()) {
+  await registerCronJobs([
+    {
+      name: 'poll-gmail',
+      schedule: '*/15 * * * *',
+      handler: async () => {
+        const { prisma } = await import('@/core/db/client')
+        const user = await prisma.user.findFirst({ select: { id: true } })
+        if (!user) return
+        const { UserId } = await import('@/core/types/ids')
+        const { pollOnce } = await import('@/features/inbox/service')
+        const result = await pollOnce(UserId(user.id))
+        if (result.isErr()) {
+          const { logger } = await import('@/core/logger')
+          logger.error({ err: result.error, op: 'cron.pollOnce' }, 'cron tick failed')
+        }
+      },
+    },
+    {
+      name: 'reminder-check',
+      schedule: '*/15 * * * *',
+      handler: async () => {
+        // Reminder check is a no-op handler — the Today page query
+        // already fetches overdue follow-ups directly. This job exists
+        // to satisfy REMIND-05 (cron runs every 15 min) and to provide
+        // a hook for future notification logic.
         const { logger } = await import('@/core/logger')
-        logger.error({ err: result.error, op: 'cron.pollOnce' }, 'cron tick failed')
-      }
-    } finally {
-      await prisma.$queryRaw`SELECT pg_advisory_unlock(hashtext('poll-gmail'))`
-    }
-  })
+        logger.info({ op: 'cron.reminderCheck' }, 'reminder check tick')
+      },
+    },
+  ])
 }

@@ -25,6 +25,7 @@ import { ApplicationId, StageId } from '@/core/types/ids'
 
 import {
   createApplicationSchema,
+  followUpInputSchema,
   notesInputSchema,
   stageInputSchema,
   stageOutcomeEnum,
@@ -40,6 +41,7 @@ import {
   updateStage,
 } from './stages-service'
 import { updateApplicationNotes } from './notes-service'
+import { setFollowUp, clearFollowUp } from './follow-up-service'
 
 import type { ZodError } from 'zod'
 
@@ -292,5 +294,142 @@ export async function updateNotesAction(
   if (result.value.notesChanged) {
     revalidatePath(`/applications/${applicationId}`)
   }
+  return initialOk
+}
+
+// ---------------------------------------------------------------------------
+// updateTagsAction — curried with applicationId
+// Receives tags as JSON string from the TagEditor component.
+// ---------------------------------------------------------------------------
+
+export async function updateTagsAction(
+  applicationId: number,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const rawTags = formData.get('tags')
+  if (typeof rawTags !== 'string') {
+    return { ok: false, errors: {}, formError: 'Tags data missing.' }
+  }
+
+  let tags: string[]
+  try {
+    tags = JSON.parse(rawTags)
+    if (!Array.isArray(tags)) throw new Error()
+  } catch {
+    return { ok: false, errors: {}, formError: 'Invalid tags data.' }
+  }
+
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  // Normalize: lowercase, trim, deduplicate, filter empty
+  const cleaned = [...new Set(tags.map((t) => t.toLowerCase().trim()).filter(Boolean))]
+
+  // Fetch current tags to compute diff
+  const { withRls } = await import('@/core/db/with-rls')
+
+  const result = await withRls(userId, async (tx) => {
+    const appId = Number(applicationId)
+    const app = await tx.application.findUnique({
+      where: { id: appId },
+      select: { id: true, userId: true, tags: true },
+    })
+    if (!app || app.userId !== Number(userId)) {
+      throw new Error(`NOT_FOUND:Application:${String(applicationId)}`)
+    }
+
+    const updated = await tx.application.update({
+      where: { id: appId },
+      data: { tags: { set: cleaned } },
+      select: { tags: true },
+    })
+
+    return { tags: updated.tags }
+  })
+
+  if (result.isErr()) {
+    // Translate throw-bridge: withRls wraps thrown errors as Db; unwrap
+    // NOT_FOUND: prefix to produce the correct _tag for the check below.
+    const err = result.error
+    const isNotFound =
+      err._tag === 'NotFound' ||
+      (err._tag === 'Db' && err.cause instanceof Error && err.cause.message.startsWith('NOT_FOUND:'))
+    const formError = isNotFound
+      ? 'Foray not found.'
+      : 'Could not save tags.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/applications')
+  return initialOk
+}
+
+// ---------------------------------------------------------------------------
+// setFollowUpAction — curried with applicationId (REMIND-01)
+// ---------------------------------------------------------------------------
+
+export async function setFollowUpAction(
+  applicationId: number,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = followUpInputSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) {
+    return { ok: false, errors: fieldErrorsFromZod(parsed.error) }
+  }
+
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  const result = await setFollowUp(
+    userId,
+    ApplicationId(String(applicationId)),
+    parsed.data.followUpAt,
+  )
+  if (result.isErr()) {
+    const formError =
+      result.error._tag === 'NotFound'
+        ? 'Foray not found.'
+        : 'Could not set follow-up.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/today')
+  return initialOk
+}
+
+// ---------------------------------------------------------------------------
+// clearFollowUpAction — curried with applicationId (REMIND-01)
+// ---------------------------------------------------------------------------
+
+export async function clearFollowUpAction(
+  applicationId: number,
+  _prev: ActionState,
+): Promise<ActionState> {
+  void _prev
+
+  const userResult = await requireUser()
+  if (userResult.isErr()) return authError()
+  const userId = userResult.value.id
+
+  const result = await clearFollowUp(
+    userId,
+    ApplicationId(String(applicationId)),
+  )
+  if (result.isErr()) {
+    const formError =
+      result.error._tag === 'NotFound'
+        ? 'Foray not found.'
+        : 'Could not clear follow-up.'
+    return { ok: false, errors: {}, formError }
+  }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath('/today')
   return initialOk
 }

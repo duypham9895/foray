@@ -1,17 +1,5 @@
 'use client'
 
-// Capture form (CAPT-01 + CAPT-02). React 19 useActionState pattern, matching
-// src/features/auth/components/login-form.tsx. Per-field error rendering reads
-// state.errors[fieldName]?.[0] in line with PRINCIPLES.md §"Forms — useActionState
-// pattern".
-//
-// Salary fields collapsed by default behind a "Show salary" toggle to keep the
-// form short — supports the <30s capture target (CONTEXT §"Specifics" / CAPT-01).
-//
-// Company autocomplete uses a native <datalist> populated server-side from the
-// page's withRls company.findMany call (CONTEXT §"Claude's Discretion" — datalist
-// over combobox for Lean).
-
 import { useActionState, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
@@ -31,7 +19,6 @@ function decodePrefill(searchParams: URLSearchParams): PrefillData {
   const encoded = searchParams.get('prefilled')
   if (!encoded) return {}
   try {
-    // base64url → standard base64 for atob
     const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
     const json = atob(b64)
     return JSON.parse(json) as PrefillData
@@ -41,13 +28,19 @@ function decodePrefill(searchParams: URLSearchParams): PrefillData {
 }
 
 const initial: ActionState = { ok: true }
-
 const today = () => new Date().toISOString().slice(0, 10)
 
 function fieldError(state: ActionState, name: string): string | undefined {
   if (state.ok) return undefined
   return state.errors[name]?.[0]
 }
+
+const inputClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20'
+
+const labelClass = 'block text-sm text-muted-foreground'
+const optionalClass = 'text-muted-foreground/60'
+const errorClass = 'text-xs text-destructive mt-1'
 
 export function NewApplicationForm({
   companies,
@@ -62,18 +55,18 @@ export function NewApplicationForm({
   const formError = !state.ok ? state.formError : undefined
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-5">
       {formError ? (
         <p
           role="alert"
-          className="text-sm text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded px-3 py-2"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           {formError}
         </p>
       ) : null}
 
-      <div className="space-y-1">
-        <label htmlFor="companyName" className="block text-sm">
+      <div className="space-y-1.5">
+        <label htmlFor="companyName" className={labelClass}>
           Company
         </label>
         <input
@@ -84,7 +77,7 @@ export function NewApplicationForm({
           autoComplete="off"
           defaultValue={prefill.companyName ?? ''}
           aria-invalid={!!fieldError(state, 'companyName')}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         <datalist id="company-names">
           {companies.map((c) => (
@@ -92,15 +85,15 @@ export function NewApplicationForm({
           ))}
         </datalist>
         {fieldError(state, 'companyName') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'companyName')}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="companyDomain" className="block text-sm">
-          Company domain <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="companyDomain" className={labelClass}>
+          Company domain <span className={optionalClass}>(optional)</span>
         </label>
         <input
           id="companyDomain"
@@ -108,17 +101,17 @@ export function NewApplicationForm({
           placeholder="stripe.com"
           defaultValue={prefill.companyDomain ?? ''}
           aria-invalid={!!fieldError(state, 'companyDomain')}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         {fieldError(state, 'companyDomain') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'companyDomain')}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="roleTitle" className="block text-sm">
+      <div className="space-y-1.5">
+        <label htmlFor="roleTitle" className={labelClass}>
           Role title
         </label>
         <input
@@ -128,18 +121,18 @@ export function NewApplicationForm({
           maxLength={160}
           defaultValue={prefill.roleTitle ?? ''}
           aria-invalid={!!fieldError(state, 'roleTitle')}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         {fieldError(state, 'roleTitle') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'roleTitle')}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="roleUrl" className="block text-sm">
-          Role URL <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="roleUrl" className={labelClass}>
+          Role URL <span className={optionalClass}>(optional)</span>
         </label>
         <input
           id="roleUrl"
@@ -147,54 +140,55 @@ export function NewApplicationForm({
           type="url"
           defaultValue={prefill.roleUrl ?? ''}
           aria-invalid={!!fieldError(state, 'roleUrl')}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         {fieldError(state, 'roleUrl') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'roleUrl')}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="jobDescription" className="block text-sm">
-          Job description <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="jobDescription" className={labelClass}>
+          Job description <span className={optionalClass}>(optional)</span>
         </label>
         <textarea
           id="jobDescription"
           name="jobDescription"
           rows={4}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         {fieldError(state, 'jobDescription') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'jobDescription')}
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="location" className="block text-sm">
-          Location <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="location" className={labelClass}>
+          Location <span className={optionalClass}>(optional)</span>
         </label>
         <input
           id="location"
           name="location"
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="source" className="block text-sm">
+      <div className="space-y-1.5">
+        <label htmlFor="source" className={labelClass}>
           Source
         </label>
         <select
           id="source"
           name="source"
           defaultValue="other"
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         >
           <option value="linkedin">LinkedIn</option>
+          <option value="company">Company website</option>
           <option value="direct">Direct</option>
           <option value="referral">Referral</option>
           <option value="recruiter">Recruiter</option>
@@ -202,8 +196,8 @@ export function NewApplicationForm({
         </select>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="appliedAt" className="block text-sm">
+      <div className="space-y-1.5">
+        <label htmlFor="appliedAt" className={labelClass}>
           Applied date
         </label>
         <input
@@ -211,7 +205,7 @@ export function NewApplicationForm({
           name="appliedAt"
           type="date"
           defaultValue={today()}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
       </div>
 
@@ -219,15 +213,16 @@ export function NewApplicationForm({
         <button
           type="button"
           onClick={() => setShowSalary((v) => !v)}
-          className="text-sm text-stone-500 hover:text-stone-700 underline"
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition"
         >
           {showSalary ? 'Hide salary' : 'Show salary'}
         </button>
       </div>
+
       {showSalary ? (
         <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <label htmlFor="salaryMin" className="block text-sm">
+          <div className="space-y-1.5">
+            <label htmlFor="salaryMin" className={labelClass}>
               Min
             </label>
             <input
@@ -235,16 +230,16 @@ export function NewApplicationForm({
               name="salaryMin"
               type="number"
               min={0}
-              className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+              className={inputClass}
             />
             {fieldError(state, 'salaryMin') ? (
-              <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+              <p role="alert" className={errorClass}>
                 {fieldError(state, 'salaryMin')}
               </p>
             ) : null}
           </div>
-          <div className="space-y-1">
-            <label htmlFor="salaryMax" className="block text-sm">
+          <div className="space-y-1.5">
+            <label htmlFor="salaryMax" className={labelClass}>
               Max
             </label>
             <input
@@ -252,16 +247,16 @@ export function NewApplicationForm({
               name="salaryMax"
               type="number"
               min={0}
-              className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+              className={inputClass}
             />
             {fieldError(state, 'salaryMax') ? (
-              <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+              <p role="alert" className={errorClass}>
                 {fieldError(state, 'salaryMax')}
               </p>
             ) : null}
           </div>
-          <div className="space-y-1">
-            <label htmlFor="salaryCurrency" className="block text-sm">
+          <div className="space-y-1.5">
+            <label htmlFor="salaryCurrency" className={labelClass}>
               Currency
             </label>
             <input
@@ -269,15 +264,15 @@ export function NewApplicationForm({
               name="salaryCurrency"
               maxLength={8}
               placeholder="USD"
-              className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+              className={inputClass}
             />
           </div>
         </div>
       ) : null}
 
-      <div className="space-y-1">
-        <label htmlFor="notes" className="block text-sm">
-          Notes <span className="text-stone-500">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="notes" className={labelClass}>
+          Notes <span className={optionalClass}>(optional)</span>
         </label>
         <textarea
           id="notes"
@@ -286,10 +281,10 @@ export function NewApplicationForm({
           maxLength={2000}
           placeholder="Add a note about this foray…"
           defaultValue={prefill.notes ?? ''}
-          className="w-full rounded border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2 text-base"
+          className={inputClass}
         />
         {fieldError(state, 'notes') ? (
-          <p role="alert" className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+          <p role="alert" className={errorClass}>
             {fieldError(state, 'notes')}
           </p>
         ) : null}

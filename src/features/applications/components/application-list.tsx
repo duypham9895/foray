@@ -15,6 +15,7 @@ import { Badge } from '@/ui/badge'
 import { Card, CardContent } from '@/ui/card'
 
 import type { ApplicationListItem, ListSort } from '../queries'
+import { StaleIndicator } from './stale-indicator'
 
 const ALL_STATUSES: CanonicalStatus[] = [
   'applied',
@@ -160,6 +161,7 @@ export function ApplicationList({
                       <p className="text-sm text-muted-foreground">{item.companyName}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
+                      <StaleIndicator daysQuiet={item.daysQuiet} />
                       <StatusBadge status={item.canonicalStatus} />
                       <span className="font-mono text-xs text-muted-foreground">
                         {formatDistanceToNow(item.lastActivityAt, { addSuffix: true })}

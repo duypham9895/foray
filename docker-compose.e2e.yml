@@ -1,0 +1,39 @@
+# =============================================================================
+# foray — E2E test compose
+# Spins up Postgres + app with Playwright browsers for reproducible E2E runs.
+# Usage:  docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: foray-e2e-db
+    environment:
+      POSTGRES_USER: foray_e2e
+      POSTGRES_PASSWORD: foray_e2e
+      POSTGRES_DB: foray_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foray_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    container_name: foray-e2e-runner
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://foray_e2e:foray_e2e@db:5432/foray_e2e
+      APP_PASSWORD: test-password-e2e
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+      ANTHROPIC_API_KEY: ""
+      NODE_ENV: test
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results

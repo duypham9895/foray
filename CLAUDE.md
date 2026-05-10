@@ -232,7 +232,8 @@ The project ships hooks that enforce rules in this CLAUDE.md automatically. They
 |---|---|
 | `DEVKIT_PREPUSH_SKIP=1` | Skip `pre-push-tests` for this push |
 | `touch .claude/.devkit/prepush-skip` | Persistent skip of `pre-push-tests` for this project |
-| `FORAY_ALLOW_DB_RESET=1` | Allow one `pnpm db:reset` / `prisma migrate reset` |
+| `FORAY_ALLOW_PUSH_MAIN=1` | Allow direct push to `main` (still blocks `--force`) |
+| `FORAY_ALLOW_DB_RESET=1` | Allow one destructive db rebuild |
 | `FORAY_ALLOW_COAUTHOR=1` | Allow `Co-Authored-By: Claude` in commit (use only when user explicitly asks) |
 | `DEVKIT_STATUSLINE_ANIMATE=0` | Disable statusline animation |
 

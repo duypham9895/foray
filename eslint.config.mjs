@@ -48,6 +48,21 @@ const eslintConfig = defineConfig([
                 ['feature', { slice: 'applications' }],
               ],
             },
+            // Application detail page renders document components.
+            {
+              from: [['feature', { slice: 'applications' }]],
+              allow: [
+                ['feature', { slice: 'documents' }],
+              ],
+            },
+            // Today dashboard displays inbox review queue and needs to call
+            // inbox confirmation actions.
+            {
+              from: [['feature', { slice: 'today' }]],
+              allow: [
+                ['feature', { slice: 'inbox' }],
+              ],
+            },
           ],
         },
       ],

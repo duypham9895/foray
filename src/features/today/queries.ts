@@ -170,14 +170,54 @@ export async function findTodaysInterviews(
         },
       },
     })
-    return rows.map<TodaysInterview>((r) => ({
-      stageId: r.id,
-      applicationId: r.application.id,
-      roleTitle: r.application.roleTitle,
-      companyName: r.application.company.name,
-      stageName: r.name,
-      scheduledAt: r.scheduledAt!,
-    }))
+    return rows
+      .filter((r): r is typeof r & { scheduledAt: Date } => r.scheduledAt !== null)
+      .map<TodaysInterview>((r) => ({
+        stageId: r.id,
+        applicationId: r.application.id,
+        roleTitle: r.application.roleTitle,
+        companyName: r.application.company.name,
+        stageName: r.name,
+        scheduledAt: r.scheduledAt,
+      }))
+  })
+}
+
+// --- Overdue follow-ups ---
+
+export type OverdueFollowUp = {
+  id: number
+  roleTitle: string
+  companyName: string
+  followUpAt: Date
+  daysOverdue: number
+}
+
+export async function findOverdueFollowUps(
+  userId: UserId,
+): Promise<Result<OverdueFollowUp[], AppError>> {
+  const now = new Date()
+
+  return withRls(userId, async (tx) => {
+    const rows = await tx.application.findMany({
+      where: {
+        userId: Number(userId),
+        archivedAt: null,
+        followUpAt: { lte: now, not: null },
+      },
+      orderBy: { followUpAt: 'asc' },
+      include: { company: { select: { name: true } } },
+    })
+
+    return rows
+      .filter((r) => r.followUpAt !== null)
+      .map<OverdueFollowUp>((r) => ({
+        id: r.id,
+        roleTitle: r.roleTitle,
+        companyName: r.company.name,
+        followUpAt: r.followUpAt!,
+        daysOverdue: Math.floor((now.getTime() - r.followUpAt!.getTime()) / MS_PER_DAY),
+      }))
   })
 }
 
@@ -202,5 +242,133 @@ export async function getPipelineCounts(
       counts[r.canonicalStatus] = r._count._all
     }
     return counts
+  })
+}
+
+// --- Recent 24h activity ---
+
+export type RecentEmail = {
+  id: number
+  subject: string
+  from: string
+  classification: EmailClassification | null
+  receivedAt: Date
+  applicationId: number | null
+}
+
+export type RecentlyActiveApplication = {
+  id: number
+  canonicalStatus: CanonicalStatus
+  updatedAt: Date
+}
+
+export type Recent24hActivity = {
+  emails: RecentEmail[]
+  activeApplications: RecentlyActiveApplication[]
+}
+
+export async function findRecent24hActivity(
+  userId: UserId,
+): Promise<Result<Recent24hActivity, AppError>> {
+  const since = new Date(Date.now() - MS_PER_DAY)
+
+  return withRls(userId, async (tx) => {
+    const [emails, activeApplications] = await Promise.all([
+      tx.email.findMany({
+        where: {
+          userId: Number(userId),
+          receivedAt: { gte: since },
+        },
+        select: {
+          id: true,
+          subject: true,
+          from: true,
+          classification: true,
+          receivedAt: true,
+          applicationId: true,
+        },
+        orderBy: { receivedAt: 'desc' },
+        take: 10,
+      }),
+      tx.application.findMany({
+        where: {
+          userId: Number(userId),
+          updatedAt: { gte: since },
+        },
+        select: {
+          id: true,
+          canonicalStatus: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
+      }),
+    ])
+
+    return { emails, activeApplications }
+  })
+}
+
+// --- Week-over-week counts ---
+
+export type WeekCounts = {
+  thisWeek: PipelineCounts
+  lastWeek: PipelineCounts
+}
+
+export async function findThisWeekCounts(
+  userId: UserId,
+): Promise<Result<WeekCounts, AppError>> {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - dayOfWeek)
+  weekStart.setHours(0, 0, 0, 0)
+
+  const lastWeekStart = new Date(weekStart)
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+
+  return withRls(userId, async (tx) => {
+    const [thisWeekRows, lastWeekRows] = await Promise.all([
+      tx.application.groupBy({
+        by: ['canonicalStatus'],
+        where: {
+          userId: Number(userId),
+          archivedAt: null,
+          appliedAt: { gte: weekStart },
+        },
+        _count: { _all: true },
+      }),
+      tx.application.groupBy({
+        by: ['canonicalStatus'],
+        where: {
+          userId: Number(userId),
+          archivedAt: null,
+          appliedAt: { gte: lastWeekStart, lt: weekStart },
+        },
+        _count: { _all: true },
+      }),
+    ])
+
+    const emptyCounts: PipelineCounts = {
+      applied: 0,
+      screening: 0,
+      interviewing: 0,
+      offer: 0,
+      rejected: 0,
+      withdrawn: 0,
+    }
+
+    const thisWeek = { ...emptyCounts }
+    for (const r of thisWeekRows) {
+      thisWeek[r.canonicalStatus] = r._count._all
+    }
+
+    const lastWeek = { ...emptyCounts }
+    for (const r of lastWeekRows) {
+      lastWeek[r.canonicalStatus] = r._count._all
+    }
+
+    return { thisWeek, lastWeek }
   })
 }

@@ -1,5 +1,29 @@
 # Milestones
 
+## v0.2 Standard (Shipped: 2026-05-10)
+
+**Phases completed:** 5 phases, 15 plans, 50 tasks
+
+**Key accomplishments:**
+
+- IIFE bookmarklet that captures page title/URL/selection, with esbuild minification pipeline producing 861-char javascript:... URL
+- POST /api/capture route handler with CORS, ATS domain rejection, base64url prefill encoding, and form auto-population
+- Bookmarklet build pipeline with esbuild minification and draggable install link on settings page
+- Seven Prisma query functions feeding the Today dashboard — stale forays, interviews, review queue, recent activity, pipeline counts, and week-over-week deltas
+- Reusable TodaySection, CountBadge, and StaleIndicator components for the today dashboard UI
+- Root page redirects to /today dashboard; two missing query functions added with 371 passing tests
+- Tag system with autocomplete input, tag cloud with counts, filter API endpoint, and tag editing on application detail
+- Full-text search across applications, emails, and stages with GIN indexes and /search page
+- Global "/" keyboard shortcut to focus search bar with integration test coverage for shortcut and submit behavior
+- Centralized keyboard shortcut system with vim-style g-prefix combos (n, g+a, g+i, g+s) mounted globally via client provider, with settings documentation
+- StaleIndicator badges on application cards (7d threshold) and UndoToast component with 10-second countdown for auto-update undo
+- One-time shortcut hint toast on first visit plus i18n translations for keyboard shortcuts section
+- Playwright E2E test runner with chromium project, authenticated page fixture, and DB reset via TRUNCATE CASCADE
+- 31 Playwright E2E test cases across 4 spec files covering capture flow, dashboard, search/filter, and keyboard shortcuts
+- Docker-based E2E test infrastructure with GitHub Actions CI, tmpfs Postgres, and Playwright artifact uploads
+
+---
+
 ## v0.1 — Lean
 
 **Shipped:** 2026-05-09

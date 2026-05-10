@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 
+import { KeyboardShortcutsProvider } from '@/features/shortcuts/keyboard-shortcuts-provider'
+import { ShortcutHintToast } from '@/features/shortcuts/shortcut-hint-toast'
+
 import './globals.css'
 
 const geistSans = Geist({
@@ -36,6 +39,8 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <KeyboardShortcutsProvider />
+          <ShortcutHintToast />
           {children}
         </NextIntlClientProvider>
       </body>

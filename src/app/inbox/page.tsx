@@ -9,6 +9,8 @@ import { DegradationBanner } from '@/features/inbox/components/degradation-banne
 import { InboxList } from '@/features/inbox/components/inbox-list'
 import { findApplicationsForLink, findEmailsForReview } from '@/features/inbox/queries'
 
+const TOKEN_STALE_MS = 5 * 24 * 60 * 60 * 1000
+
 export default async function InboxPage() {
   const userResult = await requireUser()
   if (userResult.isErr()) redirect('/login')
@@ -26,6 +28,8 @@ export default async function InboxPage() {
 
   const gmailConnected = !!user?.gmailRefreshTokenEncrypted
   const lastSyncAt = user?.gmailLastSyncAt ?? null
+  const syncIsStale =
+    lastSyncAt === null || new Date().getTime() - lastSyncAt.getTime() > TOKEN_STALE_MS
 
   const emailsResult = await findEmailsForReview(userId)
   const appsResult = await findApplicationsForLink(userId)
@@ -49,7 +53,7 @@ export default async function InboxPage() {
         </header>
 
         <div className="space-y-6">
-          <DegradationBanner gmailConnected={gmailConnected} lastSyncAt={lastSyncAt} />
+          <DegradationBanner gmailConnected={gmailConnected} syncIsStale={syncIsStale} />
           <InboxList items={emails} applications={applications} />
         </div>
       </div>

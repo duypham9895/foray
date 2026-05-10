@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src tests eslint.config.mjs next.config.ts prisma.config.ts --no-warn-ignored",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
@@ -17,7 +17,10 @@
     "db:generate": "prisma generate",
     "build:bookmarklet": "tsx scripts/build-bookmarklet.ts",
     "depcheck": "depcruise src --config .dependency-cruiser.cjs",
-    "depcheck:graph": "depcruise --include-only ^src --output-type dot src --config .dependency-cruiser.cjs > dependency-graph.dot"
+    "depcheck:graph": "depcruise --include-only ^src --output-type dot src --config .dependency-cruiser.cjs > dependency-graph.dot",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:reset-db": "tsx scripts/e2e-reset-db.ts"
   },
   "prisma": {
     "seed": "tsx scripts/seed.ts"
@@ -49,10 +52,13 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@testcontainers/postgresql": "^11.14.0",
     "@testing-library/jest-dom": "^6.9.1",
