@@ -1,5 +1,10 @@
 import { test, expect } from './fixtures'
 
+async function waitForShortcutHydration(page: import('@playwright/test').Page) {
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(250)
+}
+
 /**
  * E2E: Keyboard shortcuts and undo toast.
  *
@@ -23,6 +28,7 @@ test.describe('Keyboard shortcuts', () => {
   }) => {
     await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
+    await waitForShortcutHydration(page)
 
     // Press N (single key shortcut)
     await page.keyboard.press('n')
@@ -30,17 +36,18 @@ test.describe('Keyboard shortcuts', () => {
     await expect(page).toHaveURL(/\/applications\/new/)
   })
 
-  test('pressing / focuses the search input on search page', async ({
+  test('pressing / focuses the app shell search input', async ({
     authenticatedPage: page,
   }) => {
-    await page.goto('/search')
+    await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
+    await waitForShortcutHydration(page)
 
     // Press / to focus search
     await page.keyboard.press('/')
 
     // The search input should be focused
-    const input = page.locator('input[name="q"]')
+    const input = page.getByPlaceholder('Search... (press "/" to focus)')
     await expect(input).toBeFocused()
   })
 
@@ -49,6 +56,7 @@ test.describe('Keyboard shortcuts', () => {
   }) => {
     await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
+    await waitForShortcutHydration(page)
 
     // G-prefix combo: press G, then A within 1 second
     await page.keyboard.press('g')
@@ -60,6 +68,7 @@ test.describe('Keyboard shortcuts', () => {
   test('G then I navigates to inbox', async ({ authenticatedPage: page }) => {
     await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
+    await waitForShortcutHydration(page)
 
     await page.keyboard.press('g')
     await page.keyboard.press('i')
@@ -72,6 +81,7 @@ test.describe('Keyboard shortcuts', () => {
   }) => {
     await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
+    await waitForShortcutHydration(page)
 
     await page.keyboard.press('g')
     await page.keyboard.press('s')
@@ -86,7 +96,7 @@ test.describe('Keyboard shortcuts', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // Focus the search input
-    const input = page.locator('input[name="q"]')
+    const input = page.getByPlaceholder('Search applications, companies, emails...')
     await input.focus()
 
     // Type 'n' — should NOT navigate, should type into input
@@ -112,11 +122,10 @@ test.describe('Undo toast', () => {
     await page.goto('/today')
     await page.waitForLoadState('domcontentloaded')
 
-    // Verify no toast is visible initially (clean state)
-    const toast = page.locator('[role="alert"]')
-    const toastCount = await toast.count()
-    // Toast should not be visible on a clean dashboard
-    expect(toastCount).toBe(0)
+    // Verify no undo affordance is visible initially (clean state).
+    // The dev overlay can mount its own alert region, so avoid a broad
+    // [role="alert"] assertion here.
+    await expect(page.getByRole('button', { name: /^Undo:/ })).toHaveCount(0)
   })
 
   test('application detail page loads without undo toast in clean state', async ({
@@ -128,6 +137,6 @@ test.describe('Undo toast', () => {
 
     // With clean DB, there should be no applications to click into.
     // Verify the page loads and shows the applications section.
-    await expect(page.locator('text=Applications')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Forays' })).toBeVisible()
   })
 })

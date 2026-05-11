@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+import { config as loadEnv } from 'dotenv'
 import { test as base, type Page } from "@playwright/test";
 
 /**
@@ -8,7 +9,12 @@ import { test as base, type Page } from "@playwright/test";
  * - `resetDb`: truncates tenant-scoped tables between tests
  */
 
-const APP_PASSWORD = process.env.APP_PASSWORD ?? "correct-horse-battery-staple";
+loadEnv({ path: ['.env.local', '.env'], quiet: true })
+
+const APP_PASSWORD =
+  process.env.E2E_APP_PASSWORD ??
+  process.env.APP_PASSWORD ??
+  "correct-horse-battery-staple";
 
 async function login(page: Page): Promise<void> {
   await page.goto("/login");

@@ -101,6 +101,7 @@ For agents:
 For both:
 - **[docs/architecture.md](./docs/architecture.md)** — system diagram + data flow
 - **[docs/data-model.md](./docs/data-model.md)** — entity relationships + canonical_status semantics
+- **[docs/qa-release-test-scenarios.md](./docs/qa-release-test-scenarios.md)** — release-readiness QA/QC scenarios and sign-off checklist
 - **[docs/decisions/](./docs/decisions/)** — ADRs (one per design decision)
 - **[docs/milestones/](./docs/milestones/)** — Lean / Standard / Full deliverables
 

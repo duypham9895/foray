@@ -19,7 +19,7 @@ test.describe('Search', () => {
   test('search submits query via form', async ({ authenticatedPage: page }) => {
     await page.goto('/search')
 
-    const input = page.locator('input[name="q"]')
+    const input = page.getByPlaceholder('Search applications, companies, emails...')
     await input.fill('engineer')
     await input.press('Enter')
 
@@ -76,7 +76,7 @@ test.describe('Tag filtering', () => {
 
     // TagCloud only renders when tags exist. With clean DB it may be absent.
     // Just verify the page loads and the applications section is present.
-    await expect(page.locator('text=Applications')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Forays' })).toBeVisible()
   })
 })
 
@@ -84,7 +84,7 @@ test.describe('Application status filtering', () => {
   test('board view is the default', async ({ authenticatedPage: page }) => {
     await page.goto('/applications')
     // Board view shows column headers for each status
-    await expect(page.locator('text=Applied')).toBeVisible()
+    await expect(page.getByText('Applied', { exact: true })).toBeVisible()
   })
 
   test('list view renders with sort controls', async ({
