@@ -85,7 +85,7 @@ async function seedApplication() {
 describe('calendar integration', () => {
   it('syncs interview events, matches by attendee domain, and skips unchanged etags', async () => {
     const app = await seedApplication()
-    const now = new Date('2026-05-11T09:00:00.000Z')
+    const now = new Date()
     const start = new Date(now.getTime() + 2 * 60 * 60 * 1000)
     const end = new Date(start.getTime() + 45 * 60 * 1000)
     const calendar = fakeCalendar([

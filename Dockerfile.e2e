@@ -8,7 +8,15 @@
 FROM node:20-bookworm-slim AS base
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+ENV DATABASE_URL=postgresql://foray_e2e:foray_e2e@db:5432/foray_e2e
+ENV APP_PASSWORD=test-password-e2e
+ENV APP_SESSION_SECRET=test-session-secret-for-e2e-only-32chars
+ENV ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+ENV ANTHROPIC_API_KEY=test-anthropic-key
+ENV NODE_ENV=test
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
+RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
 
 # Install Playwright system deps (Chromium needs these on Debian slim)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,15 +29,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---- deps ----
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
+RUN pnpm exec playwright install --with-deps chromium
 
 # ---- build ----
 COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
 
-# ---- playwright browsers ----
-RUN pnpm exec playwright install --with-deps chromium
-
 # ---- run e2e ----
-ENV NODE_ENV=test
-CMD ["pnpm", "exec", "playwright", "test"]
+CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm seed && pnpm exec playwright test"]

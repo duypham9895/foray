@@ -21,12 +21,16 @@ async function main() {
   // CASCADE handles foreign keys, but explicit ordering is clearer.
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
-      "Event",
-      "Stage",
-      "Email",
-      "ApplicationRecruiter",
-      "Application"
-    CASCADE
+      calendar_events,
+      documents,
+      application_recruiters,
+      events,
+      stages,
+      emails,
+      applications,
+      recruiters,
+      companies
+    RESTART IDENTITY CASCADE
   `);
 
   console.log("[e2e:reset-db] Truncated tenant-scoped tables");

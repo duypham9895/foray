@@ -31,8 +31,9 @@ services:
     environment:
       DATABASE_URL: postgresql://foray_e2e:foray_e2e@db:5432/foray_e2e
       APP_PASSWORD: test-password-e2e
-      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
-      ANTHROPIC_API_KEY: ""
+      APP_SESSION_SECRET: test-session-secret-for-e2e-only-32chars
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      ANTHROPIC_API_KEY: test-anthropic-key
       NODE_ENV: test
     volumes:
       - ./playwright-report:/app/playwright-report

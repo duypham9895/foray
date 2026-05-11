@@ -39,12 +39,7 @@ export const test = base.extend<{
       // Reset via internal API or direct DB call.
       // Uses the e2e:reset-db script which truncates tenant-scoped tables.
       const { execSync } = await import("node:child_process");
-      try {
-        execSync("pnpm e2e:reset-db", { stdio: "pipe" });
-      } catch {
-        // If the script doesn't exist yet, we silently continue.
-        // Tests will fail naturally if the DB state is wrong.
-      }
+      execSync("pnpm e2e:reset-db", { stdio: "pipe" });
       await use();
     },
     { auto: true },

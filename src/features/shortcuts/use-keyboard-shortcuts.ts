@@ -40,11 +40,14 @@ export function useKeyboardShortcuts() {
       if (isInTextInput(e.target)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
       const key = e.key.toLowerCase()
+      const code = e.code.toLowerCase()
+      const shortcutKey =
+        code.startsWith('key') ? code.slice(3) : key
 
       // If we're waiting for the second key of a g-combo
       if (pendingG.current) {
         clearPending()
-        switch (key) {
+        switch (shortcutKey) {
           case 'a':
             e.preventDefault()
             router.push('/applications')
@@ -64,7 +67,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Single-key shortcuts
-      switch (key) {
+      switch (shortcutKey) {
         case 'n':
           e.preventDefault()
           router.push('/applications/new')
@@ -72,8 +75,9 @@ export function useKeyboardShortcuts() {
 
         case 'g':
           // Start g-prefix combo
+          e.preventDefault()
           pendingG.current = true
-          timeoutRef.current = setTimeout(clearPending, 1000)
+          timeoutRef.current = setTimeout(clearPending, 2000)
           return
       }
     }

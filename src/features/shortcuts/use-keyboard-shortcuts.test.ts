@@ -48,10 +48,10 @@ describe('useKeyboardShortcuts', () => {
     expect(push).toHaveBeenCalledWith('/settings')
   })
 
-  it('times out g-prefix combo after 1 second', () => {
+  it('times out g-prefix combo after 2 seconds', () => {
     renderHook(() => useKeyboardShortcuts())
     fireEvent.keyDown(window, { key: 'g' })
-    vi.advanceTimersByTime(1100)
+    vi.advanceTimersByTime(2100)
     fireEvent.keyDown(window, { key: 'a' })
     expect(push).not.toHaveBeenCalled()
   })
