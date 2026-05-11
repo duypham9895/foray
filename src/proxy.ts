@@ -9,5 +9,7 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!login|api/auth/login|_next|favicon.ico).*)'],
+  // Keep auth proxy off API routes; route handlers perform their own
+  // boundary checks and cross-origin endpoints need JSON responses.
+  matcher: ['/((?!api|login|_next|favicon.ico).*)'],
 }

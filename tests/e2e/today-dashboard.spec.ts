@@ -29,13 +29,13 @@ test.describe('Today dashboard', () => {
     await page.goto('/today')
 
     // DecisionsCard — "Decisions needed" or empty state
-    await expect(page.locator('text=Decisions')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Decisions' })).toBeVisible()
 
     // InterviewsCard — "Today's interviews" or empty state
-    await expect(page.locator('text=Interview')).toBeVisible()
+    await expect(page.getByRole('heading', { name: "Today's interviews" })).toBeVisible()
 
-    // QuietCard — "Needs attention" or empty state
-    await expect(page.locator('text=attention')).toBeVisible()
+    // Empty dashboard still shows the weekly summary/global empty prompt.
+    await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible()
   })
 
   test('today page loads within performance budget', async ({

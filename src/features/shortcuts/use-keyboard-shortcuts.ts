@@ -39,11 +39,12 @@ export function useKeyboardShortcuts() {
     function handleKeyDown(e: KeyboardEvent) {
       if (isInTextInput(e.target)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      const key = e.key.toLowerCase()
 
       // If we're waiting for the second key of a g-combo
       if (pendingG.current) {
         clearPending()
-        switch (e.key) {
+        switch (key) {
           case 'a':
             e.preventDefault()
             router.push('/applications')
@@ -63,7 +64,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Single-key shortcuts
-      switch (e.key) {
+      switch (key) {
         case 'n':
           e.preventDefault()
           router.push('/applications/new')
