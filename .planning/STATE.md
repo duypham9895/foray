@@ -1,23 +1,23 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.3
-milestone_name: Full
-status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-05-10T10:10:35.487Z"
-last_activity: 2026-05-10 -- Phase 13 execution started
+milestone: v0.4
+milestone_name: Future
+status: complete
+stopped_at: Phase 17 complete; next scope TBD
+last_updated: "2026-05-11T04:35:06Z"
+last_activity: 2026-05-11 -- Phase 17 completed with Anthropic/OpenAI classifier provider selection
 progress:
-  total_phases: 6
-  completed_phases: 2
-  total_plans: 9
-  completed_plans: 6
-  percent: 67
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 13
+  completed_plans: 13
+  percent: 100
 ---
 
-# State: foray (v0.3 Full)
+# State: foray (v0.4 Future)
 
-**Version**: 2.0 (Global continuous numbering: phases 1-16)
-**Last updated**: 2026-05-10
+**Version**: 2.1 (Global continuous numbering: phases 1-17)
+**Last updated**: 2026-05-11
 **Mode**: autonomous (auto-advance enabled)
 
 ---
@@ -27,18 +27,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** One screen tells the owner what's actually happening today — what's stale, what got rejected silently, what needs a follow-up — without manual spreadsheet maintenance.
-**Current focus:** Phase 13 — chrome-mv3-extension
+**Current focus:** Phase 17 complete; next scope TBD
 
 ---
 
 ## Current Position
 
-Phase: 13 (chrome-mv3-extension) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 13
-Last activity: 2026-05-10 -- Phase 13 execution started
+Phase: 17 (multi-llm-provider-abstraction) — COMPLETE
+Plan: Complete
+Status: Phase 17 implemented and verified
+Last activity: 2026-05-11 -- Phase 17 completed with Anthropic/OpenAI classifier provider selection
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100% through Phase 17; next scope TBD
 
 ---
 
@@ -46,19 +46,20 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 3 (v0.3)
+- Total plans completed: 13 (v0.3 + v0.4 Phase 17)
 - Prior milestone plans: 15 (v0.1) + 15 (v0.2) = 30 total
 
 **By Phase:**
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 11. Reminders + Cron | TBD | Not started |
-| 12. Document Storage | TBD | Not started |
-| 13. Chrome MV3 Extension | TBD | Not started |
-| 14. Recruiter Entity | TBD | Not started |
-| 15. Analytics Dashboard | TBD | Not started |
-| 16. Google Calendar | TBD | Not started |
+| 11. Reminders + Cron | 3/3 | Complete |
+| 12. Document Storage | 3/3 | Complete |
+| 13. Chrome MV3 Extension | 3/3 | Complete |
+| 14. Recruiter Entity | 1/1 | Complete |
+| 15. Analytics Dashboard | 1/1 | Complete |
+| 16. Google Calendar | 1/1 | Complete |
+| 17. Multi-LLM Provider Abstraction | 1/1 | Complete |
 
 *Updated after each plan completion*
 
@@ -77,26 +78,24 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- Define the next v0.4 scope beyond Phase 17.
 
 ### Blockers/Concerns
 
-- Chrome extension (Phase 13) has highest friction — WXT framework, MV3 service worker lifecycle, Bearer token auth pattern
-- Google Calendar (Phase 16) requires separate OAuth token from existing Gmail token — must not invalidate Gmail session
-- Document storage introduces first file I/O pattern in the codebase — `data/documents/` path traversal protection critical
+- None for v0.3 completion.
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-05-10T07:01:53.485Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-reminders-cron-infrastructure/11-CONTEXT.md
+Last session: 2026-05-11T04:35:06Z
+Stopped at: Phase 17 complete; next scope TBD
+Resume file: .planning/phases/17-multi-llm-provider-abstraction/17-SUMMARY.md
 
 **When resuming:**
 
 1. Read this file (STATE.md)
-2. Run `/gsd-plan-phase 11` to plan Reminders + Cron Infrastructure
+2. Pick the next scope from `.planning/ROADMAP.md` or define the next phase
 3. Verify pre-commit gate: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build`
 
 ---

@@ -1,4 +1,6 @@
 export async function register() {
+  if (process.env.NEXT_RUNTIME !== 'nodejs') return
+
   const { registerCronJobs } = await import('@/core/cron/registry')
 
   await registerCronJobs([
@@ -28,6 +30,29 @@ export async function register() {
         // a hook for future notification logic.
         const { logger } = await import('@/core/logger')
         logger.info({ op: 'cron.reminderCheck' }, 'reminder check tick')
+      },
+    },
+    {
+      name: 'sync-calendar',
+      schedule: '*/30 * * * *',
+      handler: async () => {
+        const { prisma } = await import('@/core/db/client')
+        const users = await prisma.user.findMany({
+          where: { calendarRefreshTokenEncrypted: { not: null } },
+          select: { id: true },
+        })
+        if (users.length === 0) return
+
+        const { UserId } = await import('@/core/types/ids')
+        const { syncCalendarEvents } = await import('@/features/calendar/service')
+        const { logger } = await import('@/core/logger')
+
+        for (const user of users) {
+          const result = await syncCalendarEvents(UserId(user.id))
+          if (result.isErr()) {
+            logger.error({ err: result.error, op: 'cron.syncCalendar', userId: user.id }, 'calendar sync failed')
+          }
+        }
       },
     },
   ])

@@ -3,7 +3,9 @@
 > **Goal**: a usable foray by Friday. Owner can manually log applications, Gmail auto-classifies high-confidence emails, ambiguous ones land in a small review queue.
 
 **Estimated effort**: ~1 week
-**Status**: 🔨 In progress — Phases 1–4 complete, Phase 5 (Review Queue + Acceptance) executing
+**Status**: ✅ Shipped 2026-05-09 — Phases 1-5 complete
+
+**Completion note**: This file is now historical milestone documentation. For the active execution plan, see [`.planning/ROADMAP.md`](../../.planning/ROADMAP.md).
 
 ---
 
@@ -18,8 +20,8 @@
 - [ ] Google OAuth flow at `/api/gmail/auth` and `/api/gmail/callback` (test mode, single user)
 - [ ] OAuth refresh token storage (encrypted) on User row
 - [ ] Settings page at `/settings` showing connection state + "Connect Gmail" / "Disconnect" / "Sync now"
-- [ ] Gmail polling endpoint at `/api/gmail/poll` — fetches threads modified since `User.gmailLastSyncAt`
-- [ ] In-process cron (node-cron) firing `/api/gmail/poll` every 15 minutes when app is running
+- [ ] Gmail polling service fetches threads modified since the stored Gmail history watermark
+- [ ] In-process cron (node-cron) runs Gmail polling every 15 minutes when app is running
 
 ### Classifier (slice: `src/features/classifier/`)
 - [ ] Rules-first classifier in `src/features/classifier/service.ts` with regex patterns for: rejection, interview_invite, recruiter_outreach, noise (newsletters, automated digests), unmatched
@@ -74,17 +76,17 @@ These were established before Lean started; tasks here are *enabling* feature wo
 
 ---
 
-## Out of scope (explicitly deferred)
+## Originally out of scope
 
-- Bookmarklet (Standard milestone)
-- "Today" dashboard (Standard milestone)
-- Native Chrome MV3 extension (Full milestone)
-- Document upload / storage (Full milestone)
+- Bookmarklet (delivered in Standard)
+- "Today" dashboard (delivered in Standard)
+- Native Chrome MV3 extension (Full Phase 13, in progress)
+- Document upload / storage (delivered in Full Phase 12)
 - Recruiter entity UI (Full milestone)
 - Google Calendar sync (Full milestone)
 - Analytics view (Full milestone)
-- Follow-up reminders (Full milestone)
-- Tags + cross-record search (Standard milestone)
+- Follow-up reminders (delivered in Full Phase 11)
+- Tags + cross-record search (delivered in Standard)
 
 ---
 

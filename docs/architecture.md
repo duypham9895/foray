@@ -20,11 +20,13 @@ System overview, data flow, and module responsibilities.
 │                                                                 │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │ Routes (src/app/api/)                                      │ │
-│  │  ├ /capture        ← bookmarklet POSTs new application     │ │
+│  │  ├ /capture        ← bookmarklet / extension capture       │ │
 │  │  ├ /gmail/auth     ← OAuth start                           │ │
 │  │  ├ /gmail/callback ← OAuth complete                        │ │
-│  │  ├ /gmail/poll     ← cron-triggered or manual sync         │ │
-│  │  └ /classify       ← manual classification override        │ │
+│  │  ├ /calendar/auth  ← Calendar OAuth start                  │ │
+│  │  ├ /calendar/callback ← Calendar OAuth complete            │ │
+│  │  ├ /inbox/full-body← on-demand Gmail full-body fetch       │ │
+│  │  └ /documents/*    ← upload/download/delete documents      │ │
 │  └────────────────────────────────────────────────────────────┘ │
 │           │                                                     │
 │           ▼                                                     │
@@ -52,9 +54,9 @@ System overview, data flow, and module responsibilities.
                           ▲
                           │
                 ┌──────────────────┐         ┌────────────────┐
-                │ Cron (15 min)    │ ──────→ │ Anthropic API  │
-                │ /api/gmail/poll  │         │ (Claude Haiku, │
-                │                  │ ───┐    │  fallback only)│
+                │ Cron (15 min)    │ ──────→ │ LLM Provider   │
+                │ pollOnce service │         │ API            │
+                │                  │ ───┐    │ (fallback only)│
                 └──────────────────┘    │    └────────────────┘
                                         │
                                         ▼
@@ -76,10 +78,10 @@ received  →  matched  →  classified  →  acted
 ```
 
 ```
-Cron tick (every 15 min)
+Cron tick (every 15 min, registered from `src/instrumentation.ts`)
       │
       ▼
-/api/cron/poll-gmail
+features/inbox/service.pollOnce
       │
       ├─→ Stage 1: ingest          [features/inbox/service.ts]
       │   • fetch from Gmail (history.list + watermark)
@@ -93,7 +95,8 @@ Cron tick (every 15 min)
       │
       ├─→ Stage 3: classify         [features/classifier/service.ts]
       │   • rules-first regex against subject + body_excerpt
-      │   • if confidence < 0.85 AND relevant: LLM fallback (Claude Haiku)
+      │   • if confidence < 0.85 AND relevant: LLM fallback
+      │   • provider is selected from User.classifierLlmProvider
       │   • persist {label, confidence, classified_by}
       │   • set processing_status = 'classified'
       │
@@ -120,7 +123,7 @@ The codebase uses Vertical Slice Architecture (see [ADR-0010](./decisions/0010-a
 |---|---|---|
 | `core/db/client.ts` | Prisma singleton with `@prisma/adapter-pg` | Globalized for hot reload; `pg.Pool` with `max: 10` |
 | `core/db/tenant.ts` | `tenantDb(userId)` wrapper auto-injecting `userId` filter | **All Prisma queries go through this** |
-| `core/db/rls.ts` | Sets `app.user_id` via `SET LOCAL` per transaction | Belt-and-suspenders to `tenantDb` |
+| `core/db/with-rls.ts` | Sets `app.user_id` via `SET LOCAL` per transaction | Belt-and-suspenders to `tenantDb` |
 | `core/logger/index.ts` | pino instance + AsyncLocalStorage request context | Every log line carries `requestId` + `userId` |
 | `core/errors/index.ts` | `AppError` union taxonomy + `Result` re-export | `_tag`-discriminated, exhaustively checked |
 | `core/types/ids.ts` | Branded ID types (`UserId`, `ApplicationId`, ...) | Compile-time tenant safety |
@@ -139,7 +142,7 @@ Each slice has a fixed quartet:
 | `<slice>/schema.ts` | Zod input/output schemas | — |
 | `<slice>/components/` | UI used only by this slice | — |
 
-Slices known so far: `applications`, `capture`, `classifier`, `matcher`, `inbox`, `auth`.
+Slices known so far: `analytics`, `applications`, `auth`, `calendar`, `classifier`, `documents`, `inbox`, `matcher`, `recruiters`, `search`, `settings`, `shortcuts`, and `today`.
 
 ### `src/app/` — Next.js App Router (thin)
 
@@ -153,9 +156,9 @@ Each `page.tsx` and `route.ts` is intentionally THIN — five lines of "validate
 
 ## Cron strategy
 
-For local dev: a tiny in-process scheduler (`node-cron`) runs alongside Next.js. Triggers `/api/gmail/poll` every 15 minutes when the app is up.
+For local dev: a tiny in-process scheduler (`node-cron`) runs alongside Next.js through `src/instrumentation.ts` and `src/core/cron/registry.ts`. It runs Gmail polling and reminder-check jobs every 15 minutes, plus Google Calendar sync every 30 minutes when the app is up.
 
-For future deployment (when foray flips public): replace with Vercel Cron, Inngest, or a separate scheduler service. The endpoint stays the same.
+For future deployment (when foray flips public): replace with Vercel Cron, Inngest, or a separate scheduler service. The job handler shape can stay the same even if the trigger changes.
 
 ## Why we don't use Gmail Push (yet)
 
@@ -172,10 +175,11 @@ Gmail Push API uses Cloud Pub/Sub. That's:
 See [PRINCIPLES.md §"Security baseline"](../PRINCIPLES.md) for the full ruleset. Highlights:
 
 - **Multi-tenant isolation in the type system**, not in discipline. Every Prisma query goes through `tenantDb(userId)` (auto-injects `userId` filter). Direct `prisma.application.*` outside `core/db/` is banned by ESLint. Postgres RLS is the belt-and-suspenders safety net.
-- **Auth checks live in the Data Access Layer**, not middleware. Every Server Action begins with `await requireUser()`. Middleware is for redirects + rate-limiting only (post-CVE-2025-29927 lesson).
+- **Auth checks live in the Data Access Layer**, not Proxy. Every Server Action begins with `await requireUser()`. `src/proxy.ts` is for optimistic redirects only (post-CVE-2025-29927 lesson).
 - **Gmail token**: stored encrypted in `User.gmail_refresh_token_encrypted` using AES-256-GCM with `ENCRYPTION_KEY` from env. Never logged, never sent to LLM.
-- **Anthropic API key**: server-side only. Never reaches the browser. pino redact paths configured.
-- **Single-user gate (v1)**: `src/core/auth/session.ts` reads `APP_PASSWORD` from env; middleware redirects unauthenticated requests to `/login`. Trivial to swap for Clerk later.
+- **Calendar token**: stored encrypted in `User.calendar_refresh_token_encrypted` separately from Gmail, using the readonly Calendar Events scope.
+- **LLM API keys**: Anthropic is the default classifier provider; OpenAI can be selected from Settings when `OPENAI_API_KEY` is configured. Keys are server-side only and never reach the browser.
+- **Single-user gate (v1)**: `src/core/auth/session.ts` reads `APP_PASSWORD` from env; `src/proxy.ts` redirects unauthenticated requests to `/login`. Trivial to swap for Clerk later.
 - **Bookmarklet / extension auth**: `Authorization: Bearer <api-token>` (NOT cookies — enables `Access-Control-Allow-Origin: *` safely). Tokens issued from settings, stored hashed.
 - **CORS**: `/api/capture` accepts cross-origin requests with bearer auth. Body validated by Zod (`safeParse`); rejects malformed payloads with structured error.
 - **CSRF**: Server Actions get free protection from Origin/Host check. Configured via `experimental.serverActions.allowedOrigins` in `next.config.ts`.

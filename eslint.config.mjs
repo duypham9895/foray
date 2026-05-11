@@ -53,6 +53,7 @@ const eslintConfig = defineConfig([
               from: [['feature', { slice: 'applications' }]],
               allow: [
                 ['feature', { slice: 'documents' }],
+                ['feature', { slice: 'recruiters' }],
               ],
             },
             // Today dashboard displays inbox review queue and needs to call

@@ -12,7 +12,7 @@ export type AppError =
   | { _tag: 'Unauthorized' }
   | { _tag: 'Forbidden';    reason: string }
   | { _tag: 'Validation';   issues: ZodIssue[] }
-  | { _tag: 'ExternalApi';  service: 'gmail' | 'llm'; cause: unknown }
+  | { _tag: 'ExternalApi';  service: 'gmail' | 'calendar' | 'llm'; cause: unknown }
   | { _tag: 'Db';           cause: unknown }
   | { _tag: 'RateLimited';  retryAfterSeconds: number }
   | { _tag: 'Conflict';     reason: string }
@@ -36,7 +36,7 @@ export const errors = {
   unauthorized: (): AppError => ({ _tag: 'Unauthorized' }),
   forbidden:    (reason: string): AppError => ({ _tag: 'Forbidden', reason }),
   validation:   (issues: ZodIssue[]): AppError => ({ _tag: 'Validation', issues }),
-  externalApi:  (service: 'gmail' | 'llm', cause: unknown): AppError => ({ _tag: 'ExternalApi', service, cause }),
+  externalApi:  (service: 'gmail' | 'calendar' | 'llm', cause: unknown): AppError => ({ _tag: 'ExternalApi', service, cause }),
   db:           (cause: unknown): AppError => ({ _tag: 'Db', cause }),
   rateLimited:  (retryAfterSeconds: number): AppError => ({ _tag: 'RateLimited', retryAfterSeconds }),
   conflict:     (reason: string): AppError => ({ _tag: 'Conflict', reason }),

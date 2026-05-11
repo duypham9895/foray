@@ -38,3 +38,39 @@ export const classifyToolOutputSchema = z.object({
 })
 
 export type ClassifyToolOutput = z.infer<typeof classifyToolOutputSchema>
+
+export const CLASSIFY_OUTPUT_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    label: {
+      type: 'string',
+      enum: ['rejection', 'interview_invite', 'recruiter_outreach', 'noise', 'unmatched'],
+    },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    reasoning: { type: 'string', maxLength: 200 },
+  },
+  required: ['label', 'confidence', 'reasoning'],
+  additionalProperties: false,
+}
+
+export type ClassifyByLlmInput = {
+  subject: string
+  bodyExcerpt: string
+}
+
+export type ClassifyByLlmSuccess = {
+  label: z.infer<typeof classifyToolOutputSchema>['label']
+  confidence: number
+  classifiedBy: 'llm'
+  inputTokens: number
+  outputTokens: number
+}
+
+export const SYSTEM_PROMPT = `You classify job-related emails into exactly one of these 5 labels.
+- rejection: an explicit "we are not moving forward" / "we have decided not to proceed" message.
+- interview_invite: a request to schedule, propose times, or join an interview/call.
+- recruiter_outreach: a recruiter introducing a new role, asking if you're interested. NOT a follow-up on an existing application.
+- noise: newsletters, automated digests, marketing, "view in browser" / "unsubscribe" footer dominant.
+- unmatched: none of the above. Includes generic notifications, calendar updates, document signing, etc.
+
+Output exactly one classify_email object. Do not output free text.` as const

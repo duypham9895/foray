@@ -35,11 +35,13 @@ import { type AppError, type Result, err, errors, ok } from '@/core/errors'
 /** Per-day USD spending cap on the LLM classifier. */
 export const DAILY_BUDGET_USD = 0.5
 
-// Anthropic Claude Haiku 4.5 pricing (as of 2026-01-15)
-// Source: https://www.anthropic.com/pricing
-// Update both constants together when Anthropic changes pricing.
+// Provider pricing, per million tokens. Keep model keys aligned with the
+// provider adapters; cost logging passes the concrete model string.
 export const HAIKU_INPUT_USD_PER_MTOK = 0.8 // $0.80 per million input tokens
 export const HAIKU_OUTPUT_USD_PER_MTOK = 4.0 // $4.00 per million output tokens
+export const GPT_5_4_NANO_INPUT_USD_PER_MTOK = 0.2 // $0.20 per million input tokens
+export const GPT_5_4_NANO_OUTPUT_USD_PER_MTOK = 1.25 // $1.25 per million output tokens
+const DEFAULT_CLASSIFIER_LOG_PATH = 'data/classifier-log.jsonl'
 
 /**
  * Cost-log path. Defaults to `<cwd>/data/classifier-log.jsonl`. Tests
@@ -52,20 +54,22 @@ export const HAIKU_OUTPUT_USD_PER_MTOK = 4.0 // $4.00 per million output tokens
  * unset.
  */
 function currentLogPath(): string {
-  return (
-    process.env['CLASSIFIER_LOG_PATH'] ??
-    path.join(process.cwd(), 'data', 'classifier-log.jsonl')
-  )
+  return process.env['CLASSIFIER_LOG_PATH'] ?? DEFAULT_CLASSIFIER_LOG_PATH
 }
 
 // ---------------------------------------------------------------------------
 // Pure helpers
 // ---------------------------------------------------------------------------
 
-export function computeCostUsd(inputTokens: number, outputTokens: number): number {
+export function computeCostUsd(
+  inputTokens: number,
+  outputTokens: number,
+  model: string = 'claude-haiku-4-5-20251001',
+): number {
+  const pricing = getPricingForModel(model)
   return (
-    (inputTokens / 1_000_000) * HAIKU_INPUT_USD_PER_MTOK +
-    (outputTokens / 1_000_000) * HAIKU_OUTPUT_USD_PER_MTOK
+    (inputTokens / 1_000_000) * pricing.inputUsdPerMTok +
+    (outputTokens / 1_000_000) * pricing.outputUsdPerMTok
   )
 }
 
@@ -162,7 +166,7 @@ export async function appendCostEntry(
   input: AppendCostInput,
 ): Promise<Result<{ costUsd: number }, AppError>> {
   const filePath = currentLogPath()
-  const costUsd = computeCostUsd(input.inputTokens, input.outputTokens)
+  const costUsd = computeCostUsd(input.inputTokens, input.outputTokens, input.model)
   const entry: CostLogEntry = {
     ts: new Date().toISOString(),
     model: input.model,
@@ -194,4 +198,21 @@ function isFileNotFoundError(cause: unknown): boolean {
     'code' in cause &&
     (cause as { code?: string }).code === 'ENOENT'
   )
+}
+
+function getPricingForModel(model: string): {
+  inputUsdPerMTok: number
+  outputUsdPerMTok: number
+} {
+  if (model === 'gpt-5.4-nano') {
+    return {
+      inputUsdPerMTok: GPT_5_4_NANO_INPUT_USD_PER_MTOK,
+      outputUsdPerMTok: GPT_5_4_NANO_OUTPUT_USD_PER_MTOK,
+    }
+  }
+
+  return {
+    inputUsdPerMTok: HAIKU_INPUT_USD_PER_MTOK,
+    outputUsdPerMTok: HAIKU_OUTPUT_USD_PER_MTOK,
+  }
 }

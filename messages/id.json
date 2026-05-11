@@ -2,6 +2,8 @@
   "nav": {
     "today": "Hari ini",
     "forays": "Forays",
+    "recruiters": "Perekrut",
+    "analytics": "Analitik",
     "inbox": "Kotak masuk",
     "settings": "Pengaturan",
     "guide": "Panduan",
@@ -141,6 +143,18 @@
       "tokenStaleTitle": "Sinkron Gmail sudah {days} hari basi.",
       "tokenStaleBody": "Google bisa mencabut refresh token setelah 7 hari saat layar OAuth dalam mode Test. Hubungkan ulang Gmail untuk terus sinkron."
     },
+    "calendar": {
+      "title": "Google Calendar",
+      "intro": "Sinkronkan acara wawancara mendatang dari kalender utama. Ringkasan, waktu, lokasi, tautan, dan email peserta disimpan untuk pencocokan.",
+      "connected": "Terhubung",
+      "disconnected": "Belum terhubung",
+      "lastSynced": "Sinkron terakhir {date}",
+      "connect": "Hubungkan Calendar",
+      "disconnect": "Putuskan",
+      "disconnecting": "Sedang memutuskan…",
+      "syncNow": "Sinkron sekarang",
+      "syncing": "Sedang sinkron…"
+    },
     "bookmarklet": {
       "title": "Bookmarklet",
       "intro": "Tangkap satu klik dari posting kerja mana pun. Tarik tombol ke bilah bookmark — judul halaman, URL, dan teks yang dipilih akan terisi otomatis ke foray baru.",
@@ -150,6 +164,31 @@
       "step1": "Tarik tombol di atas ke bilah bookmark browser-mu.",
       "step2": "Atau klik kanan → <em>Tandai Tautan Ini</em>, lalu pilih foldermu.",
       "usage": "Klik bookmark saat berada di posting kerja. Kamu akan masuk ke form foray baru dengan semua isi sudah terisi."
+    },
+    "extension": {
+      "title": "Ekstensi Browser",
+      "intro": "Tangkap posting kerja langsung dari browser. Ekstensi memakai token API lokal, bukan cookie sesi.",
+      "active": "Token aktif",
+      "inactive": "Belum ada token",
+      "generate": "Buat token",
+      "regenerate": "Buat ulang token",
+      "revoke": "Cabut token",
+      "tokenLabel": "Token API ekstensi",
+      "copy": "Salin",
+      "copied": "Disalin",
+      "shownOnce": "Masukkan token ini di pengaturan ekstensi. Token tidak akan ditampilkan lagi."
+    },
+    "llm": {
+      "title": "Penyedia pengklasifikasi",
+      "intro": "Pilih LLM cadangan yang dipakai hanya saat aturan belum cukup yakin.",
+      "anthropic": "Anthropic Claude",
+      "openai": "OpenAI GPT",
+      "configured": "API key dikonfigurasi",
+      "missingKey": "API key belum ada",
+      "anthropicMissing": "Setel ANTHROPIC_API_KEY sebelum memakai Anthropic.",
+      "openaiMissing": "Setel OPENAI_API_KEY sebelum memakai OpenAI.",
+      "save": "Simpan penyedia",
+      "saving": "Menyimpan…"
     },
     "language": {
       "title": "Bahasa",

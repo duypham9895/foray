@@ -26,6 +26,7 @@ export const logger = pino({
       '*.refreshToken',
       '*.refresh_token',
       '*.gmailRefreshTokenEncrypted',
+      '*.calendarRefreshTokenEncrypted',
       'req.headers.authorization',
       'req.headers.cookie',
     ],

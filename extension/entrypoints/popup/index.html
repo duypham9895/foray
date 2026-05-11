@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foray</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="header">
+        <h1>Foray</h1>
+        <button id="options-btn" class="btn-link" type="button">Settings</button>
+      </header>
+
+      <main class="panel" aria-live="polite">
+        <p class="label">Page</p>
+        <p id="tab-title" class="value">Loading...</p>
+        <p id="tab-url" class="url">-</p>
+      </main>
+
+      <div class="actions">
+        <button id="capture-btn" class="btn-primary" type="button" disabled>
+          Capture
+        </button>
+      </div>
+
+      <div id="status" class="status hidden"></div>
+
+      <footer class="footer">
+        <a id="open-foray" class="hidden" href="#" target="_blank" rel="noreferrer">
+          Open in Foray
+        </a>
+        <p id="setup-hint" class="hint hidden">
+          Add your API token in extension settings.
+        </p>
+      </footer>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

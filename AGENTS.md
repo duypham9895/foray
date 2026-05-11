@@ -1,209 +1,324 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# AGENTS.md
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+Instructions for Codex and other coding agents working in this repository.
+
+<!-- BEGIN:nextjs-agent-rules -->
+## This Is Not The Next.js You Know
+
+This project uses Next.js 16. APIs and conventions may differ from older Next.js versions. Before changing App Router code, read the relevant guide in `node_modules/next/dist/docs/`, especially for `page.tsx`, `route.ts`, Server Actions, middleware/proxy behavior, and client/server component boundaries.
 <!-- END:nextjs-agent-rules -->
 
----
+## 1. Project Overview
 
-# Agent Contract — `foray`
+`foray` is a local-first job-application campaign room for one owner, designed so it can become multi-tenant later. It captures job applications from the web, ingests Gmail updates, classifies recruiting email, and presents a daily dashboard of applications, follow-ups, reminders, documents, and review items.
 
-If you are an AI agent (Claude Code, Cursor, GitHub Copilot, anything similar) reading this file, this is your contract for working in this repository. Read it once at the start of every session. Re-read it when you encounter unfamiliar conventions.
+Main domain concepts:
 
-## What `foray` is
+- **Foray / Application**: one job opportunity being pursued.
+- **Campaign**: the user's overall job search effort.
+- **Company**: employer attached to one or more applications.
+- **Stage**: user-visible workflow label such as "Applied", "Recruiter Screen", or custom stages.
+- **Canonical status**: normalized lifecycle status used for analytics and automation (`applied`, `screening`, `interviewing`, `offer`, `rejected`, `withdrawn`).
+- **Event**: timeline entry for email updates, stage changes, reminders, notes, document attachments, and system actions.
+- **Email ingestion**: Gmail sync stores metadata and excerpts, then matcher/classifier logic decides whether to update an application or send the email to review.
+- **Review queue**: low-confidence or ambiguous classifier results that need user approval.
+- **Today view**: operational dashboard for stale applications, reminders, interviews, review queue, and daily priorities.
+- **Documents**: local file storage for resume, cover letter, and related application artifacts.
 
-A personal job-application tracker that ingests Gmail, classifies emails, and gives the (single) user a daily campaign-room dashboard. Local-only, runs on the owner's laptop, multi-tenant-ready schema for a future public flip. See [README.md](./README.md) for the full pitch.
+Important architecture:
 
-## Read these before writing any code
+- The app follows **Vertical Slice Architecture**. Business capabilities live under `src/features/<feature>/`; cross-cutting code lives under `src/core/`; shared UI primitives live under `src/ui/`.
+- `src/app/**` should stay thin. Pages and route handlers validate/route/delegate to feature code.
+- Database access must preserve tenant readiness. Use `tenantDb(userId)` for tenant-scoped queries and `withRls(...)` for multi-statement or raw SQL flows. Direct Prisma usage outside `src/core/db/**` is forbidden by dependency rules.
+- Services return `Result<T, AppError>` from `neverthrow` for expected failures. Do not throw for validation, authorization, missing records, or external-service failures.
+- Zod validation belongs at system boundaries: forms, Server Actions, API routes, external payloads, env parsing, and LLM responses.
+- Gmail/email privacy matters. Do not store full email bodies indefinitely; store metadata plus short excerpts and fetch full content on demand.
 
-1. **[PRINCIPLES.md](./PRINCIPLES.md)** — *strategic* rulebook. Architecture (Vertical Slice), TypeScript discipline, error handling (`Result<T, AppError>`), multi-tenant safety (`tenantDb`), code review checklist. **The most important file in the repo.** Re-read at session start.
-2. **[CLAUDE.md](./CLAUDE.md)** — *tactical* rules (Karpathy guidelines, testing, naming, commit style). Non-negotiable.
-3. **[docs/architecture.md](./docs/architecture.md)** — system diagram and data flow.
-4. **[docs/data-model.md](./docs/data-model.md)** — entity relationships and the `canonical_status` vs `current_stage` semantics. The data model is load-bearing; misunderstanding it will cause cascading bugs.
-5. **The relevant ADR** in [docs/decisions/](./docs/decisions/) — every architectural decision has an ADR. Before changing one, read the ADR that established it.
-6. **The current milestone doc** in [docs/milestones/](./docs/milestones/) — defines what's in scope for the current sprint.
+Read these before significant edits:
 
-## File layout (Vertical Slice Architecture — see ADR-0010 + PRINCIPLES.md §Architecture)
+- `PRINCIPLES.md` - strategic architecture and TypeScript/error-handling rules.
+- `CLAUDE.md` - tactical conventions that still contain useful project history.
+- `DESIGN.md` - product tone, UI rules, and visual constraints.
+- `docs/codex-workflow.md` - practical Codex workflow and git/verification hygiene.
+- `docs/architecture.md` - system/data-flow overview.
+- `docs/data-model.md` - entity semantics, especially `canonicalStatus` vs `currentStage`.
+- `docs/decisions/*.md` - ADRs for architectural decisions.
+- `.planning/ROADMAP.md` and `.planning/STATE.md` - current phase context. Treat `.planning/ROADMAP.md` as more reliable when planning docs disagree.
 
-```
-foray/
-├── README.md, AGENTS.md, CLAUDE.md, SETUP.md, DESIGN.md   ← root docs (read these)
-├── PRINCIPLES.md                                          ← ⭐ the rulebook
-├── package.json, tsconfig.json, next.config.ts            ← config (don't touch unless needed)
-├── eslint.config.mjs, postcss.config.mjs                  ← lint/style
-├── .dependency-cruiser.cjs                                ← module boundary rules (CI-enforced)
-├── prisma.config.ts                                       ← Prisma 7 config (URL, seed)
-├── Dockerfile, Dockerfile.dev                             ← container build
-├── docker-compose.yml, docker-compose.dev.yml             ← service orchestration
-│
-├── prisma/
-│   ├── schema.prisma                                      ← database schema (source of truth)
-│   └── migrations/                                        ← Prisma migrations (auto-generated)
-│
-├── src/
-│   ├── app/                                               ← Next.js App Router (THIN — delegate to slices)
-│   │   ├── layout.tsx, page.tsx                           ← root + Today dashboard
-│   │   ├── applications/                                  ← pages (list, detail, new)
-│   │   ├── inbox/                                         ← page (review queue)
-│   │   ├── settings/                                      ← page
-│   │   └── api/
-│   │       ├── capture/route.ts                           ← bookmarklet/extension POST (Route Handler)
-│   │       ├── gmail/                                     ← OAuth callback + cron poll
-│   │       └── cron/                                      ← scheduled triggers
-│   │
-│   ├── features/                                          ← ⭐ Vertical slices. One folder per capability.
-│   │   ├── applications/
-│   │   │   ├── actions.ts                                 ← Server Actions (validate → authorize → service)
-│   │   │   ├── service.ts                                 ← business logic, returns Result<T, AppError>
-│   │   │   ├── queries.ts                                 ← Prisma reads via tenantDb
-│   │   │   ├── schema.ts                                  ← Zod input/output schemas
-│   │   │   └── components/                                ← UI used ONLY by this slice
-│   │   ├── capture/                                       ← bookmarklet/extension capture
-│   │   ├── classifier/                                    ← rules + LLM hybrid
-│   │   ├── matcher/                                       ← email → application matching
-│   │   ├── inbox/                                         ← Gmail sync + review queue
-│   │   └── auth/                                          ← single-user gate (Clerk-replaceable)
-│   │
-│   ├── core/                                              ← Cross-cutting (KEEP SMALL — see PRINCIPLES.md)
-│   │   ├── db/                                            ← Prisma client singleton + tenantDb wrapper
-│   │   ├── logger/                                        ← pino + request context (AsyncLocalStorage)
-│   │   ├── errors/                                        ← AppError taxonomy + Result re-export
-│   │   ├── types/                                         ← branded IDs (UserId, ApplicationId)
-│   │   └── auth/                                          ← session helpers (requireUser)
-│   │
-│   ├── ui/                                                ← shared design-system primitives (Button, Input, Card)
-│   │
-│   ├── generated/                                         ← ⚠️ generated by `pnpm prisma generate`, gitignored
-│   │   └── prisma/                                        ←   import: `@/generated/prisma/client`
-│   │
-│   └── test/                                              ← factories (fishery), DB helpers, fixtures
-│
-├── extension/                                             ← Chrome MV3 extension (Full milestone)
-├── bookmarklet/                                           ← bookmarklet source (Standard milestone)
-│
-├── docs/
-│   ├── architecture.md, data-model.md
-│   ├── decisions/                                         ← ADRs (numbered, immutable history)
-│   └── milestones/                                        ← Lean, Standard, Full
-│
-├── scripts/
-│   └── seed.ts                                            ← demo data for `pnpm seed`
-│
-└── tests/
-    ├── unit/                                              ← Vitest unit (colocated preferred: src/**/*.test.ts)
-    ├── integration/                                       ← Vitest + real Postgres
-    └── e2e/                                               ← Playwright (added at Standard)
-```
+## 2. Tech Stack
 
-## Module boundary rules (enforced by `dependency-cruiser` in CI)
+- **Language**: TypeScript 5 with strict compiler settings.
+- **Framework**: Next.js 16 App Router, React 19.
+- **Package manager**: pnpm.
+- **Styling/UI**: Tailwind CSS v4, local primitives in `src/ui`, Radix UI where needed, lucide-react for functional icons, next-intl for localization.
+- **Database**: PostgreSQL, Prisma 7, generated client under `src/generated/prisma`, runtime adapter `@prisma/adapter-pg` with `pg`.
+- **Auth**: local single-user password/session helpers, intentionally replaceable later.
+- **External services**: Gmail API / Google OAuth, Anthropic SDK for classifier work.
+- **Background work**: node-cron and route-triggered cron/polling code.
+- **Testing**: Vitest, React Testing Library, Testcontainers PostgreSQL for integration tests, Playwright for E2E.
+- **Static/content docs**: Markdown content under `content/`, `docs/`, and landing documentation.
+- **Deployment/local ops**: Dockerfile, Docker Compose, GitHub Actions.
 
-1. **No circular dependencies.**
-2. **Slice isolation.** `features/applications/**` cannot import from `features/classifier/**`. Cross-slice sharing goes in `core/`.
-3. **`core/` is a leaf.** Anyone may import from `core/`; `core/**` cannot import from `features/**` or `app/**`.
-4. **`app/` is the only thing that imports from `next/*` page-level APIs.** (`notFound()`, `redirect()`, etc.)
-5. **No `prisma` imports outside `src/core/db/`.** Forces every query through `tenantDb`. *This rule prevents multi-tenant leaks.*
+## 3. Repository Structure
 
-## Conventions
+Key folders and files:
 
-### Where new things go
+- `src/app/` - Next.js App Router pages, layouts, API route handlers, and thin route composition.
+- `src/features/` - vertical slices such as `applications`, `classifier`, `documents`, `inbox`, `matcher`, `search`, `shortcuts`, `today`, and `settings`.
+- `src/core/` - cross-cutting infrastructure: auth, cron, crypto, database access, env validation, errors, logging, types, and shared query helpers.
+- `src/ui/` - shared design-system primitives.
+- `src/components/` - app shell and shared app-level components.
+- `src/i18n/` and `messages/` - localization setup and message catalogs.
+- `src/generated/prisma/` - generated Prisma client. Regenerate; do not hand-edit.
+- `prisma/` - Prisma schema and migrations.
+- `scripts/` - seed, bookmarklet build, E2E reset, and utility scripts.
+- `tests/integration/` - Vitest integration tests, mostly with real PostgreSQL through Testcontainers.
+- `tests/e2e/` - Playwright tests.
+- `bookmarklet/` and `public/foray-bookmarklet-url.json` - bookmarklet source/build artifact.
+- `content/`, `docs/`, `landing/` - public docs, guide content, ADRs, milestone docs, and landing material.
+- `.planning/` - historical/current planning state from prior Claude/GSD workflow.
+- `.github/workflows/` - CI and Pages deployment workflows.
+- `.claude/` - Claude-specific hooks/settings. Useful context, but Codex should not depend on those hooks running.
 
-| You're adding... | It goes in... |
-|---|---|
-| A new feature (capability) | New folder `src/features/<feature>/` with `actions.ts`, `service.ts`, `queries.ts`, `schema.ts`, `components/` |
-| A Server Action | `src/features/<feature>/actions.ts` |
-| Business logic | `src/features/<feature>/service.ts` (returns `Result<T, AppError>`) |
-| A Prisma read | `src/features/<feature>/queries.ts`, **always** via `tenantDb(userId)` |
-| A Zod schema (slice-specific) | `src/features/<feature>/schema.ts` |
-| A Zod schema (cross-cutting) | `src/core/schemas/<topic>.ts` |
-| A new entity (e.g., `Note`, `Tag`) | `prisma/schema.prisma` → migrate → use via `tenantDb` |
-| A new API route (cross-origin endpoint) | `src/app/api/<resource>/route.ts` (Route Handler) |
-| A new page | `src/app/<route>/page.tsx` (delegates to slice) |
-| A UI component used only by one slice | `src/features/<feature>/components/<name>.tsx` |
-| A shared design-system primitive | `src/ui/<name>.tsx` |
-| A util function used by 2+ slices | `src/core/<topic>/index.ts` (genuinely cross-cutting) |
-| A util function used in 1 place | Colocate inline; only extract when reused |
-| A test for `src/features/foo/service.ts` | `src/features/foo/service.test.ts` (colocated) |
-| A test that crosses slices | `tests/integration/<flow>.test.ts` (real Postgres) |
-| A factory for testing | `src/test/factories.ts` (fishery) |
-| A new env var | Add to `.env.example` with comment + Zod-validate in `src/core/env.ts` |
-| A new error variant | Add to `AppError` union in `src/core/errors/index.ts` |
-| A new branded ID type | Add to `src/core/types/ids.ts` |
-| A new architectural decision | New ADR in `docs/decisions/<NNNN>-<title>.md` |
-| A milestone deliverable update | Edit the relevant file in `docs/milestones/` |
+Avoid changing unless explicitly asked:
 
-### Naming
+- `.env`, `.env.local`, and any secret-bearing local files.
+- `node_modules/`, `.next/`, coverage/output directories, and generated build artifacts.
+- `src/generated/prisma/**`; run Prisma generation instead.
+- Existing committed migrations. Create a new migration for schema changes rather than editing migration history.
+- Public API contracts, auth/session behavior, Gmail OAuth behavior, deployment/CI infrastructure, or database schema unless the task clearly requires it.
+- Large planning/history files in `.planning/` unless the task is about roadmap or phase tracking.
 
-- **Files**: kebab-case (`gmail-poller.ts`, not `gmailPoller.ts`)
-- **React components**: PascalCase, one component per file (`<ApplicationCard />` in `application-card.tsx`)
-- **Functions**: camelCase, verb phrases (`classifyEmail`, not `emailClassifier`)
-- **Types**: PascalCase, no `I` prefix (`Application`, not `IApplication`)
-- **Enums in DB**: lowercase snake (`canonical_status` enum values: `applied`, `screening`, `interviewing`, `offer`, `rejected`, `withdrawn`)
-- **API routes**: noun resources (`/api/applications`), verbs only when truly action-shaped (`/api/capture`, `/api/classify`)
+## 4. Setup & Development
 
-### Imports
-
-- Use `@/` alias for `src/` imports — never relative paths beyond one level (`../foo` ok, `../../../foo` not)
-- Sort: external → `@/` aliases → relative → types-only (TS will help)
-
-## Prisma 7 reminders
-
-- **Schema URL is in `prisma.config.ts`**, not `schema.prisma` (Prisma 7 breaking change).
-- **PrismaClient imports come from `@/generated/prisma/client`**, not `@prisma/client`. The legacy path is broken under pnpm in Prisma 7.
-- **Runtime requires an adapter**: instantiate as `new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })`. The canonical pattern is already in `src/core/db/client.ts`. Import via `import { prisma } from '@/core/db'` (and prefer `tenantDb(userId)` from the same module for tenant-scoped queries — see PRINCIPLES.md §"Database").
-
-## Critical commands
+Install:
 
 ```bash
-# Development
-pnpm dev                    # native dev server, hot reload (default Path A)
-pnpm test                   # vitest watch mode
-pnpm test:run               # vitest single run (CI mode)
-pnpm build                  # production build (must pass before commit)
-pnpm lint                   # ESLint check
-pnpm typecheck              # tsc --noEmit
-
-# Database
-pnpm prisma migrate dev     # create migration from schema changes (dev only)
-pnpm prisma migrate deploy  # apply migrations (prod-shaped, no prompts)
-pnpm prisma studio          # open DB GUI at http://localhost:5555
-pnpm seed                   # populate demo data (calls scripts/seed.ts)
-
-# Docker (Path B)
-docker compose up -d db     # start only Postgres (for Path A native dev)
-docker compose up           # start app + db (production-like)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up   # full Docker dev
-
-# Pre-commit (always run)
-pnpm lint && pnpm typecheck && pnpm test:run && pnpm build
+pnpm install
 ```
 
-## Default workflow for any change
+Environment:
 
-1. **Read** [CLAUDE.md](./CLAUDE.md) (Karpathy 4 rules) and the relevant ADR.
-2. **State assumptions** in your response before writing code. Surface ambiguities. Push back if the request seems wrong.
-3. **Write tests first** when adding a feature or fixing a bug (TDD — see CLAUDE.md testing rules).
-4. **Make the change** with surgical scope — touch only what was asked. Don't reformat or refactor adjacent code.
-5. **Run pre-commit checks**: `pnpm lint && pnpm typecheck && pnpm test:run && pnpm build`. All must pass.
-6. **Update docs** if the change touches: schema (→ data-model.md), architecture (→ architecture.md), or a decision (→ new ADR).
-7. **Commit** with a present-tense verb-led message: `add Gmail polling cron`, `fix matcher false-positive on subject reply prefix`.
+- Start from `.env.example`.
+- Use `.env.local` for native development or `.env` for Docker Compose workflows.
+- Required variables include `DATABASE_URL`, `APP_PASSWORD`, `APP_SESSION_SECRET`, `ENCRYPTION_KEY`, and `ANTHROPIC_API_KEY`.
+- Gmail integration uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
+- Never print or copy real secret values into commits, logs, or chat responses.
 
-## Things to never do
+Native local development:
 
-- **Don't add features the user didn't ask for.** No "while I was here, I also..." — flag, don't act.
-- **Don't ship commented-out code** or `// TODO: implement later` blocks. Either implement or open an issue/ADR.
-- **Don't add error handling for impossible cases.** Validate at boundaries (user input, external APIs); trust internal calls.
-- **Don't write multi-paragraph docstrings.** One-line if needed; prefer good naming over comments.
-- **Don't break the multi-tenant readiness** — every new model with user-owned data must have a `userId` field, even though we only have one user today.
-- **Don't bypass the classifier confidence threshold** — if the rules give 0.6 confidence, route to review queue; don't auto-update.
-- **Don't store full email bodies indefinitely** — store metadata + body excerpt (~500 chars); fetch full via Gmail API on demand. (Privacy + storage cost.)
+```bash
+docker compose up -d db
+pnpm db:migrate
+pnpm seed
+pnpm dev
+```
 
-## When you're stuck
+Full Docker development:
 
-1. Re-read this file and CLAUDE.md.
-2. Check the most recent ADR for relevant context.
-3. Look at how the closest existing pattern handles it (e.g., a similar API route).
-4. If still stuck: write a one-paragraph summary of what you tried, what failed, and your best two guesses, and stop. Don't keep flailing.
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
 
-## When this contract is wrong
+Common checks:
 
-If you find AGENTS.md tells you to do something that conflicts with the codebase reality (a path that doesn't exist, a command that fails, a convention that no file actually follows), **fix this file**. The contract should match the code. If you can't fix it because you're not authorized: write a note in your response and surface the contradiction to the user.
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:run
+pnpm build
+```
+
+Formatting:
+
+- There is no standalone format script in `package.json`.
+- Follow the existing code style and rely on TypeScript/ESLint feedback.
+
+## 5. Coding Conventions
+
+File and naming conventions:
+
+- Files use kebab-case, for example `gmail-poller.ts`.
+- React components use PascalCase and usually one component per file.
+- Functions use camelCase verb phrases, for example `classifyEmail`.
+- Types use PascalCase with no `I` prefix.
+- Database enum values use lowercase snake case.
+- API routes should be noun resources unless the route is genuinely action-shaped.
+
+Imports:
+
+- Use the `@/` alias for `src/` imports.
+- Avoid deep relative imports beyond one level.
+- Keep import order as external packages, `@/` aliases, relative imports, then type-only imports.
+- Do not import Prisma client directly outside `src/core/db/**`.
+- Prisma 7 client imports come from `@/generated/prisma/client`, not `@prisma/client`.
+
+Feature organization:
+
+- New capabilities belong in `src/features/<feature>/`.
+- Server Actions belong in feature-level `actions.ts`.
+- Business logic belongs in feature-level `service.ts`.
+- Tenant-scoped reads belong in feature-level `queries.ts`, using `tenantDb(userId)`.
+- Slice-specific schemas belong in feature-level `schema.ts`.
+- Cross-cutting schemas belong in `src/core/schemas/` only when truly shared.
+- UI used by one feature should stay in that feature's `components/` folder.
+- Shared primitives belong in `src/ui/`.
+
+API and service patterns:
+
+- Route Handlers in `src/app/api/**/route.ts` are for cross-origin endpoints, webhooks, extension/bookmarklet endpoints, and non-form clients.
+- Server Actions are for same-origin UI mutations.
+- Validate input with Zod before calling services.
+- Check authorization/session at the boundary.
+- Services return `Result<T, AppError>`.
+- Convert service results to UI/action/API responses at the boundary.
+
+Error handling and logging:
+
+- Expected failures are `AppError` values, not thrown exceptions.
+- Add new error variants in `src/core/errors/index.ts` when needed.
+- Use structured logging through the existing logger.
+- `console.*` is disallowed in `src` by lint.
+- Do not log credentials, session secrets, tokens, raw OAuth payloads, or full email bodies.
+
+UI conventions:
+
+- Server Components by default; add `'use client'` only at interactive leaves.
+- Client component props must be serializable.
+- Follow `DESIGN.md`: quiet campaign-room UI, no decorative emoji/icons in app chrome, restrained color, rejection states as neutral gray rather than alarming red.
+- Prefer existing `src/ui` primitives and established layout patterns before adding new abstractions.
+- Localized visible copy should go through the message catalogs when the surrounding feature uses next-intl.
+
+## 6. Testing Guidance
+
+Frameworks:
+
+- Unit and integration tests use Vitest.
+- React tests use Testing Library.
+- Integration tests use Testcontainers PostgreSQL.
+- E2E tests use Playwright.
+
+Where tests live:
+
+- Colocate unit tests beside source files as `*.test.ts` or `*.test.tsx`.
+- Cross-slice/database tests live in `tests/integration/`.
+- Browser workflow tests live in `tests/e2e/`.
+- Shared test setup and factories live under `src/test/` and `tests/`.
+
+Targeted test examples:
+
+```bash
+pnpm test:run -- src/features/classifier/service.test.ts
+pnpm test:run -- tests/integration/capture.test.ts
+pnpm e2e -- tests/e2e/smoke.spec.ts
+```
+
+Before PR or commit-worthy completion, run when possible:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:run
+pnpm build
+```
+
+Testing expectations:
+
+- Pure business logic gets unit tests.
+- Database behavior, RLS/tenant safety, migrations, and cross-slice flows get integration tests.
+- Critical user journeys get Playwright coverage.
+- Route Handlers should cover method validation, auth, content type/body validation, success cases, and expected error cases.
+- Server Actions should cover schema validation, auth behavior, service delegation, and returned action state.
+
+Integration test gotchas:
+
+- Docker must be running for Testcontainers.
+- On Docker Desktop, `DOCKER_HOST=unix://$HOME/.docker/run/docker.sock pnpm test:run` may be needed if the default socket is unavailable.
+- Integration setup applies all migrations to a disposable PostgreSQL 16 container and switches tests to a non-superuser database role.
+
+## 7. Working Rules For Codex
+
+- Start every task by checking `git status --short --branch --untracked-files=all`. The worktree may contain user or prior-agent WIP.
+- Inspect relevant files before editing. For unfamiliar Next.js APIs, inspect `node_modules/next/dist/docs/` first.
+- Preserve user changes. Do not revert, restage, or overwrite unrelated modifications.
+- Keep changes minimal and focused on the requested task.
+- Do not modify application code for documentation-only tasks.
+- Do not introduce new dependencies without explaining why they are necessary and why existing tools are insufficient.
+- Do not change public APIs, migrations, auth/session behavior, Gmail OAuth, payment-like flows, deployment files, or infrastructure without an explicit request.
+- Do not bypass classifier confidence thresholds. Low-confidence classification should go to the review queue.
+- Do not store full email bodies indefinitely.
+- Prefer existing project patterns over new abstractions.
+- Add tests for new behavior or bug fixes when feasible.
+- Run lint, typecheck, tests, and build after code changes when possible. If not possible, state why.
+- Summarize changed files and verification steps after every task.
+- If committing is requested, use present-tense, verb-led commit messages such as `add extension token rotation` or `fix matcher reply-prefix handling`.
+
+## 8. Known Risks / Gotchas
+
+- Some documentation is historical. `.planning/ROADMAP.md` appears to be the current roadmap source, while README/milestone/state docs may lag.
+- The active roadmap context on 2026-05-10 is v0.3 Full, with Phase 13 Chrome MV3 Extension in progress after completed reminder and document-storage phases.
+- `extension/` may be referenced by older docs but may not exist yet.
+- `docs/architecture.md` and `docs/data-model.md` can lag the schema. Confirm against `prisma/schema.prisma` before making model assumptions.
+- Prisma 7 uses `prisma.config.ts` for the datasource URL and requires the runtime adapter pattern already established in `src/core/db/client.ts`.
+- Generated Prisma files under `src/generated/prisma/` should not be hand-edited.
+- The app uses local system font stacks instead of `next/font/google`, so production builds should not need network access for font fetching.
+- The build currently emits a Turbopack NFT tracing warning through the classifier budget import path; the build still passes. Treat new warning classes as suspicious, but do not assume this known warning is caused by your change.
+- ESLint/dependency-cruiser boundary rules are intentional. If they block a change, rethink the slice boundary before weakening rules.
+- Testcontainers requires local Docker access. CI and local sandbox behavior may differ.
+- Real secrets may exist in local env files. Do not print them.
+- Claude/GSD planning artifacts are useful context, but they are not executable Codex workflow. Convert their useful content into normal repo docs when needed.
+
+## 9. Useful Commands
+
+Development:
+
+```bash
+pnpm dev                  # start Next.js dev server
+pnpm build                # production build
+pnpm start                # start production server after build
+pnpm install              # install dependencies
+```
+
+Quality:
+
+```bash
+pnpm lint                 # ESLint over src, tests, and config files
+pnpm typecheck            # TypeScript no-emit check
+pnpm test                 # Vitest watch mode
+pnpm test:run             # Vitest single run
+pnpm e2e                  # Playwright tests
+pnpm e2e:ui               # Playwright UI mode
+pnpm depcheck             # dependency-cruiser architecture checks
+pnpm depcheck:graph       # write dependency graph to dependency-graph.dot
+```
+
+Database:
+
+```bash
+pnpm db:migrate           # prisma migrate dev
+pnpm db:reset             # prisma migrate reset
+pnpm db:studio            # Prisma Studio
+pnpm db:generate          # Prisma generate
+pnpm seed                 # seed demo data
+pnpm prisma migrate deploy # apply migrations in prod-shaped environments
+```
+
+Docker:
+
+```bash
+docker compose up -d db
+docker compose up
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit
+docker compose logs api --tail=200
+docker compose ps
+```
+
+Project utilities:
+
+```bash
+pnpm build:bookmarklet    # build bookmarklet URL artifact
+pnpm e2e:reset-db         # reset E2E database state
+tsx scripts/seed.ts       # run seed script directly
+tsx scripts/e2e-reset-db.ts # run E2E reset directly
+```

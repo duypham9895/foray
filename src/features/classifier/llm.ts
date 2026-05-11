@@ -33,9 +33,13 @@ import type { Tool } from '@anthropic-ai/sdk/resources/messages/messages.js'
 
 import { env } from '@/core/env'
 import { type AppError, type Result, err, errors, ok } from '@/core/errors'
-import type { EmailClassification } from '@/generated/prisma/client'
 
-import { classifyToolOutputSchema } from './schema'
+import {
+  SYSTEM_PROMPT,
+  classifyToolOutputSchema,
+  type ClassifyByLlmInput,
+  type ClassifyByLlmSuccess,
+} from './schema'
 
 // ---------------------------------------------------------------------------
 // LOCKED constants — see CONTEXT §Area 2
@@ -72,6 +76,7 @@ export const classifyTool: Tool = {
       reasoning: { type: 'string', maxLength: 200 },
     },
     required: ['label', 'confidence', 'reasoning'],
+    additionalProperties: false,
   },
 }
 
@@ -82,31 +87,13 @@ export const classifyTool: Tool = {
 // (paired with tool_choice forcing structured output).
 // ---------------------------------------------------------------------------
 
-export const SYSTEM_PROMPT = `You classify job-related emails into exactly one of these 5 labels.
-- rejection: an explicit "we are not moving forward" / "we have decided not to proceed" message.
-- interview_invite: a request to schedule, propose times, or join an interview/call.
-- recruiter_outreach: a recruiter introducing a new role, asking if you're interested. NOT a follow-up on an existing application.
-- noise: newsletters, automated digests, marketing, "view in browser" / "unsubscribe" footer dominant.
-- unmatched: none of the above. Includes generic notifications, calendar updates, document signing, etc.
-
-Output exactly one classify_email tool call. Do not output free text.` as const
+export { SYSTEM_PROMPT }
 
 // ---------------------------------------------------------------------------
 // classifyByLlm — public function
 // ---------------------------------------------------------------------------
 
-export type ClassifyByLlmInput = {
-  subject: string
-  bodyExcerpt: string
-}
-
-export type ClassifyByLlmSuccess = {
-  label: EmailClassification
-  confidence: number
-  classifiedBy: 'llm'
-  inputTokens: number
-  outputTokens: number
-}
+export type { ClassifyByLlmInput, ClassifyByLlmSuccess }
 
 /**
  * Call Anthropic with the locked tool definition and parse the response.

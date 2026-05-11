@@ -53,6 +53,19 @@ export type TodaysInterview = {
   scheduledAt: Date
 }
 
+export type UpcomingCalendarInterview = {
+  id: number
+  applicationId: number | null
+  roleTitle: string | null
+  companyName: string | null
+  summary: string
+  startAt: Date
+  endAt: Date | null
+  location: string | null
+  htmlLink: string | null
+  hangoutLink: string | null
+}
+
 export type PipelineCounts = Record<CanonicalStatus, number>
 
 const ACTIVE_STATUSES: ReadonlyArray<CanonicalStatus> = [
@@ -180,6 +193,47 @@ export async function findTodaysInterviews(
         stageName: r.name,
         scheduledAt: r.scheduledAt,
       }))
+  })
+}
+
+export async function findUpcomingCalendarInterviews(
+  userId: UserId,
+): Promise<Result<UpcomingCalendarInterview[], AppError>> {
+  const now = new Date()
+  const weekFromNow = new Date(now.getTime() + 7 * MS_PER_DAY)
+
+  return withRls(userId, async (tx) => {
+    const rows = await tx.calendarEvent.findMany({
+      where: {
+        userId: Number(userId),
+        status: { not: 'cancelled' },
+        startAt: { gte: now, lt: weekFromNow },
+      },
+      orderBy: { startAt: 'asc' },
+      take: 10,
+      include: {
+        application: {
+          select: {
+            id: true,
+            roleTitle: true,
+            company: { select: { name: true } },
+          },
+        },
+      },
+    })
+
+    return rows.map<UpcomingCalendarInterview>((r) => ({
+      id: r.id,
+      applicationId: r.application?.id ?? null,
+      roleTitle: r.application?.roleTitle ?? null,
+      companyName: r.application?.company.name ?? null,
+      summary: r.summary,
+      startAt: r.startAt,
+      endAt: r.endAt,
+      location: r.location,
+      htmlLink: r.htmlLink,
+      hangoutLink: r.hangoutLink,
+    }))
   })
 }
 

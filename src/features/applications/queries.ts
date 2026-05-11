@@ -45,6 +45,21 @@ export type ApplicationDetail = {
   events: Event[]
   emails: Email[]
   documents: Document[]
+  recruiters: Array<{
+    id: number
+    name: string
+    email: string | null
+    linkedinUrl: string | null
+    phone: string | null
+    role: string | null
+    companyName: string | null
+  }>
+  recruiterOptions: Array<{
+    id: number
+    name: string
+    email: string | null
+    companyName: string | null
+  }>
 }
 
 // URL-driven sort param. Validated at the page boundary via `safeParse` so
@@ -141,13 +156,48 @@ export async function findApplicationDetail(
     })
     if (!application || application.userId !== Number(userId)) return null
 
-    const [stages, events, emails, documents] = await Promise.all([
+    const [stages, events, emails, documents, recruiterLinks, recruiterOptions] = await Promise.all([
       tx.stage.findMany({ where: { applicationId: numericId }, orderBy: { order: 'asc' } }),
       tx.event.findMany({ where: { applicationId: numericId }, orderBy: { occurredAt: 'desc' } }),
       tx.email.findMany({ where: { applicationId: numericId }, orderBy: { receivedAt: 'desc' } }),
       tx.document.findMany({ where: { applicationId: numericId }, orderBy: { createdAt: 'desc' } }),
+      tx.applicationRecruiter.findMany({
+        where: { applicationId: numericId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          recruiter: {
+            include: { company: { select: { name: true } } },
+          },
+        },
+      }),
+      tx.recruiter.findMany({
+        where: { userId: Number(userId) },
+        orderBy: { name: 'asc' },
+        include: { company: { select: { name: true } } },
+      }),
     ])
-    return { application, stages, events, emails, documents }
+    return {
+      application,
+      stages,
+      events,
+      emails,
+      documents,
+      recruiters: recruiterLinks.map((link) => ({
+        id: link.recruiter.id,
+        name: link.recruiter.name,
+        email: link.recruiter.email,
+        linkedinUrl: link.recruiter.linkedinUrl,
+        phone: link.recruiter.phone,
+        role: link.role,
+        companyName: link.recruiter.company?.name ?? null,
+      })),
+      recruiterOptions: recruiterOptions.map((recruiter) => ({
+        id: recruiter.id,
+        name: recruiter.name,
+        email: recruiter.email,
+        companyName: recruiter.company?.name ?? null,
+      })),
+    }
   })
 }
 
