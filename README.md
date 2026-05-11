@@ -24,7 +24,7 @@ move, walk out.
 
 ## What it does
 
-- **Captures** new applications via bookmarklet (or Chrome extension at v1-Full) — one click on any job page → application logged with company, role, URL, JD, salary range
+- **Captures** new applications via bookmarklet today, with native Chrome extension work underway in v0.3 Full — one click on any job page -> application logged with company, role, URL, JD, salary range
 - **Ingests** Gmail automatically — polls every 15 minutes, classifies emails (rejection, interview invite, recruiter outreach, noise), updates application status when confidence is high, surfaces ambiguous cases in a small daily review queue
 - **Models reality** — every company runs interviews differently, so each application has a flexible per-application stage timeline alongside a canonical status enum for global views
 - **Surfaces today** — dashboard shows what needs your attention: today's interviews, stale applications (no movement >7 days), unreviewed emails, this-week summary
@@ -40,7 +40,7 @@ move, walk out.
 pnpm install
 cp .env.example .env.local
 docker compose up -d db          # only Postgres in Docker
-pnpm prisma migrate dev
+pnpm db:migrate
 pnpm dev                          # → http://localhost:3000
 ```
 
@@ -58,7 +58,7 @@ Full setup (including Gmail OAuth and Anthropic API key) is in **[SETUP.md](./SE
 
 ## Architecture in one paragraph
 
-Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma schema. A cron-driven Gmail watcher polls your inbox every 15 minutes, runs each new email through a rules-first classifier (regex patterns for templated rejection / interview / recruiter language) and falls back to Claude Haiku for ambiguous cases. High-confidence classifications auto-update application status; ambiguous ones land in a review queue that's typically 0–3 items per day. A bookmarklet (and later a native Chrome MV3 extension) captures new applications by POSTing to `/api/capture`. Browser-side runs Tailwind v4 + shadcn primitives — responsive enough to use on phone over a tunnel, optimized for laptop daily use. Single-user mode for now; multi-tenant-ready schema (every record has `userId`) so a future flip to public requires a database migration but no schema rewrite.
+Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma 7 schema. A cron-driven Gmail watcher polls your inbox every 15 minutes, runs each new email through a rules-first classifier (regex patterns for templated rejection / interview / recruiter language), and falls back to Claude Haiku for ambiguous cases. High-confidence classifications auto-update application status; ambiguous ones land in a review queue that's typically 0-3 items per day. A bookmarklet captures new applications by POSTing to `/api/capture`; Phase 13 is extending that endpoint for a local Chrome MV3 extension with bearer-token auth. Browser-side runs Tailwind v4 and local UI primitives, optimized for laptop daily use. Single-user mode for now; multi-tenant-ready schema (every record has `userId`) so a future public flip does not require a schema rewrite.
 
 ---
 
@@ -66,11 +66,11 @@ Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma schema. A
 
 | Milestone | Status | Scope |
 |-----------|--------|-------|
-| **Lean** | 🔨 In progress (Phase 4/5) | Manual entry + Gmail polling + classifier + review queue + applications list/detail |
-| **Standard** | ⏳ Pending Lean | + Bookmarklet capture + "Today" dashboard + tags + search |
-| **Full** | ⏳ Pending Standard | + Native Chrome MV3 extension + document storage + recruiter entity + Google Calendar sync + analytics + follow-up reminders |
+| **Lean** | ✅ Shipped 2026-05-09 | Manual entry + Gmail polling + classifier + review queue + applications list/detail |
+| **Standard** | ✅ Shipped 2026-05-10 | Bookmarklet capture + Today dashboard + tags + search + keyboard shortcuts + E2E baseline |
+| **Full** | 🚧 In progress | Reminders and document storage are complete; Phase 13 Chrome MV3 extension is underway; recruiter, analytics, and calendar remain |
 
-See **[docs/milestones/](./docs/milestones/)** for each milestone's checklist and acceptance criteria.
+See **[.planning/ROADMAP.md](./.planning/ROADMAP.md)** for the live phase plan and **[docs/milestones/](./docs/milestones/)** for milestone-level checklists and acceptance criteria.
 
 ---
 
@@ -81,7 +81,7 @@ See **[docs/milestones/](./docs/milestones/)** for each milestone's checklist an
 - **DB**: PostgreSQL 16 via Prisma 7
 - **LLM**: Claude Haiku via Anthropic SDK (classifier fallback only)
 - **Email**: Gmail API via googleapis SDK
-- **Tests**: Vitest (unit + integration) + Playwright (E2E, added at Standard milestone)
+- **Tests**: Vitest (unit + integration with Testcontainers PostgreSQL) + Playwright E2E
 - **Container**: Docker + Docker Compose (dual-track: native dev + full-Docker dev)
 
 ---
@@ -95,6 +95,7 @@ For humans:
 
 For agents:
 - **[AGENTS.md](./AGENTS.md)** — file layout, conventions, extension points, critical commands
+- **[docs/codex-workflow.md](./docs/codex-workflow.md)** — practical Codex workflow, verification, and git hygiene
 - **[CLAUDE.md](./CLAUDE.md)** — project rules (Karpathy guidelines, testing, naming)
 
 For both:

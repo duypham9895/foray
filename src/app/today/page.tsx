@@ -17,6 +17,7 @@ import {
   findStaleForays,
   findThisWeekCounts,
   findTodaysInterviews,
+  findUpcomingCalendarInterviews,
   getPipelineCounts,
 } from '@/features/today/queries'
 
@@ -32,7 +33,7 @@ export default async function TodayPage() {
   const userId = userResult.value.id
   const locale = await getLocale()
 
-  const [staleResult, offerResult, reviewResult, interviewsResult, countsResult, recentResult, weekResult, followUpsResult] =
+  const [staleResult, offerResult, reviewResult, interviewsResult, countsResult, recentResult, weekResult, followUpsResult, calendarInterviewsResult] =
     await Promise.all([
       findStaleForays(userId),
       findOfferForays(userId),
@@ -42,6 +43,7 @@ export default async function TodayPage() {
       findRecent24hActivity(userId),
       findThisWeekCounts(userId),
       findOverdueFollowUps(userId),
+      findUpcomingCalendarInterviews(userId),
     ])
 
   const stale = staleResult.isOk() ? staleResult.value : []
@@ -52,6 +54,7 @@ export default async function TodayPage() {
   const recent = recentResult.isOk() ? recentResult.value : { emails: [], activeApplications: [] }
   const weekCounts = weekResult.isOk() ? weekResult.value : null
   const followUps = followUpsResult.isOk() ? followUpsResult.value : []
+  const calendarInterviews = calendarInterviewsResult.isOk() ? calendarInterviewsResult.value : []
   const t = await getTranslations('today')
 
   const totalForays = counts
@@ -75,7 +78,7 @@ export default async function TodayPage() {
 
         <div className="space-y-6">
           <DecisionsCard offers={offers} reviewQueue={review} />
-          <InterviewsCard interviews={interviews} />
+          <InterviewsCard interviews={interviews} calendarInterviews={calendarInterviews} />
           <QuietCard forays={stale} />
           <FollowUpsCard followUps={followUps} />
 

@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { StatusBadge } from '@/components/status-badge'
 import { DocumentList } from '@/features/documents/components/document-list'
 import { UploadForm } from '@/features/documents/components/upload-form'
+import { ApplicationRecruitersSection } from '@/features/recruiters/components/application-recruiters-section'
 
 import type { ApplicationDetail } from '../queries'
 import { ClassifierBreadcrumb } from './classifier-breadcrumb'
@@ -27,7 +28,7 @@ export function ApplicationDetail({
   allTags?: string[]
 }) {
   const t = useTranslations('forayDetail')
-  const { application, stages, events, emails, documents } = detail
+  const { application, stages, events, emails, documents, recruiters, recruiterOptions } = detail
   const company = application.company
 
   return (
@@ -78,6 +79,15 @@ export function ApplicationDetail({
           applicationId={application.id}
           initialTags={application.tags}
           allTags={allTags}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-medium">Recruiters</h2>
+        <ApplicationRecruitersSection
+          applicationId={application.id}
+          recruiters={recruiters}
+          recruiterOptions={recruiterOptions}
         />
       </section>
 

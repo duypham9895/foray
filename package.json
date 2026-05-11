@@ -16,6 +16,8 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "build:bookmarklet": "tsx scripts/build-bookmarklet.ts",
+    "extension:dev": "cd extension && pnpm dev",
+    "extension:build": "cd extension && pnpm build",
     "depcheck": "depcruise src --config .dependency-cruiser.cjs",
     "depcheck:graph": "depcruise --include-only ^src --output-type dot src --config .dependency-cruiser.cjs > dependency-graph.dot",
     "e2e": "playwright test",

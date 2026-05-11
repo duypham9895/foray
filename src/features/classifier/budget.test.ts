@@ -15,6 +15,8 @@ import path from 'node:path'
 
 import {
   DAILY_BUDGET_USD,
+  GPT_5_4_NANO_INPUT_USD_PER_MTOK,
+  GPT_5_4_NANO_OUTPUT_USD_PER_MTOK,
   HAIKU_INPUT_USD_PER_MTOK,
   HAIKU_OUTPUT_USD_PER_MTOK,
   appendCostEntry,
@@ -67,6 +69,12 @@ describe('budget pricing constants — Anthropic Haiku 4.5 (LOCKED)', () => {
   it('Test C3: HAIKU_OUTPUT_USD_PER_MTOK === 4.00', () => {
     expect(HAIKU_OUTPUT_USD_PER_MTOK).toBe(4.0)
   })
+  it('Test C4: GPT_5_4_NANO_INPUT_USD_PER_MTOK === 0.20', () => {
+    expect(GPT_5_4_NANO_INPUT_USD_PER_MTOK).toBe(0.2)
+  })
+  it('Test C5: GPT_5_4_NANO_OUTPUT_USD_PER_MTOK === 1.25', () => {
+    expect(GPT_5_4_NANO_OUTPUT_USD_PER_MTOK).toBe(1.25)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -82,6 +90,9 @@ describe('computeCostUsd — pure', () => {
   })
   it('Test 8c: 1M input + 1M output → $4.80', () => {
     expect(computeCostUsd(1_000_000, 1_000_000)).toBeCloseTo(4.8, 10)
+  })
+  it('Test 8c-openai: GPT-5.4 nano 1M input + 1M output → $1.45', () => {
+    expect(computeCostUsd(1_000_000, 1_000_000, 'gpt-5.4-nano')).toBeCloseTo(1.45, 10)
   })
   it('Test 8d: 0 + 0 → 0 (boundary)', () => {
     expect(computeCostUsd(0, 0)).toBe(0)

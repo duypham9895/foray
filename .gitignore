@@ -46,6 +46,9 @@ next-env.d.ts
 classifier-log.jsonl
 foray-sync.log
 public/foray-bookmarklet-url.json
+extension/node_modules/
+extension/.output/
+extension/.wxt/
 
 # Prisma — generated client (regenerated on `pnpm prisma generate`)
 /src/generated/
@@ -66,4 +69,3 @@ scripts/dev/
 # Playwright E2E artifacts
 /playwright-report/
 /test-results/
-

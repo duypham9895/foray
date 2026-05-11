@@ -3,30 +3,29 @@
 > **Goal**: the real-product version. Native browser extension, file storage, recruiter relationship management, calendar sync, analytics, and reminders.
 
 **Estimated effort**: ~2-3 weeks
-**Status**: ⏳ Pending Standard
+**Status**: 🚧 In progress — Phases 11-12 complete, Phase 13 executing
 **Prerequisites**: Standard milestone complete
+
+**Live plan**: [`.planning/ROADMAP.md`](../../.planning/ROADMAP.md) is the source of truth for current phase status.
 
 ---
 
 ## In scope
 
-### Native Chrome MV3 extension
-- [ ] `extension/manifest.json` (MV3) with `host_permissions` for `*://*.linkedin.com/*`, `*://*.greenhouse.io/*`, `*://*.lever.co/*`, `*://*.ashbyhq.com/*` and a permissive content script for `<all_urls>`
-- [ ] `extension/popup.html` + `popup.ts` — opens on toolbar click; shows site-specific scrape (better than bookmarklet) + manual fields, calls `localhost:3000/api/capture` directly
-- [ ] Site-specific scrapers for the four listed ATSes (LinkedIn, Greenhouse, Lever, Ashby) — extract role title, company, location, JD, salary cleanly
-- [ ] Background service worker for: badge count of unreviewed inbox items, optional notification on new auto-classification
-- [ ] Build pipeline (Vite or esbuild): bundle TS, output to `extension/dist/` for Chrome's "Load unpacked"
-- [ ] Settings page section with "Install extension" instructions + version check
+### Native Chrome MV3 extension (Phase 13, in progress)
+- [ ] Token infrastructure + capture route bearer auth
+- [ ] WXT extension scaffold, popup, and capture flow
+- [ ] SPA navigation handling and build pipeline finalization
 
-### Document storage
-- [ ] `Document` entity wired up (already in schema)
-- [ ] Upload UI on Application detail — accept resume PDF/DOCX, cover letter, JD PDF, take-home submission
-- [ ] Local file storage under `data/uploads/{userId}/{applicationId}/`
-- [ ] Download endpoint with auth check
-- [ ] Document version history (when same `kind` re-uploaded, keep prior with version number)
+### Document storage (Phase 12, shipped)
+- [x] `Document` entity wired up
+- [x] Upload UI on Application detail — accept resume PDF/DOCX, cover letter, JD PDF, take-home submission
+- [x] Local file storage under `data/documents/`
+- [x] Download/delete endpoints with auth checks
+- [x] Upload validation by size, extension, and magic bytes
 - [ ] Storage quota soft-warning at 1GB used
 
-### Recruiter entity UI
+### Recruiter entity UI (Phase 14, planned)
 - [ ] `Recruiter` and `ApplicationRecruiter` join table wired up (already in schema)
 - [ ] `/recruiters` list page
 - [ ] `/recruiters/[id]` detail page — shows all linked Applications
@@ -34,13 +33,13 @@
 - [ ] Recruiter contact field on Application form (autocomplete creates Recruiter inline)
 - [ ] Email auto-link: when an Email arrives from a known recruiter's email address, link both to Recruiter and Application
 
-### Google Calendar integration
+### Google Calendar integration (Phase 16, planned)
 - [ ] OAuth scope additions (`calendar.events` + `calendar.events.readonly`) — re-authentication required (clear notice in settings)
 - [ ] When a Stage is created with `scheduledAt`, offer to create a Google Calendar event
 - [ ] Two-way sync: cron-poll the Calendar for declined/rescheduled events; update Stage accordingly
 - [ ] Conflict resolution: foray is source of truth for the `scheduledAt` field; Calendar reflects what foray says
 
-### Analytics dashboard
+### Analytics dashboard (Phase 15, planned)
 - [ ] `/analytics` page with sections:
   - Applications per week (line chart)
   - Funnel: applied → screening → interviewing → offer (bar chart with drop-off rates)
@@ -51,9 +50,10 @@
 - [ ] All charts respect filters: date range, tags, source, company industry
 - [ ] Export CSV button for raw data
 
-### Follow-up reminders
-- [ ] Per-application "remind me to follow up" affordance — sets a `followUpAt` field
-- [ ] Daily cron checks `followUpAt` ≤ today; surfaces on Today dashboard
+### Follow-up reminders (Phase 11, shipped)
+- [x] Per-application "remind me to follow up" affordance — sets a `followUpAt` field
+- [x] Cron infrastructure checks reminders every 15 minutes; Today dashboard queries overdue follow-ups
+- [x] Overdue follow-ups surface on Today dashboard
 - [ ] Smart suggestions: "5 days since recruiter call with X, no follow-up logged — ping them?"
 - [ ] Optional native browser notification when reminders fire
 

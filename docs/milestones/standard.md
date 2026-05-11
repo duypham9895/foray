@@ -3,8 +3,10 @@
 > **Goal**: zero-friction capture from any job page + a daily-check landing dashboard. The "ritual" is well-supported.
 
 **Estimated effort**: ~1.5-2 weeks
-**Status**: ⏳ Pending Lean
+**Status**: ✅ Shipped 2026-05-10 — Phases 6-10 complete
 **Prerequisites**: Lean milestone complete
+
+**Completion note**: This file is now historical milestone documentation. For the active execution plan, see [`.planning/ROADMAP.md`](../../.planning/ROADMAP.md).
 
 ---
 
@@ -43,14 +45,14 @@
 
 ---
 
-## Out of scope (deferred to Full)
+## Originally out of scope
 
-- Native Chrome MV3 extension (bookmarklet covers ~90% of use)
-- Document storage
+- Native Chrome MV3 extension (Full Phase 13, in progress)
+- Document storage (delivered in Full Phase 12)
 - Recruiter entity UI
 - Calendar integration
 - Analytics dashboard
-- Follow-up reminders
+- Follow-up reminders (delivered in Full Phase 11)
 
 ---
 

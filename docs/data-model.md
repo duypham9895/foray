@@ -37,6 +37,11 @@ The owner of the data. Single user for now (Duy). `userId` exists on every other
 | `name` | String? | |
 | `gmailRefreshTokenEncrypted` | String? | AES-256-GCM, key in `ENCRYPTION_KEY` env |
 | `gmailLastSyncAt` | DateTime? | last successful Gmail poll |
+| `gmailHistoryId` | String? | Gmail history watermark for incremental polling |
+| `calendarRefreshTokenEncrypted` | String? | AES-256-GCM Google Calendar refresh token, separate from Gmail |
+| `calendarLastSyncAt` | DateTime? | last successful Google Calendar sync |
+| `extensionApiTokenHash` | String? | hashed bearer token for the Chrome extension capture API |
+| `classifierLlmProvider` | Enum | `anthropic` or `openai`; per-user provider for low-confidence classifier fallback |
 | `createdAt` / `updatedAt` | DateTime | |
 
 ### `Company`
@@ -80,6 +85,8 @@ A single foray — one application to one role at one company.
 | `priority` | Int | 1-3, default 2; lets user pin top forays |
 | `tags` | String[] | free-form tags ("dream-job", "remote", "vietnam") |
 | `notes` | String? | free-form |
+| `searchText` | String? | denormalized search corpus |
+| `followUpAt` | DateTime? | follow-up reminder date shown in Today when overdue |
 | `archivedAt` | DateTime? | nullable; archived forays hidden from default views |
 | `createdAt` / `updatedAt` | DateTime | |
 
@@ -89,7 +96,7 @@ A phase within a single application. Free-form per-application — every company
 | Field | Type | Notes |
 |---|---|---|
 | `id` | Int | PK |
-| `applicationId` | Int | FK |
+| `applicationId` | Int? | FK; null for user-level/system events |
 | `name` | String | "Recruiter call", "Take-home", "Tech round 1", "Bar raiser" |
 | `order` | Int | 1, 2, 3... |
 | `scheduledAt` | DateTime? | for upcoming interviews |
@@ -127,6 +134,7 @@ Raw + classified Gmail messages relevant to job hunt.
 | `fromDomain` | String | extracted for matcher |
 | `subject` | String | |
 | `bodyExcerpt` | String | first ~500 chars of plain text body (privacy: don't store full body) |
+| `processingStatus` | Enum | `received`, `matched`, `classified`, `acted`, `needs_review`, `failed` |
 | `receivedAt` | DateTime | from Gmail headers |
 | `classification` | Enum? | `rejection`, `interview_invite`, `recruiter_outreach`, `noise`, `unmatched`, null = unclassified |
 | `confidence` | Float? | 0–1 |
@@ -134,8 +142,8 @@ Raw + classified Gmail messages relevant to job hunt.
 | `reviewedByUser` | Boolean | true once user has triaged from inbox |
 | `createdAt` / `updatedAt` | DateTime | |
 
-### `Recruiter` (Full milestone)
-A person on the other side. Optional — at v1-Lean we just use `Application.referredBy` as a string. Full milestone introduces the entity.
+### `Recruiter` (Full Phase 14 shipped)
+A person on the other side. Recruiter records can be managed at `/recruiters` and linked to applications from the application detail view.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -148,9 +156,9 @@ A person on the other side. Optional — at v1-Lean we just use `Application.ref
 | `phone` | String? | |
 | `notes` | String? | |
 
-`ApplicationRecruiter` — many-to-many join table linking Recruiter ↔ Application.
+`ApplicationRecruiter` — many-to-many join table linking Recruiter ↔ Application with a free-form role label such as "Recruiter", "Hiring Manager", or "Founder".
 
-### `Document` (Full milestone)
+### `Document` (Full Phase 12 shipped)
 Files attached to an application — resume version, cover letter, JD PDF, take-home submission.
 
 | Field | Type | Notes |
@@ -160,10 +168,33 @@ Files attached to an application — resume version, cover letter, JD PDF, take-
 | `kind` | Enum | `resume`, `cover_letter`, `jd_pdf`, `take_home`, `other` |
 | `filename` | String | |
 | `mimeType` | String | |
-| `storagePath` | String | path under `data/uploads/` (local fs at v1; swap for S3/Supabase Storage if going public) |
+| `storagePath` | String | server-generated path under `data/documents/` (local fs at v1; swap for object storage if going public) |
 | `sizeBytes` | Int | |
 | `notes` | String? | |
 | `createdAt` | DateTime | |
+
+### `CalendarEvent` (Full Phase 16 shipped)
+Google Calendar events synced from the user's primary calendar. The sync stores event metadata needed for interview visibility and application matching, not arbitrary calendar state beyond the rolling sync window.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | Int | PK |
+| `userId` | Int | FK |
+| `applicationId` | Int? | matched application, if attendee domain matched a company domain |
+| `calendarId` | String | currently `primary` |
+| `googleEventId` | String | Google Calendar event id |
+| `etag` | String | idempotency key for skipping unchanged events |
+| `status` | String | Google event status, e.g. `confirmed` or `cancelled` |
+| `summary` | String | event title |
+| `descriptionExcerpt` | String? | first 500 chars of description |
+| `location` | String? | |
+| `htmlLink` | String? | Google Calendar event link |
+| `hangoutLink` | String? | meeting link when present |
+| `organizerEmail` | String? | |
+| `attendeeEmails` | String[] | stored to support domain matching/debugging |
+| `matchedDomain` | String? | attendee/organizer domain that matched `Company.domain` |
+| `startAt` / `endAt` | DateTime | event time bounds |
+| `createdAt` / `updatedAt` | DateTime | |
 
 ## The hybrid status model (read this carefully)
 
@@ -194,9 +225,9 @@ Auto-classifier only ever sets `canonicalStatus`. It never touches `currentStage
 
 - `User.email` unique
 - `Company(userId, name)` unique (one user can have only one "Stripe" record)
-- `Application(userId, companyId, roleTitle, appliedAt)` unique-ish — soft-prevent dupes; if user re-applies to same role we allow it but flag in UI
 - `Email.gmailMessageId` unique (idempotent ingestion)
-- Indexed: `Application.canonicalStatus`, `Application.lastActivityAt`, `Application.archivedAt`, `Email.applicationId`, `Email.classification`, `Event.applicationId`, `Stage.applicationId`
+- `CalendarEvent(userId, calendarId, googleEventId)` unique (idempotent Calendar sync)
+- Indexed: tenant ownership fields, `Company.domain`, `Application.companyId`, `Application.canonicalStatus`, `Application.lastActivityAt`, `Application.archivedAt`, `Application.followUpAt`, `Email.applicationId`, `Email.gmailThreadId`, `Email.fromDomain`, `Email.classification`, `Email.processingStatus`, `Event.applicationId`, `Event.userId`, `Event.occurredAt`, `Event.type`, `Stage.applicationId`, `Stage.scheduledAt`, `Document.applicationId`, `Document.kind`, `CalendarEvent.applicationId`, `CalendarEvent.startAt`, `CalendarEvent.status`
 
 ## Migration discipline
 

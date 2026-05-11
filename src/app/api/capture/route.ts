@@ -14,15 +14,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { findUserByApiToken } from '@/core/auth/api-token'
 import { isAtsDomain } from '@/core/domains/ats-domains'
 import { logger } from '@/core/logger'
 
-// TODO(edward, 2026-05-10): Add Bearer token auth per PRINCIPLES.md §Security baseline.
-// Deferred for Lean — bookmarklet is single-user, local-only deployment.
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 } as const
 
 const MAX_BODY_BYTES = 4096
@@ -47,6 +46,21 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  let authenticatedVia: 'bookmarklet' | 'extension' = 'bookmarklet'
+  const authorization = req.headers.get('authorization')
+  if (authorization) {
+    const [scheme, token] = authorization.split(' ')
+    if (scheme !== 'Bearer' || !token) {
+      return jsonResponse({ error: 'Invalid API token' }, 401)
+    }
+
+    const user = await findUserByApiToken(token)
+    if (!user) {
+      return jsonResponse({ error: 'Invalid API token' }, 401)
+    }
+    authenticatedVia = 'extension'
+  }
+
   // Content-Type check
   const contentType = req.headers.get('content-type') ?? ''
   if (!contentType.includes('application/json')) {
@@ -101,7 +115,7 @@ export async function POST(req: NextRequest) {
 
   const encoded = Buffer.from(JSON.stringify(prefillData)).toString('base64url')
 
-  logger.info({ op: 'capture.success', hostname })
+  logger.info({ op: 'capture.success', hostname, source: authenticatedVia })
 
   return jsonResponse(
     { redirectUrl: `/applications/new?prefilled=${encoded}` },

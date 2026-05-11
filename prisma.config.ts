@@ -5,8 +5,8 @@
 // supplies it to the migrate engine and seed runner.
 //
 // At runtime, PrismaClient is instantiated with @prisma/adapter-pg using the
-// same DATABASE_URL — see src/lib/db.ts (created at Lean milestone) or
-// scripts/seed.ts for the pattern.
+// same DATABASE_URL — see src/core/db/client.ts or scripts/seed.ts for the
+// pattern.
 // =============================================================================
 
 import 'dotenv/config'

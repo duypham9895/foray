@@ -2,7 +2,7 @@
 //
 // All four building blocks are mocked:
 //   - rules.classifyByRules    — deterministic stub per test
-//   - llm.classifyByLlm        — stub Result.ok / Result.err per test
+//   - providers.classifyBySelectedLlm — stub Result.ok / Result.err per test
 //   - budget.checkBudget       — stub Result.ok / Result.err per test
 //   - budget.appendCostEntry   — stub + spied for arg assertions
 //   - budget.hashEmailContent  — REAL (pure crypto helper, safe to use)
@@ -32,13 +32,11 @@ vi.mock('./rules', () => ({
   classifyByRules: vi.fn(),
 }))
 
-vi.mock('./llm', async () => {
-  const actual = await vi.importActual<typeof import('./llm')>('./llm')
-  return {
-    ...actual,
-    classifyByLlm: vi.fn(),
-  }
-})
+vi.mock('./providers', () => ({
+  DEFAULT_LLM_PROVIDER: 'anthropic',
+  classifyBySelectedLlm: vi.fn(),
+  getModelForProvider: vi.fn(() => 'claude-haiku-4-5-20251001'),
+}))
 
 vi.mock('./budget', async () => {
   const actual = await vi.importActual<typeof import('./budget')>('./budget')
@@ -53,17 +51,21 @@ import { ok, err } from 'neverthrow'
 
 import { classifyEmail } from './service'
 import { classifyByRules } from './rules'
-import { classifyByLlm, MODEL } from './llm'
+import { classifyBySelectedLlm, getModelForProvider } from './providers'
 import { checkBudget, appendCostEntry } from './budget'
 
+const MODEL = 'claude-haiku-4-5-20251001'
 const mockedRules = vi.mocked(classifyByRules)
-const mockedLlm = vi.mocked(classifyByLlm)
+const mockedLlm = vi.mocked(classifyBySelectedLlm)
+const mockedGetModelForProvider = vi.mocked(getModelForProvider)
 const mockedCheckBudget = vi.mocked(checkBudget)
 const mockedAppendCost = vi.mocked(appendCostEntry)
 
 beforeEach(() => {
   mockedRules.mockReset()
   mockedLlm.mockReset()
+  mockedGetModelForProvider.mockReset()
+  mockedGetModelForProvider.mockReturnValue(MODEL)
   mockedCheckBudget.mockReset()
   mockedAppendCost.mockReset()
   // Default: appendCostEntry succeeds (overridable per-test)
@@ -163,12 +165,60 @@ describe('classifyEmail — LLM escalation (rules weak)', () => {
     }
     expect(mockedCheckBudget).toHaveBeenCalledTimes(1)
     expect(mockedLlm).toHaveBeenCalledTimes(1)
+    expect(mockedLlm).toHaveBeenCalledWith(
+      { subject: 'Update', bodyExcerpt: 'Thank you for your interest.' },
+      'anthropic',
+    )
+    expect(mockedGetModelForProvider).toHaveBeenCalledWith('anthropic')
     expect(mockedAppendCost).toHaveBeenCalledTimes(1)
     const costArgs = mockedAppendCost.mock.calls[0]![0]
     expect(costArgs.inputTokens).toBe(420)
     expect(costArgs.outputTokens).toBe(42)
     expect(costArgs.model).toBe(MODEL)
     expect(costArgs.emailHash).toMatch(/^sha256:[0-9a-f]{64}$/)
+  })
+
+  it('Test T3b: caller-selected provider is passed to the provider router and cost log uses that model', async () => {
+    mockedRules.mockReturnValue({
+      label: 'rejection',
+      confidence: 0.8,
+      classifiedBy: 'rules',
+      matchedRuleIndex: 1,
+    })
+    mockedCheckBudget.mockResolvedValue(ok(undefined))
+    mockedGetModelForProvider.mockReturnValue('gpt-5.4-nano')
+    mockedLlm.mockResolvedValue(
+      ok({
+        label: 'interview_invite',
+        confidence: 0.9,
+        classifiedBy: 'llm',
+        inputTokens: 120,
+        outputTokens: 30,
+      }),
+    )
+
+    const r = await classifyEmail({
+      subject: 'Next steps',
+      bodyExcerpt: 'Would you be available for a screen?',
+      provider: 'openai',
+    })
+
+    expect(r.isOk()).toBe(true)
+    if (r.isOk()) {
+      expect(r.value).toEqual({ label: 'interview_invite', confidence: 0.9, classifiedBy: 'llm' })
+    }
+    expect(mockedLlm).toHaveBeenCalledWith(
+      { subject: 'Next steps', bodyExcerpt: 'Would you be available for a screen?' },
+      'openai',
+    )
+    expect(mockedGetModelForProvider).toHaveBeenCalledWith('openai')
+    expect(mockedAppendCost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputTokens: 120,
+        outputTokens: 30,
+        model: 'gpt-5.4-nano',
+      }),
+    )
   })
 })
 

@@ -10,6 +10,9 @@
  * separate --status-* track and are used only by <StatusBadge>.
  */
 :root {
+  --font-geist-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-geist-mono: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
   /* Surfaces */
   --background: #f5f1e8;        /* warm parchment */
   --foreground: #1a1814;        /* near-coffee */

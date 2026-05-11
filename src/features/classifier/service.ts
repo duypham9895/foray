@@ -11,9 +11,9 @@
 //      Both paths skip checkBudget AND classifyByLlm — cost-bound by design.
 //   4. checkBudget() — FAIL CLOSED on read failure (Plan 03-01 / T-03-02-03).
 //      If RateLimited, return that err. The LLM is NEVER called.
-//   5. classifyByLlm() — Anthropic Haiku 4.5 with structured tool output.
+//   5. classifyBySelectedLlm() — user-selected provider with structured output.
 //      If err, return that err. appendCostEntry is NOT called (no charge for
-//      failures — Anthropic doesn't bill failed requests).
+//      failures).
 //   6. appendCostEntry() — best-effort. See HACK comment below for why we
 //      intentionally ignore the Result.
 //   7. Return ok({label, confidence, classifiedBy: 'llm'}).
@@ -32,9 +32,10 @@ import { ok, err, type Result } from 'neverthrow'
 import { errors, type AppError } from '@/core/errors'
 import { logger } from '@/core/logger'
 import type { EmailClassification } from '@/generated/prisma/client'
+import type { LlmProvider } from '@/generated/prisma/client'
 
 import { classifyByRules } from './rules'
-import { classifyByLlm, MODEL } from './llm'
+import { classifyBySelectedLlm, DEFAULT_LLM_PROVIDER, getModelForProvider } from './providers'
 import { checkBudget, appendCostEntry, hashEmailContent } from './budget'
 import { classifyEmailInputSchema } from './schema'
 
@@ -45,6 +46,7 @@ import { classifyEmailInputSchema } from './schema'
 export type ClassifyEmailInput = {
   subject: string
   bodyExcerpt: string
+  provider?: LlmProvider
 }
 
 export type ClassifyEmailOutput = {
@@ -70,6 +72,7 @@ export async function classifyEmail(
     return err(errors.validation(parsed.error.issues))
   }
   const { subject, bodyExcerpt } = parsed.data
+  const provider = input.provider ?? DEFAULT_LLM_PROVIDER
 
   // Step 2: rules-first.
   const rules = classifyByRules({ subject, bodyExcerpt })
@@ -88,7 +91,7 @@ export async function classifyEmail(
 
   // Step 5: LLM call. On failure, propagate without recording cost — Anthropic
   // doesn't bill for failed requests (T-03-02-07 documents the trade-off).
-  const llm = await classifyByLlm({ subject, bodyExcerpt })
+  const llm = await classifyBySelectedLlm({ subject, bodyExcerpt }, provider)
   if (llm.isErr()) return err(llm.error)
 
   // Step 6: best-effort cost recording.
@@ -105,7 +108,7 @@ export async function classifyEmail(
   const append = await appendCostEntry({
     inputTokens: llm.value.inputTokens,
     outputTokens: llm.value.outputTokens,
-    model: MODEL,
+    model: getModelForProvider(provider),
     emailHash,
   })
   if (append.isErr()) {

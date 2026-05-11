@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 const links = [
   { href: '/today', key: 'today' as const },
   { href: '/applications', key: 'forays' as const },
+  { href: '/recruiters', key: 'recruiters' as const },
+  { href: '/analytics', key: 'analytics' as const },
   { href: '/inbox', key: 'inbox' as const },
   { href: '/settings', key: 'settings' as const },
   { href: '/guide', key: 'guide' as const },

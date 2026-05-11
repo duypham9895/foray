@@ -369,9 +369,8 @@ describe('findReviewQueueTopN', () => {
 
 describe('findTodaysInterviews', () => {
   it('returns stages scheduled for today', async () => {
-    const now = new Date()
-    const laterToday = new Date(now)
-    laterToday.setHours(now.getHours() + 2)
+    const laterToday = new Date()
+    laterToday.setHours(12, 0, 0, 0)
 
     await withRls(ALICE, async (tx) => {
       await tx.stage.create({

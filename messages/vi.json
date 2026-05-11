@@ -2,6 +2,8 @@
   "nav": {
     "today": "Hôm nay",
     "forays": "Forays",
+    "recruiters": "Nhà tuyển dụng",
+    "analytics": "Phân tích",
     "inbox": "Hộp thư",
     "settings": "Cài đặt",
     "guide": "Hướng dẫn",
@@ -141,6 +143,18 @@
       "tokenStaleTitle": "Đồng bộ Gmail đã cũ {days} ngày.",
       "tokenStaleBody": "Google có thể thu hồi refresh token sau 7 ngày khi màn hình OAuth ở chế độ Test. Kết nối lại Gmail để tiếp tục đồng bộ."
     },
+    "calendar": {
+      "title": "Google Calendar",
+      "intro": "Đồng bộ các lịch phỏng vấn sắp tới từ lịch chính. Tiêu đề, thời gian, địa điểm, liên kết và email người tham dự được lưu để khớp với foray.",
+      "connected": "Đã kết nối",
+      "disconnected": "Chưa kết nối",
+      "lastSynced": "Đồng bộ lần cuối {date}",
+      "connect": "Kết nối Calendar",
+      "disconnect": "Ngắt kết nối",
+      "disconnecting": "Đang ngắt kết nối…",
+      "syncNow": "Đồng bộ ngay",
+      "syncing": "Đang đồng bộ…"
+    },
     "bookmarklet": {
       "title": "Bookmarklet",
       "intro": "Thêm foray chỉ với một cú nhấp từ bất kỳ trang tin tuyển dụng nào. Kéo nút bên dưới vào thanh bookmark — tiêu đề trang, URL và phần text đã bôi đen sẽ được điền sẵn vào foray mới.",
@@ -150,6 +164,31 @@
       "step1": "Kéo nút bên trên vào thanh bookmark của trình duyệt.",
       "step2": "Hoặc nhấp chuột phải → <em>Lưu liên kết này</em>, rồi chọn thư mục.",
       "usage": "Nhấp bookmark khi đang ở trang tuyển dụng. Bạn sẽ vào form foray mới với mọi thứ đã được điền sẵn."
+    },
+    "extension": {
+      "title": "Tiện ích trình duyệt",
+      "intro": "Lưu tin tuyển dụng trực tiếp từ trình duyệt. Tiện ích dùng token API cục bộ thay vì cookie phiên đăng nhập.",
+      "active": "Token đang hoạt động",
+      "inactive": "Chưa có token",
+      "generate": "Tạo token",
+      "regenerate": "Tạo lại token",
+      "revoke": "Thu hồi token",
+      "tokenLabel": "Token API cho tiện ích",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "shownOnce": "Thêm token này vào phần cài đặt của tiện ích. Token sẽ không hiển thị lại."
+    },
+    "llm": {
+      "title": "Nhà cung cấp phân loại",
+      "intro": "Chọn LLM dự phòng chỉ dùng khi luật phân loại chưa đủ tự tin.",
+      "anthropic": "Anthropic Claude",
+      "openai": "OpenAI GPT",
+      "configured": "Đã cấu hình API key",
+      "missingKey": "Thiếu API key",
+      "anthropicMissing": "Đặt ANTHROPIC_API_KEY trước khi dùng Anthropic.",
+      "openaiMissing": "Đặt OPENAI_API_KEY trước khi dùng OpenAI.",
+      "save": "Lưu nhà cung cấp",
+      "saving": "Đang lưu…"
     },
     "language": {
       "title": "Ngôn ngữ",

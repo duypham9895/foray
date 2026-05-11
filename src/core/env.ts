@@ -32,11 +32,14 @@ export const envSchema = z.object({
       1,
       'ANTHROPIC_API_KEY is required for classifier (CLASS-02). Get one from https://console.anthropic.com/settings/keys',
     ),
+  OPENAI_API_KEY: z.string().optional(),
+  CLASSIFIER_LLM_PROVIDER: z.enum(['anthropic', 'openai']).default('anthropic'),
 
   // -- Optional in v1; required when relevant feature lands -----------------
   GOOGLE_CLIENT_ID:    z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.url().default('http://localhost:3000/api/gmail/callback'),
+  GOOGLE_CALENDAR_REDIRECT_URI: z.url().default('http://localhost:3000/api/calendar/callback'),
 
   // -- Tunables --------------------------------------------------------------
   CLASSIFIER_AUTO_THRESHOLD: z.coerce.number().min(0).max(1).default(0.85),

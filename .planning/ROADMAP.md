@@ -1,7 +1,7 @@
 # Roadmap: foray
 
 **Created:** 2026-05-09
-**Last Updated:** 2026-05-10
+**Last Updated:** 2026-05-11
 
 ---
 
@@ -9,7 +9,8 @@
 
 - ✅ **v0.1 Lean** — Phases 1-5 (shipped 2026-05-09)
 - ✅ **v0.2 Standard** — Phases 6-10 (shipped 2026-05-10)
-- 🚧 **v0.3 Full** — Phases 11-16 (in progress)
+- ✅ **v0.3 Full** — Phases 11-16 (shipped 2026-05-11)
+- 🚧 **v0.4 Future** — Phase 17 complete; next scope TBD
 
 ---
 
@@ -37,16 +38,23 @@
 
 </details>
 
-### 🚧 v0.3 Full (In Progress)
+<details>
+<summary>✅ v0.3 Full (Phases 11-16) — SHIPPED 2026-05-11</summary>
 
 **Milestone Goal:** Transform foray from a capture-and-classify tool into a complete job-search command center with browser extension, document management, calendar integration, and analytics.
 
 - [x] **Phase 11: Reminders + Cron Infrastructure** - Follow-up dates, Today dashboard integration, CronRegistry upgrade (completed 2026-05-10)
 - [x] **Phase 12: Document Storage** - File upload/download/delete for resumes, cover letters, and artifacts (completed 2026-05-10)
-- [ ] **Phase 13: Chrome MV3 Extension** - One-click capture from job posting pages via browser extension
-- [ ] **Phase 14: Recruiter Entity** - Structured recruiter records linked to applications
-- [ ] **Phase 15: Analytics Dashboard** - Funnel visualization, response rates, weekly activity, source effectiveness
-- [ ] **Phase 16: Google Calendar Integration** - One-way sync of interview events from Google Calendar
+- [x] **Phase 13: Chrome MV3 Extension** - One-click capture from job posting pages via browser extension (completed 2026-05-10)
+- [x] **Phase 14: Recruiter Entity** - Structured recruiter records linked to applications (completed 2026-05-10)
+- [x] **Phase 15: Analytics Dashboard** - Funnel visualization, response rates, weekly activity, source effectiveness (completed 2026-05-11)
+- [x] **Phase 16: Google Calendar Integration** - One-way sync of interview events from Google Calendar (completed 2026-05-11)
+
+</details>
+
+### 🚧 v0.4 Future
+
+- [x] **Phase 17: Multi-LLM Provider Abstraction** - Extract classifier LLM provider boundary beyond the current Anthropic-only adapter (completed 2026-05-11)
 
 ## Phase Details
 
@@ -60,11 +68,11 @@
   3. Count badge on Today nav link displays the number of overdue follow-ups
   4. Reminder check cron runs every 15 minutes without hot-reload double-fire (CronRegistry pattern)
   5. Overdue follow-ups appear in Today view within 15 minutes of becoming due
-**Plans:** 0/4 plans complete
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 11-01-PLAN.md — CronRegistry + Follow-up Backend
-- [ ] 11-02-PLAN.md — Follow-up UI Components
-- [ ] 11-03-PLAN.md — Wiring + Nav Badge
+- [x] 11-01-PLAN.md — CronRegistry + Follow-up Backend
+- [x] 11-02-PLAN.md — Follow-up UI Components
+- [x] 11-03-PLAN.md — Wiring + Nav Badge
 **UI hint**: yes
 
 ### Phase 12: Document Storage
@@ -94,11 +102,11 @@ Plans:
   3. Extension handles SPA navigation (LinkedIn, etc.) via `webNavigation.onHistoryStateUpdated`
   4. All extension state stored in `chrome.storage.local`; no module variables (MV3 service worker dies after 30s)
   5. Build pipeline (WXT) produces a loadable extension directory for dev and production
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 13-01-PLAN.md — Token Infrastructure + Capture Route Auth (Wave 1)
-- [ ] 13-02-PLAN.md — WXT Extension Scaffold + Popup + Capture Flow (Wave 2)
-- [ ] 13-03-PLAN.md — SPA Navigation + Build Pipeline Finalization (Wave 3)
+- [x] 13-01-PLAN.md — Token Infrastructure + Capture Route Auth (Wave 1)
+- [x] 13-02-PLAN.md — WXT Extension Scaffold + Popup + Capture Flow (Wave 2)
+- [x] 13-03-PLAN.md — SPA Navigation + Build Pipeline Finalization (Wave 3)
 
 ### Phase 14: Recruiter Entity
 **Goal**: Owner can create and manage recruiter records, link them to applications with roles, and see linked recruiters on application detail views.
@@ -110,7 +118,7 @@ Plans:
   3. Application detail view shows linked recruiters with role and contact info
   4. Linking a recruiter auto-suggests existing recruiters by email match to prevent duplicates
   5. `recruiter_linked` event appears in application timeline when a recruiter is linked
-**Plans**: TBD
+**Plans**: Complete
 **UI hint**: yes
 
 ### Phase 15: Analytics Dashboard
@@ -124,7 +132,7 @@ Plans:
   4. Source effectiveness table shows breakdown by `ApplicationSource` with conversion rates
   5. Stale forays count (7+ days no activity) is shown and links to a filtered list
   6. All aggregation queries use SQL (Prisma `groupBy`/`aggregate` or `$queryRaw`); no in-memory processing
-**Plans**: TBD
+**Plans**: Complete
 **UI hint**: yes
 
 ### Phase 16: Google Calendar Integration
@@ -137,13 +145,31 @@ Plans:
   3. Calendar sync cron fetches events (now - 7d to now + 30d) and stores them as `CalendarEvent` records with idempotent upserts via etag
   4. Calendar events matched to applications via attendee email domain; matched events link to the associated application
   5. Today dashboard shows upcoming calendar events in the next 7 days with links to matched applications
-**Plans**: TBD
+**Plans**: Complete
+**UI hint**: yes
+
+### Phase 17: Multi-LLM Provider Abstraction
+**Goal**: Decouple the classifier from a single Anthropic SDK adapter so additional LLM providers can be configured later without changing classifier orchestration.
+**Depends on**: Phase 16
+**Requirements**: LLM-01, LLM-02, LLM-03, LLM-04, LLM-05, LLM-06
+**Success Criteria** (what must be TRUE):
+  1. Classifier service depends on a provider-neutral LLM interface, not directly on an Anthropic-specific module
+  2. Existing Anthropic behavior, model settings, structured output validation, cost logging, and error mapping remain unchanged
+  3. Provider selection is explicit and validated at startup or configuration boundary
+  4. Existing classifier tests still pass, with added coverage for provider selection/fallback boundaries
+  5. Settings page lets the owner choose Anthropic or OpenAI and shows key availability
+  6. Gmail ingestion uses the persisted per-user provider setting
+**Plans**: Complete
+Plans:
+- [x] 17-RESEARCH.md — Provider/API research
+- [x] 17-PLAN.md — Implementation plan
+- [x] 17-SUMMARY.md — Completion summary
 **UI hint**: yes
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16
+Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16 → 17
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -158,11 +184,12 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15 → 16
 | 9. UX Polish + Keyboard Shortcuts | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 10. E2E Tests + Acceptance | v0.2 | 3/3 | ✅ Complete | 2026-05-10 |
 | 11. Reminders + Cron Infrastructure | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
-| 12. Document Storage | v0.3 | 3/3 | Complete    | 2026-05-10 |
-| 13. Chrome MV3 Extension | v0.3 | 0/3 | Not started | - |
-| 14. Recruiter Entity | v0.3 | 0/TBD | Not started | - |
-| 15. Analytics Dashboard | v0.3 | 0/TBD | Not started | - |
-| 16. Google Calendar Integration | v0.3 | 0/TBD | Not started | - |
+| 12. Document Storage | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
+| 13. Chrome MV3 Extension | v0.3 | 3/3 | ✅ Complete | 2026-05-10 |
+| 14. Recruiter Entity | v0.3 | 1/1 | ✅ Complete | 2026-05-10 |
+| 15. Analytics Dashboard | v0.3 | 1/1 | ✅ Complete | 2026-05-11 |
+| 16. Google Calendar Integration | v0.3 | 1/1 | ✅ Complete | 2026-05-11 |
+| 17. Multi-LLM Provider Abstraction | v0.4 | 1/1 | ✅ Complete | 2026-05-11 |
 
 ## Archive
 

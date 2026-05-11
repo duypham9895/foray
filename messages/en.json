@@ -2,6 +2,8 @@
   "nav": {
     "today": "Today",
     "forays": "Forays",
+    "recruiters": "Recruiters",
+    "analytics": "Analytics",
     "inbox": "Inbox",
     "settings": "Settings",
     "guide": "Guide",
@@ -141,6 +143,18 @@
       "tokenStaleTitle": "Gmail sync is {days} days stale.",
       "tokenStaleBody": "Google may revoke the refresh token after 7 days when the OAuth consent screen is in Test mode. Reconnect Gmail to keep syncing."
     },
+    "calendar": {
+      "title": "Google Calendar",
+      "intro": "Sync upcoming interview events from your primary calendar. Event summaries, times, locations, links, and attendee emails are stored for matching.",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "lastSynced": "Last synced {date}",
+      "connect": "Connect Calendar",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "syncNow": "Sync now",
+      "syncing": "Syncing…"
+    },
     "bookmarklet": {
       "title": "Bookmarklet",
       "intro": "One-click capture from any job posting. Drag the button to your bookmarks bar — page title, URL, and any selected text get pre-filled into a new foray.",
@@ -150,6 +164,31 @@
       "step1": "Drag the button above to your browser's bookmark bar.",
       "step2": "Or right-click → <em>Bookmark This Link</em>, then choose your folder.",
       "usage": "Click the bookmark while on any job posting. You'll land on the new foray form with everything captured."
+    },
+    "extension": {
+      "title": "Browser Extension",
+      "intro": "Capture job postings directly from your browser. The extension uses a local API token instead of your session cookie.",
+      "active": "Token active",
+      "inactive": "No token",
+      "generate": "Generate token",
+      "regenerate": "Regenerate token",
+      "revoke": "Revoke token",
+      "tokenLabel": "Extension API token",
+      "copy": "Copy",
+      "copied": "Copied",
+      "shownOnce": "Add this token in the extension settings. You won't see it again."
+    },
+    "llm": {
+      "title": "Classifier provider",
+      "intro": "Choose the LLM fallback used only when rules are not confident enough.",
+      "anthropic": "Anthropic Claude",
+      "openai": "OpenAI GPT",
+      "configured": "API key configured",
+      "missingKey": "API key missing",
+      "anthropicMissing": "Set ANTHROPIC_API_KEY before using Anthropic.",
+      "openaiMissing": "Set OPENAI_API_KEY before using OpenAI.",
+      "save": "Save provider",
+      "saving": "Saving…"
     },
     "language": {
       "title": "Language",

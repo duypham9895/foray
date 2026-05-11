@@ -47,7 +47,7 @@ export async function pollOnce(userId: UserId): Promise<Result<PollSummary, AppE
   // Get current watermark
   const user = await tenantDb(userId).user.findUnique({
     where: { id: Number(userId) },
-    select: { gmailHistoryId: true },
+    select: { gmailHistoryId: true, classifierLlmProvider: true },
   })
 
   // Stage 1: Ingest
@@ -113,6 +113,7 @@ export async function pollOnce(userId: UserId): Promise<Result<PollSummary, AppE
       const classifyResult = await classifyEmail({
         subject: parsed.subject,
         bodyExcerpt: parsed.bodyExcerpt,
+        provider: user?.classifierLlmProvider ?? undefined,
       })
       if (classifyResult.isErr()) {
         log.error({ err: classifyResult.error, messageId: msgRef.id }, 'classify failed')

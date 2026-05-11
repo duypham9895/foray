@@ -51,6 +51,8 @@ function describeEvent(event: Event): string {
       const kind = String(data.kind ?? 'other')
       return `Document uploaded: ${filename} (${kind})`
     }
+    case 'recruiter_linked':
+      return 'Recruiter linked'
     default:
       return `Event #${event.id}`
   }

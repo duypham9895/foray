@@ -3,7 +3,7 @@
 Step-by-step setup. Two paths: pick the one that matches your situation.
 
 - **Path A — Native dev** is faster for daily iteration. Recommended for the project owner doing real work.
-- **Path B — Full Docker** is fully reproducible. Recommended for fresh machines, AI agents (Claude Code, Cursor), or anyone who wants one command to start everything.
+- **Path B — Full Docker** is fully reproducible. Recommended for fresh machines, AI agents, or anyone who wants one command to start everything.
 
 Both paths land at `http://localhost:3000` with hot reload.
 
@@ -20,7 +20,8 @@ Both paths land at `http://localhost:3000` with hot reload.
 
 You also need:
 
-- **Anthropic API key** — get one at https://console.anthropic.com → Settings → API Keys
+- **Anthropic API key** — default classifier provider; get one at https://console.anthropic.com → Settings → API Keys
+- **OpenAI API key** — optional alternate classifier provider; get one at https://platform.openai.com/api-keys
 - **Google Cloud project + OAuth client** — for Gmail API access. See [Connecting Gmail](#connecting-gmail) below.
 
 ---
@@ -34,12 +35,13 @@ pnpm install
 # 2. Configure environment
 cp .env.example .env.local
 # → open .env.local, fill in ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# → optional: fill in OPENAI_API_KEY if you want to select OpenAI in Settings
 
 # 3. Start Postgres (in Docker, even on Path A — saves you from installing Postgres locally)
 docker compose up -d db
 
 # 4. Run database migrations
-pnpm prisma migrate dev
+pnpm db:migrate
 
 # 5. Optional: seed demo data
 pnpm seed
@@ -64,6 +66,7 @@ docker compose down       # stop Postgres
 # 1. Configure environment
 cp .env.example .env
 # → open .env, fill in ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# → optional: fill in OPENAI_API_KEY if you want to select OpenAI in Settings
 
 # 2. Start everything (app + Postgres) with hot reload
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
@@ -113,6 +116,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml build app
    GOOGLE_CLIENT_ID=...
    GOOGLE_CLIENT_SECRET=...
    GOOGLE_REDIRECT_URI=http://localhost:3000/api/gmail/callback
+   GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:3000/api/calendar/callback
    ```
 
 ### First-time connection in the app
@@ -133,6 +137,19 @@ OAuth refresh tokens last ~6 months. If sync stops working with `invalid_grant` 
 
 ---
 
+## Connecting Google Calendar
+
+Google Calendar sync uses the same Google Cloud OAuth client, but stores a separate refresh token from Gmail.
+
+1. In Google Cloud, enable **Google Calendar API**.
+2. Add `http://localhost:3000/api/calendar/callback` as an authorized redirect URI on the OAuth client.
+3. Add the readonly Calendar Events scope to the consent screen.
+4. Open `/settings` and click **Connect Calendar**.
+
+Calendar sync reads events from your primary calendar from 7 days ago through 30 days ahead, stores interview-like events, and matches them to applications by attendee or organizer email domain.
+
+---
+
 ## Connecting Anthropic (for the classifier)
 
 `foray` uses Claude Haiku as a fallback classifier when rules-based classification has low confidence. Without it, low-confidence emails still go to the review queue — they just don't get an LLM-suggested label.
@@ -145,6 +162,22 @@ OAuth refresh tokens last ~6 months. If sync stops working with `invalid_grant` 
    ```
 
 Cost estimate: rules-first classification handles ~80% of emails (free). LLM fallback runs ~20% of the time. At Haiku pricing (~$0.0005 per email), expect **<$1/month** for normal job-hunt volume.
+
+## Optional: Connecting OpenAI (for the classifier)
+
+OpenAI can be selected as the low-confidence classifier provider from `/settings`. Anthropic remains the default unless you change the provider in Settings.
+
+1. Get an API key: https://platform.openai.com/api-keys
+2. Paste into `.env.local` (Path A) or `.env` (Path B):
+
+   ```
+   OPENAI_API_KEY=sk-...
+   CLASSIFIER_LLM_PROVIDER=anthropic
+   ```
+
+3. Restart the dev server, open `/settings`, and choose **OpenAI GPT** in the LLM provider section.
+
+The OpenAI adapter uses the Responses API with structured JSON output and the same classifier schema as the Anthropic adapter.
 
 ---
 
@@ -180,7 +213,7 @@ pnpm prisma migrate dev
 
 ### "LLM classifier returns 'API key invalid'"
 
-`.env.local` (or `.env`) has a typo. Refresh the key from console.anthropic.com.
+`.env.local` (or `.env`) has a typo. Refresh the key from the configured provider's console, then restart the dev server.
 
 ### "Hot reload not working in Docker (Path B)"
 
@@ -198,34 +231,33 @@ environment:
 ```bash
 # Wipe DB + start fresh
 docker compose down -v          # -v removes the postgres volume
-pnpm prisma migrate dev          # recreates schema
+pnpm db:migrate                  # recreates schema
 pnpm seed                        # repopulates demo data
 ```
 
 ---
 
-## Database role split (Phase 1)
+## Running tests that use Docker
 
-foray uses TWO Postgres roles to make multi-tenant safety enforceable:
-
-- **`foray_owner`** — owns tables, runs migrations. Set via `DATABASE_URL_OWNER`. Used by `pnpm prisma migrate dev` and `pnpm prisma migrate deploy` only.
-- **`foray_app`** — non-superuser runtime role. Set via `DATABASE_URL`. Used by the Next.js app + tests. Has CRUD grants but does NOT own tables, so `FORCE ROW LEVEL SECURITY` policies fire correctly.
-
-For Path A (native dev with Docker Postgres):
+The integration suite uses Testcontainers to create disposable PostgreSQL containers, apply migrations, and run tests against a non-superuser runtime role. Docker must be running before `pnpm test:run`.
 
 ```bash
-# In .env.local:
-DATABASE_URL_OWNER=postgresql://foray:foray@localhost:5432/foray
-DATABASE_URL=postgresql://foray_app:<password>@localhost:5432/foray
+pnpm test:run
 ```
 
-First-time setup: after `pnpm prisma migrate deploy` runs (using `DATABASE_URL_OWNER`), set the `foray_app` password out-of-band:
+On Docker Desktop for macOS, Testcontainers may need the Docker socket path explicitly:
 
 ```bash
-docker compose exec db psql -U foray -d foray -c "ALTER ROLE foray_app PASSWORD '<your-password-here>';"
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock pnpm test:run
 ```
 
-Why split: superuser bypasses RLS silently (Pitfall #9). Tests + runtime MUST connect as a non-superuser to prove the safety net works.
+For a targeted integration file:
+
+```bash
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock pnpm test:run -- tests/integration/capture.test.ts
+```
+
+The app itself uses the single `DATABASE_URL` from `.env.local`/`.env`. The test harness creates and manages its own runtime role inside the disposable database.
 
 ---
 
@@ -233,5 +265,6 @@ Why split: superuser bypasses RLS silently (Pitfall #9). Tests + runtime MUST co
 
 - **[README.md](./README.md)** — what foray is and why
 - **[AGENTS.md](./AGENTS.md)** — for AI agents working in this repo
-- **[CLAUDE.md](./CLAUDE.md)** — coding rules
-- **[docs/milestones/lean.md](./docs/milestones/lean.md)** — current sprint scope
+- **[docs/codex-workflow.md](./docs/codex-workflow.md)** — Codex-specific workflow and verification notes
+- **[CLAUDE.md](./CLAUDE.md)** — historical coding rules and project memory
+- **[.planning/ROADMAP.md](./.planning/ROADMAP.md)** — current phase scope

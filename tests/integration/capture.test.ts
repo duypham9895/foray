@@ -5,21 +5,35 @@
 //
 // Tests import POST/OPTIONS handlers directly and call with NextRequest.
 
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+
+const mockFindUserByApiToken = vi.hoisted(() => vi.fn())
+
+vi.mock('@/core/auth/api-token', () => ({
+  findUserByApiToken: mockFindUserByApiToken,
+}))
 
 import { POST, OPTIONS } from '@/app/api/capture/route'
 
-function makePostRequest(body: Record<string, unknown>, contentType = 'application/json') {
+function makePostRequest(
+  body: Record<string, unknown>,
+  contentType = 'application/json',
+  headers: Record<string, string> = {},
+) {
   return new NextRequest('http://localhost:3000/api/capture', {
     method: 'POST',
-    headers: { 'Content-Type': contentType },
+    headers: { 'Content-Type': contentType, ...headers },
     body: JSON.stringify(body),
   })
 }
 
 
 describe('POST /api/capture', () => {
+  beforeEach(() => {
+    mockFindUserByApiToken.mockReset()
+  })
+
   it('accepts valid bookmarklet POST and returns redirectUrl', async () => {
     const req = makePostRequest({
       title: 'Senior Engineer - Google',
@@ -146,6 +160,55 @@ describe('POST /api/capture', () => {
     expect(decoded.companyName).toBe('careers.stripe.com')
     expect(decoded.companyDomain).toBe('stripe.com')
   })
+
+  it('accepts valid Bearer token auth for extension capture', async () => {
+    mockFindUserByApiToken.mockResolvedValue({ id: '1' })
+    const req = makePostRequest(
+      {
+        title: 'Senior Engineer - Example',
+        url: 'https://example.com/job',
+      },
+      'application/json',
+      { Authorization: 'Bearer valid-token' },
+    )
+
+    const res = await POST(req)
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.redirectUrl).toContain('/applications/new?prefilled=')
+    expect(mockFindUserByApiToken).toHaveBeenCalledWith('valid-token')
+  })
+
+  it('rejects invalid Bearer token auth', async () => {
+    mockFindUserByApiToken.mockResolvedValue(null)
+    const req = makePostRequest(
+      { url: 'https://example.com/job' },
+      'application/json',
+      { Authorization: 'Bearer invalid-token' },
+    )
+
+    const res = await POST(req)
+    const data = await res.json()
+
+    expect(res.status).toBe(401)
+    expect(data.error).toBe('Invalid API token')
+  })
+
+  it('rejects malformed Authorization header', async () => {
+    const req = makePostRequest(
+      { url: 'https://example.com/job' },
+      'application/json',
+      { Authorization: 'Token invalid-token' },
+    )
+
+    const res = await POST(req)
+    const data = await res.json()
+
+    expect(res.status).toBe(401)
+    expect(data.error).toBe('Invalid API token')
+    expect(mockFindUserByApiToken).not.toHaveBeenCalled()
+  })
 })
 
 describe('OPTIONS /api/capture', () => {
@@ -156,5 +219,6 @@ describe('OPTIONS /api/capture', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST')
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type')
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Authorization')
   })
 })
