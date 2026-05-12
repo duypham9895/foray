@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server'
 import { requireUser } from '@/core/auth/session'
 import { encryptToken } from '@/core/crypto/encryption'
 import { tenantDb } from '@/core/db/tenant'
+import { getPublicOrigin } from '@/core/http/public-origin'
 import { logger } from '@/core/logger'
 import { createCalendarOAuth2Client } from '@/features/calendar/client'
 
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     })
 
     logger.info({ op: 'calendar.callback.success', userId })
-    return Response.redirect(new URL('/settings?calendar=connected', request.nextUrl.origin))
+    return Response.redirect(new URL('/settings?calendar=connected', getPublicOrigin(request)))
   } catch (error) {
     logger.error({ op: 'calendar.callback.error', error })
     return new Response('Failed to exchange authorization code', { status: 500 })

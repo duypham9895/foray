@@ -9,7 +9,7 @@
 //
 // Coverage:
 //   T1  — rules confident (≥0.85) → short-circuits, NO LLM/budget calls
-//   T2  — rules unmatched         → short-circuits, NO LLM/budget calls
+//   T2  — rules unmatched         → LLM happy path → cost recorded
 //   T3  — rules weak → LLM happy path → cost recorded with sha256 hash
 //   T4  — budget exhausted → returns RateLimited; LLM NEVER called
 //   T5  — LLM error path → returned as-is; appendCostEntry NEVER called
@@ -18,7 +18,7 @@
 //   T8  — bodyExcerpt > 500 chars → Validation
 //   T9  — privacy: appendCostEntry called with sha256 hash, NOT raw content
 //
-// T1 + T2 are the cost-bound fence (rules-confident never spends).
+// T1 is the cost-bound fence (rules-confident never spends).
 // T4 is the budget-runaway fence (Pitfall #6 / T-03-02-03).
 // T9 is the privacy regression fence (CLAUDE.md §6 / T-03-02-04).
 
@@ -73,10 +73,10 @@ beforeEach(() => {
 })
 
 // ---------------------------------------------------------------------------
-// T1 + T2 — rules-first short-circuits
+// T1 — confident rules short-circuit
 // ---------------------------------------------------------------------------
 
-describe('classifyEmail — rules-first short-circuit (cost-bound fence)', () => {
+describe('classifyEmail — confident rules short-circuit (cost-bound fence)', () => {
   it('Test T1: rules confident (≥0.85, label != unmatched) → ok({classifiedBy:"rules"}), NO LLM, NO budget call', async () => {
     mockedRules.mockReturnValue({
       label: 'rejection',
@@ -99,22 +99,39 @@ describe('classifyEmail — rules-first short-circuit (cost-bound fence)', () =>
     expect(mockedAppendCost).not.toHaveBeenCalled()
   })
 
-  it('Test T2: rules unmatched → ok({label:"unmatched", confidence:0, classifiedBy:"rules"}), NO LLM, NO budget call', async () => {
+  it('Test T2: rules unmatched → checkBudget ok → selected LLM result wins', async () => {
     mockedRules.mockReturnValue({
       label: 'unmatched',
       confidence: 0,
       classifiedBy: 'rules',
     })
+    mockedCheckBudget.mockResolvedValue(ok(undefined))
+    mockedLlm.mockResolvedValue(
+      ok({
+        label: 'recruiter_outreach',
+        confidence: 0.88,
+        classifiedBy: 'llm',
+        inputTokens: 180,
+        outputTokens: 35,
+      }),
+    )
 
     const r = await classifyEmail({ subject: 'random', bodyExcerpt: 'meeting reminder' })
 
     expect(r.isOk()).toBe(true)
     if (r.isOk()) {
-      expect(r.value).toEqual({ label: 'unmatched', confidence: 0, classifiedBy: 'rules' })
+      expect(r.value).toEqual({
+        label: 'recruiter_outreach',
+        confidence: 0.88,
+        classifiedBy: 'llm',
+      })
     }
-    expect(mockedCheckBudget).not.toHaveBeenCalled()
-    expect(mockedLlm).not.toHaveBeenCalled()
-    expect(mockedAppendCost).not.toHaveBeenCalled()
+    expect(mockedCheckBudget).toHaveBeenCalledTimes(1)
+    expect(mockedLlm).toHaveBeenCalledWith(
+      { subject: 'random', bodyExcerpt: 'meeting reminder' },
+      'anthropic',
+    )
+    expect(mockedAppendCost).toHaveBeenCalledTimes(1)
   })
 
   it('Test T1b: rules confident at the 0.85 boundary → still short-circuits', async () => {
@@ -336,6 +353,16 @@ describe('classifyEmail — input validation (slice boundary)', () => {
 
   it('Test T8b: empty strings ALLOWED (boundary, not lower-bounded by Zod)', async () => {
     mockedRules.mockReturnValue({ label: 'unmatched', confidence: 0, classifiedBy: 'rules' })
+    mockedCheckBudget.mockResolvedValue(ok(undefined))
+    mockedLlm.mockResolvedValue(
+      ok({
+        label: 'unmatched',
+        confidence: 0,
+        classifiedBy: 'llm',
+        inputTokens: 10,
+        outputTokens: 5,
+      }),
+    )
     const r = await classifyEmail({ subject: '', bodyExcerpt: '' })
     expect(r.isOk()).toBe(true)
   })

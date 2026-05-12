@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { requireUser } from '@/core/auth/session'
 import { encryptToken } from '@/core/crypto/encryption'
 import { tenantDb } from '@/core/db/tenant'
+import { getPublicOrigin } from '@/core/http/public-origin'
 import { createOAuth2Client } from '@/features/inbox/gmail-client'
 import { logger } from '@/core/logger'
 
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     logger.info({ op: 'gmail.callback.success', userId })
     // Redirect to settings with success indicator
-    return Response.redirect(new URL('/settings?gmail=connected', request.nextUrl.origin))
+    return Response.redirect(new URL('/settings?gmail=connected', getPublicOrigin(request)))
   } catch (error) {
     logger.error({ op: 'gmail.callback.error', error })
     return new Response('Failed to exchange authorization code', { status: 500 })

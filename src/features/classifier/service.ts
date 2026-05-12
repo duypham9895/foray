@@ -6,9 +6,9 @@
 //   1. Validate input via classifyEmailInputSchema (≤500 chars each).
 //   2. Run classifyByRules() — pure regex tier table from Plan 03-01.
 //   3. Short-circuit:
-//        - rules.label === 'unmatched'         → return rules result as-is
 //        - rules.confidence >= 0.85            → return rules result as-is
-//      Both paths skip checkBudget AND classifyByLlm — cost-bound by design.
+//      Confident rules skip checkBudget AND classifyByLlm — cost-bound by
+//      design. Unmatched and weak rules escalate to the selected LLM provider.
 //   4. checkBudget() — FAIL CLOSED on read failure (Plan 03-01 / T-03-02-03).
 //      If RateLimited, return that err. The LLM is NEVER called.
 //   5. classifyBySelectedLlm() — user-selected provider with structured output.
@@ -77,10 +77,8 @@ export async function classifyEmail(
   // Step 2: rules-first.
   const rules = classifyByRules({ subject, bodyExcerpt })
 
-  // Step 3: short-circuit (no I/O on the confident-or-unmatched paths).
-  if (rules.label === 'unmatched') {
-    return ok({ label: 'unmatched', confidence: 0, classifiedBy: 'rules' })
-  }
+  // Step 3: short-circuit only confident rules. Unmatched and weak rules need
+  // LLM refinement; otherwise most mail never reaches the selected provider.
   if (rules.confidence >= RULES_SHORT_CIRCUIT) {
     return ok({ label: rules.label, confidence: rules.confidence, classifiedBy: 'rules' })
   }
