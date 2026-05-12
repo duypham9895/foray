@@ -26,6 +26,7 @@ import { applyAutoStatusChange } from '@/features/applications/service'
 import { isStatusRegression } from '@/features/applications/status-transitions'
 import { meetsThreshold } from '@/features/classifier/thresholds'
 
+import { shouldAutoClearClassification } from './application-importer'
 import type { ParsedEmail } from './gmail-client'
 import type { ClassifyEmailOutput } from '@/features/classifier/service'
 import type { MatchEmailOutput } from '@/features/matcher/schema'
@@ -45,7 +46,7 @@ function labelToStatus(label: EmailClassification): CanonicalStatus | null {
 // --- Act on a single email ---
 
 export type ActResult = {
-  action: 'auto_updated' | 'needs_review' | 'skipped'
+  action: 'auto_updated' | 'auto_cleared' | 'needs_review' | 'skipped'
   emailId: number
 }
 
@@ -110,6 +111,25 @@ export async function actOnEmail(
     if (email?.reviewedByUser) {
       log.debug('email already reviewed by user (undo) — skipping act')
       return ok({ action: 'skipped', emailId })
+    }
+
+    if (shouldAutoClearClassification(classification, match)) {
+      await withRls(userId, async (tx) => {
+        await tx.email.update({
+          where: { id: emailId },
+          data: {
+            classification: classification.label,
+            confidence: classification.confidence,
+            classifiedBy: classification.classifiedBy,
+            applicationId: match.applicationId ? Number(match.applicationId) : null,
+            reviewedByUser: true,
+            processingStatus: 'acted',
+          },
+        })
+      })
+
+      log.info({ label: classification.label, confidence: classification.confidence }, 'auto-cleared low-risk email')
+      return ok({ action: 'auto_cleared', emailId })
     }
 
     if (canAutoUpdate && match.applicationId && newStatus) {

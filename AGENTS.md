@@ -40,6 +40,7 @@ Read these before significant edits:
 - `CLAUDE.md` - tactical conventions that still contain useful project history.
 - `DESIGN.md` - product tone, UI rules, and visual constraints.
 - `docs/codex-workflow.md` - practical Codex workflow and git/verification hygiene.
+- `docs/operations.md` - Hostinger deployment details, OAuth notes, and Gmail import rules.
 - `docs/architecture.md` - system/data-flow overview.
 - `docs/data-model.md` - entity semantics, especially `canonicalStatus` vs `currentStage`.
 - `docs/decisions/*.md` - ADRs for architectural decisions.
@@ -258,6 +259,8 @@ Integration test gotchas:
 - Some documentation is historical. `.planning/ROADMAP.md` is the current roadmap source, while README and milestone docs may lag.
 - The active roadmap context on 2026-05-11 is v0.4 Future: Phase 17 is complete and the next scope is TBD.
 - `extension/` exists and contains the WXT Chrome MV3 extension. Older docs may still describe it as planned or in progress.
+- Production Hostinger operational context lives in `docs/operations.md`; use it before asking the user to re-provide server paths, OAuth URLs, or deploy commands.
+- Gmail job import should create applications only from strong submitted-application evidence. Do not create applications from generic LinkedIn, Glassdoor, or Indeed job alerts.
 - `docs/architecture.md` and `docs/data-model.md` can lag the schema. Confirm against `prisma/schema.prisma` before making model assumptions.
 - Prisma 7 uses `prisma.config.ts` for the datasource URL and requires the runtime adapter pattern already established in `src/core/db/client.ts`.
 - Generated Prisma files under `src/generated/prisma/` should not be hand-edited.

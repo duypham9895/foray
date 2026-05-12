@@ -23,6 +23,7 @@ import { matchEmail } from '@/features/matcher/service'
 import { getGmailClient, extractEmailMetadata } from './gmail-client'
 import { ingestSinceWatermark, persistEmail } from './ingest'
 import { actOnEmail } from './act'
+import { ensureApplicationFromEmail } from './application-importer'
 
 // --- Poll summary ---
 
@@ -125,12 +126,26 @@ export async function pollOnce(userId: UserId): Promise<Result<PollSummary, AppE
       // Update processing status to classified
       await updateStatus(userId, emailId, 'classified')
 
+      const effectiveMatchResult = await ensureApplicationFromEmail(
+        userId,
+        emailId,
+        parsed,
+        matchResult.value,
+        classifyResult.value,
+      )
+      if (effectiveMatchResult.isErr()) {
+        log.error({ err: effectiveMatchResult.error, messageId: msgRef.id }, 'application import failed')
+        await markFailed(userId, emailId)
+        failed++
+        continue
+      }
+
       // Stage 4: Act
       const actResult = await actOnEmail(
         userId,
         emailId,
         parsed,
-        matchResult.value,
+        effectiveMatchResult.value,
         classifyResult.value,
       )
       if (actResult.isErr()) {

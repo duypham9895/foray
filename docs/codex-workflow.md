@@ -67,6 +67,13 @@ Use the `DOCKER_HOST` form on Docker Desktop if plain `pnpm test:run` cannot fin
 
 - If a branch already contains unrelated WIP, either leave it unstaged or make a narrow commit containing only the files you changed.
 
+## User Working Style
+
+- Prefer end-to-end execution when access is already available. The user expects Codex to SSH, inspect logs/data, deploy, and verify rather than stopping at instructions.
+- Explain root cause after fixing user-facing issues. The user often asks "why?" when a workflow still feels broken.
+- Ask only when blocked or when a destructive/high-risk choice cannot be inferred safely.
+- For repeated Hostinger work, use `docs/operations.md` before asking for connection details.
+
 ## Phase Work
 
 When continuing roadmap phases:
