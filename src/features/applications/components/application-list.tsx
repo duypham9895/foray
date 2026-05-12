@@ -45,10 +45,9 @@ export function toggleStatusInUrl(
     ? current.filter((s) => s !== target)
     : [...current, target]
 
-  const out = new URLSearchParams()
+  const out = new URLSearchParams(currentParams)
   if (next.length > 0) out.set('status', next.join(','))
-  const sort = currentParams.get('sort')
-  if (sort) out.set('sort', sort)
+  else out.delete('status')
   const s = out.toString()
   return s ? `?${s}` : ''
 }
@@ -59,9 +58,7 @@ export function toggleStatusInUrl(
  * appliedAt. Asc variants are deferred per WR-03; see CONTEXT §"Area 2".
  */
 function toggleSortInUrl(currentParams: URLSearchParams, nextSort: ListSort): string {
-  const out = new URLSearchParams()
-  const status = currentParams.get('status')
-  if (status) out.set('status', status)
+  const out = new URLSearchParams(currentParams)
   out.set('sort', nextSort)
   return `?${out.toString()}`
 }
@@ -89,6 +86,10 @@ export function ApplicationList({
     activeSort === 'appliedAt:desc' ? 'lastActivityAt:desc' : 'appliedAt:desc'
   const sortLabel =
     activeSort.startsWith('appliedAt') ? t('sortByApplied') : t('sortByActivity')
+  const resetParams = new URLSearchParams()
+  if (currentParams.get('view') === 'list') resetParams.set('view', 'list')
+  const resetQuery = resetParams.toString()
+  const resetHref = resetQuery ? `/applications?${resetQuery}` : '/applications'
 
   return (
     <div className="space-y-6">
@@ -108,7 +109,7 @@ export function ApplicationList({
           )
         })}
         <Link
-          href="/applications"
+          href={resetHref}
           className="text-sm text-muted-foreground transition hover:text-foreground"
         >
           {tActions('reset')}

@@ -48,4 +48,22 @@ describe('toggleStatusInUrl', () => {
     // status=screening removed → no status param; sort preserved.
     expect(decodeURIComponent(out)).toBe('?sort=appliedAt:desc')
   })
+
+  it('preserves list view and tag filters when toggling status', () => {
+    const out = toggleStatusInUrl(
+      new URLSearchParams('view=list&tag=gmail-import&status=applied'),
+      'rejected',
+    )
+
+    expect(decodeURIComponent(out)).toBe('?view=list&tag=gmail-import&status=applied,rejected')
+  })
+
+  it('preserves list view when removing the last explicit status', () => {
+    const out = toggleStatusInUrl(
+      new URLSearchParams('view=list&status=screening'),
+      'screening',
+    )
+
+    expect(out).toBe('?view=list')
+  })
 })

@@ -21,6 +21,7 @@ const COLUMN_ORDER: CanonicalStatus[] = [
   'screening',
   'interviewing',
   'offer',
+  'rejected',
 ]
 
 const dotByStatus: Record<CanonicalStatus, string> = {
@@ -50,7 +51,7 @@ export function ApplicationBoard({ items }: { items: ApplicationListItem[] }) {
   for (const item of items) grouped[item.canonicalStatus].push(item)
 
   return (
-    <div className="grid gap-4 lg:grid-cols-4">
+    <div className="grid gap-4 lg:grid-cols-5">
       {COLUMN_ORDER.map((status) => {
         const colItems = grouped[status]
         return (

@@ -17,8 +17,22 @@ import { findAllTags } from '@/features/applications/tags-service'
 import type { CanonicalStatus } from '@/generated/prisma/client'
 import { cn } from '@/lib/utils'
 
-const ALL_STATUSES: CanonicalStatus[] = ['applied','screening','interviewing','offer','rejected','withdrawn']
-const DEFAULT_STATUSES: CanonicalStatus[] = ['applied','screening','interviewing','offer']
+const ALL_STATUSES: CanonicalStatus[] = [
+  'applied',
+  'screening',
+  'interviewing',
+  'offer',
+  'rejected',
+  'withdrawn',
+]
+const DEFAULT_STATUSES: CanonicalStatus[] = ['applied', 'screening', 'interviewing', 'offer']
+const BOARD_STATUSES: CanonicalStatus[] = [
+  'applied',
+  'screening',
+  'interviewing',
+  'offer',
+  'rejected',
+]
 const isCanonicalStatus = (s: string): s is CanonicalStatus => (ALL_STATUSES as string[]).includes(s)
 
 type View = 'board' | 'list'
@@ -51,12 +65,18 @@ export default async function ApplicationsPage({
   // Board mode shows ALL active statuses (the columns themselves are the
   // filter); list mode honors the chip selection.
   const queryStatuses: CanonicalStatus[] =
-    view === 'board' ? DEFAULT_STATUSES : activeStatuses
+    view === 'board' ? BOARD_STATUSES : activeStatuses
 
   const currentParams = new URLSearchParams()
+  if (view === 'list') currentParams.set('view', 'list')
   if (params.status) currentParams.set('status', params.status)
   if (sortParse.success) currentParams.set('sort', activeSort)
   if (activeTag) currentParams.set('tag', activeTag)
+
+  const clearTagParams = new URLSearchParams(currentParams)
+  clearTagParams.delete('tag')
+  const clearTagQuery = clearTagParams.toString()
+  const clearTagHref = clearTagQuery ? `/applications?${clearTagQuery}` : '/applications'
 
   const [listResult, countsResult, tagsResult] = await Promise.all([
     findApplicationsForList(userId, { statuses: queryStatuses, sort: activeSort, tag: activeTag }),
@@ -74,7 +94,7 @@ export default async function ApplicationsPage({
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-10 lg:py-14">
+      <div className="mx-auto max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="text-3xl font-medium tracking-tight">{t('title')}</h1>
@@ -121,12 +141,16 @@ export default async function ApplicationsPage({
             {activeTag && (
               <p className="mb-2 text-sm text-muted-foreground">
                 Filtering by tag: <span className="font-medium text-foreground">{activeTag}</span>{' '}
-                <Link href="/applications" className="text-primary hover:underline">
+                <Link href={clearTagHref} className="text-primary hover:underline">
                   Clear
                 </Link>
               </p>
             )}
-            <TagCloud tags={tagsResult.value} activeTag={activeTag} />
+            <TagCloud
+              tags={tagsResult.value}
+              activeTag={activeTag}
+              currentParams={currentParams}
+            />
           </div>
         )}
 
