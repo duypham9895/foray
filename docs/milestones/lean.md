@@ -80,7 +80,7 @@ These were established before Lean started; tasks here are *enabling* feature wo
 
 - Bookmarklet (delivered in Standard)
 - "Today" dashboard (delivered in Standard)
-- Native Chrome MV3 extension (Full Phase 13, in progress)
+- Native Chrome MV3 extension (delivered in Full Phase 13)
 - Document upload / storage (delivered in Full Phase 12)
 - Recruiter entity UI (Full milestone)
 - Google Calendar sync (Full milestone)

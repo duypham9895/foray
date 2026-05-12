@@ -47,7 +47,7 @@
 
 ## Originally out of scope
 
-- Native Chrome MV3 extension (Full Phase 13, in progress)
+- Native Chrome MV3 extension (delivered in Full Phase 13)
 - Document storage (delivered in Full Phase 12)
 - Recruiter entity UI
 - Calendar integration

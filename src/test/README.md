@@ -4,10 +4,12 @@ Shared test utilities for `foray`. Keep small.
 
 ## What lives here
 
-- `factories.ts` — `fishery` factories for entities (Lean milestone)
-- `db.ts` — Postgres test helpers (transaction-rollback wrapper, seeding helpers)
-- `fixtures/` — recorded fixtures for classifier inputs (real email subjects/bodies, anonymized)
-- `msw-handlers.ts` — `msw` handlers for Gmail + Anthropic (mock at network seam, not function seam)
+This folder currently holds shared unit-test support only. Keep it small and add helpers here only after at least two test files need the same setup.
+
+- `README.md` — this guidance.
+- `src/__mocks__/server-only.ts` — Vitest mock for Next.js server-only imports.
+
+Database integration setup lives in `tests/integration/setup.ts`. Recorded classifier fixtures live in `tests/integration/classifier-fixtures/`.
 
 ## Where tests actually live
 

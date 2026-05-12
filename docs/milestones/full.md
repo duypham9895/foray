@@ -3,7 +3,7 @@
 > **Goal**: the real-product version. Native browser extension, file storage, recruiter relationship management, calendar sync, analytics, and reminders.
 
 **Estimated effort**: ~2-3 weeks
-**Status**: 🚧 In progress — Phases 11-12 complete, Phase 13 executing
+**Status**: ✅ Shipped 2026-05-11 — Phases 11-16 complete
 **Prerequisites**: Standard milestone complete
 
 **Live plan**: [`.planning/ROADMAP.md`](../../.planning/ROADMAP.md) is the source of truth for current phase status.
@@ -12,10 +12,10 @@
 
 ## In scope
 
-### Native Chrome MV3 extension (Phase 13, in progress)
-- [ ] Token infrastructure + capture route bearer auth
-- [ ] WXT extension scaffold, popup, and capture flow
-- [ ] SPA navigation handling and build pipeline finalization
+### Native Chrome MV3 extension (Phase 13, shipped)
+- [x] Token infrastructure + capture route bearer auth
+- [x] WXT extension scaffold, popup, and capture flow
+- [x] SPA navigation handling and build pipeline finalization
 
 ### Document storage (Phase 12, shipped)
 - [x] `Document` entity wired up
@@ -25,29 +25,27 @@
 - [x] Upload validation by size, extension, and magic bytes
 - [ ] Storage quota soft-warning at 1GB used
 
-### Recruiter entity UI (Phase 14, planned)
-- [ ] `Recruiter` and `ApplicationRecruiter` join table wired up (already in schema)
-- [ ] `/recruiters` list page
-- [ ] `/recruiters/[id]` detail page — shows all linked Applications
-- [ ] Add/link recruiter to Application from detail view
-- [ ] Recruiter contact field on Application form (autocomplete creates Recruiter inline)
+### Recruiter entity UI (Phase 14, shipped)
+- [x] `Recruiter` and `ApplicationRecruiter` join table wired up
+- [x] `/recruiters` list page
+- [x] `/recruiters/[id]` detail page — shows all linked Applications
+- [x] Add/link recruiter to Application from detail view
+- [x] Recruiter contact field on Application form
 - [ ] Email auto-link: when an Email arrives from a known recruiter's email address, link both to Recruiter and Application
 
-### Google Calendar integration (Phase 16, planned)
-- [ ] OAuth scope additions (`calendar.events` + `calendar.events.readonly`) — re-authentication required (clear notice in settings)
-- [ ] When a Stage is created with `scheduledAt`, offer to create a Google Calendar event
-- [ ] Two-way sync: cron-poll the Calendar for declined/rescheduled events; update Stage accordingly
-- [ ] Conflict resolution: foray is source of truth for the `scheduledAt` field; Calendar reflects what foray says
+### Google Calendar integration (Phase 16, shipped)
+- [x] OAuth connection for Google Calendar
+- [x] One-way sync of interview events from the user's primary calendar
+- [x] Calendar sync cron job and application matching by company domain
+- [ ] Two-way stage-to-calendar event creation
 
-### Analytics dashboard (Phase 15, planned)
-- [ ] `/analytics` page with sections:
+### Analytics dashboard (Phase 15, shipped)
+- [x] `/analytics` page with sections:
   - Applications per week (line chart)
   - Funnel: applied → screening → interviewing → offer (bar chart with drop-off rates)
-  - Time-in-stage distribution (histogram per stage)
   - Response rate by source (linkedin / direct / referral / recruiter)
-  - Median time-to-first-response by company size / industry
-  - Median time-to-rejection
-- [ ] All charts respect filters: date range, tags, source, company industry
+  - Weekly activity
+- [x] Analytics queries respect tenant isolation
 - [ ] Export CSV button for raw data
 
 ### Follow-up reminders (Phase 11, shipped)

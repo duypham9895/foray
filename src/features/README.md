@@ -22,13 +22,20 @@ Each subdirectory is a self-contained user-visible capability. See [PRINCIPLES.m
 
 If two slices need to share something, it goes in `src/core/` (cross-cutting) or a new shared slice (domain-specific).
 
-## Slices to be created (Lean milestone)
+## Current slices
 
-- `applications/` — CRUD + list + detail
-- `capture/` — bookmarklet/extension capture flow
-- `classifier/` — rules + LLM hybrid email classifier
-- `matcher/` — email → application matching
-- `inbox/` — Gmail sync + review queue
-- `auth/` — single-user gate (Clerk-replaceable)
+- `analytics/` — funnel, response-rate, and activity queries
+- `applications/` — CRUD, status/stage changes, notes, tags, reminders, and application UI
+- `auth/` — single-user gate and login actions
+- `calendar/` — Google Calendar OAuth and interview event sync
+- `classifier/` — rules plus LLM email classifier
+- `documents/` — local file upload, download, validation, and deletion
+- `inbox/` — Gmail sync, review queue, and email pipeline orchestration
+- `matcher/` — email-to-application matching
+- `recruiters/` — recruiter records and application links
+- `search/` — cross-record search
+- `settings/` — account, integration, token, and provider settings
+- `shortcuts/` — keyboard shortcut provider and UI
+- `today/` — operational dashboard queries and components
 
-See [docs/milestones/lean.md](../../docs/milestones/lean.md) for deliverables.
+Capture is implemented as a cross-origin route handler at `src/app/api/capture/route.ts` that delegates into the application/capture flow rather than a separate `src/features/capture/` slice.

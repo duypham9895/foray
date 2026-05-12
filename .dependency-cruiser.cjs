@@ -23,8 +23,8 @@ module.exports = {
       comment:
         'Feature slices may not import each other. ' +
         'Cross-slice sharing goes in src/core/ (cross-cutting) or a new shared slice. ' +
-        'EXCEPTION: src/features/inbox/ may import from features/{matcher,classifier}/service.ts ' +
-        'as the email pipeline orchestrator. See ARCHITECTURE.md §"The one allowed exception".',
+        'EXCEPTION: selected orchestrator/UI slices may import narrow dependencies from other slices. ' +
+        'See docs/architecture.md and eslint.config.mjs for the matching exceptions.',
       from: { path: '^src/features/([^/]+)/' },
       to: {
         path: '^src/features/(?!\\1)([^/]+)/',

@@ -53,7 +53,7 @@ Read these before significant edits:
 - **Styling/UI**: Tailwind CSS v4, local primitives in `src/ui`, Radix UI where needed, lucide-react for functional icons, next-intl for localization.
 - **Database**: PostgreSQL, Prisma 7, generated client under `src/generated/prisma`, runtime adapter `@prisma/adapter-pg` with `pg`.
 - **Auth**: local single-user password/session helpers, intentionally replaceable later.
-- **External services**: Gmail API / Google OAuth, Anthropic SDK for classifier work.
+- **External services**: Gmail API / Google OAuth, Anthropic SDK plus optional OpenAI Responses API for classifier fallback work.
 - **Background work**: node-cron and route-triggered cron/polling code.
 - **Testing**: Vitest, React Testing Library, Testcontainers PostgreSQL for integration tests, Playwright for E2E.
 - **Static/content docs**: Markdown content under `content/`, `docs/`, and landing documentation.
@@ -64,7 +64,7 @@ Read these before significant edits:
 Key folders and files:
 
 - `src/app/` - Next.js App Router pages, layouts, API route handlers, and thin route composition.
-- `src/features/` - vertical slices such as `applications`, `classifier`, `documents`, `inbox`, `matcher`, `search`, `shortcuts`, `today`, and `settings`.
+- `src/features/` - vertical slices such as `analytics`, `applications`, `auth`, `calendar`, `classifier`, `documents`, `inbox`, `matcher`, `recruiters`, `search`, `settings`, `shortcuts`, and `today`.
 - `src/core/` - cross-cutting infrastructure: auth, cron, crypto, database access, env validation, errors, logging, types, and shared query helpers.
 - `src/ui/` - shared design-system primitives.
 - `src/components/` - app shell and shared app-level components.
@@ -255,9 +255,9 @@ Integration test gotchas:
 
 ## 8. Known Risks / Gotchas
 
-- Some documentation is historical. `.planning/ROADMAP.md` appears to be the current roadmap source, while README/milestone/state docs may lag.
-- The active roadmap context on 2026-05-10 is v0.3 Full, with Phase 13 Chrome MV3 Extension in progress after completed reminder and document-storage phases.
-- `extension/` may be referenced by older docs but may not exist yet.
+- Some documentation is historical. `.planning/ROADMAP.md` is the current roadmap source, while README and milestone docs may lag.
+- The active roadmap context on 2026-05-11 is v0.4 Future: Phase 17 is complete and the next scope is TBD.
+- `extension/` exists and contains the WXT Chrome MV3 extension. Older docs may still describe it as planned or in progress.
 - `docs/architecture.md` and `docs/data-model.md` can lag the schema. Confirm against `prisma/schema.prisma` before making model assumptions.
 - Prisma 7 uses `prisma.config.ts` for the datasource URL and requires the runtime adapter pattern already established in `src/core/db/client.ts`.
 - Generated Prisma files under `src/generated/prisma/` should not be hand-edited.

@@ -43,10 +43,11 @@ src/
 │   │   ├── queries.ts         # Prisma reads (always via tenantDb)
 │   │   ├── schema.ts          # Zod schemas (input + output types)
 │   │   └── components/        # UI components used ONLY by this slice
-│   ├── capture/               # Bookmarklet / extension capture flow
 │   ├── classifier/            # LLM + rule-based classifier
+│   ├── documents/             # Local document storage
 │   ├── matcher/               # Email→application matching
 │   ├── inbox/                 # Gmail sync + review queue
+│   ├── recruiters/            # Recruiter records + links
 │   └── auth/                  # Single-user gate (replaceable with Clerk later)
 ├── core/                      # Cross-cutting, feature-agnostic. Keep small.
 │   ├── db/                    # Prisma client + tenantDb wrapper
@@ -57,7 +58,7 @@ src/
 ├── ui/                        # Shared design-system components (Button, Input, Card)
 │                              # These are imported by multiple features.
 ├── generated/                 # Prisma generated client (gitignored)
-└── test/                      # Test factories (fishery), DB helpers, fixtures
+└── test/                      # Shared unit-test helpers
 ```
 
 ### Slice anatomy
@@ -169,7 +170,7 @@ When a client wrapper needs server content inside it (e.g., a `<Sheet>` with a s
 | In-app form (capture, edit, classify) | **Server Action** in `features/<slice>/actions.ts` |
 | OAuth callback (`/api/auth/gmail/callback`) | **Route Handler** (browser redirect needs a URL) |
 | Bookmarklet `POST /api/capture` | **Route Handler** (cross-origin) |
-| Future Chrome extension API | **Route Handler** (cross-origin) |
+| Chrome extension API | **Route Handler** (cross-origin) |
 | Cron tick (`/api/cron/poll-gmail`) | **Route Handler** (called by scheduler) |
 | External webhook receiver | **Route Handler** |
 | RPC-like client→server call | **Server Action** |
@@ -516,31 +517,33 @@ Coverage floor: **80% on `src/features/**`**. Don't chase coverage on `src/app/*
 
 **Mock at the network seam, not the function seam.**
 
-- ✅ `msw` to intercept HTTP calls to Gmail and Anthropic in unit tests — your service code is real, only the network is faked
+- ✅ Intercept HTTP calls to Gmail and LLM providers at the network boundary when a unit test needs external-service coverage — your service code is real, only the network is faked
 - ❌ Mocking your own functions — a smell that says the function does too much
 - ❌ Mocking Prisma — use a real Postgres via Testcontainers or `docker compose up -d db`, wrap each test in a transaction that rolls back
 
-### Test data builders — `fishery`
+### Test data builders
 
-Hand-built fixtures rot. Builders make tests *say what they care about*:
+Hand-built fixtures rot. Add a shared builder only after multiple tests need the same setup shape. Keep builders in `src/test/` and make tests *say what they care about*:
 
 ```ts
 // src/test/factories.ts
-import { Factory } from 'fishery'
 import { ApplicationId, UserId } from '@/core/types/ids'
 
-export const applicationFactory = Factory.define<Application>(({ sequence }) => ({
-  id: ApplicationId(`${sequence}`),
-  userId: UserId('1'),
-  companyId: 1,
-  roleTitle: 'Senior Engineer',
-  canonicalStatus: 'applied',
-  createdAt: new Date('2026-01-01'),
-  // ...
-}))
+export function buildApplication(overrides: Partial<Application> = {}): Application {
+  return {
+    id: ApplicationId('1'),
+    userId: UserId('1'),
+    companyId: 1,
+    roleTitle: 'Senior Engineer',
+    canonicalStatus: 'applied',
+    createdAt: new Date('2026-01-01'),
+    // ...
+    ...overrides,
+  }
+}
 
 // In a test:
-const app = applicationFactory.build({ canonicalStatus: 'interviewing' })
+const app = buildApplication({ canonicalStatus: 'interviewing' })
 ```
 
 ---

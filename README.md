@@ -24,7 +24,7 @@ move, walk out.
 
 ## What it does
 
-- **Captures** new applications via bookmarklet today, with native Chrome extension work underway in v0.3 Full — one click on any job page -> application logged with company, role, URL, JD, salary range
+- **Captures** new applications via bookmarklet or local Chrome extension — one click on any job page -> application logged with company, role, URL, JD, salary range
 - **Ingests** Gmail automatically — polls every 15 minutes, classifies emails (rejection, interview invite, recruiter outreach, noise), updates application status when confidence is high, surfaces ambiguous cases in a small daily review queue
 - **Models reality** — every company runs interviews differently, so each application has a flexible per-application stage timeline alongside a canonical status enum for global views
 - **Surfaces today** — dashboard shows what needs your attention: today's interviews, stale applications (no movement >7 days), unreviewed emails, this-week summary
@@ -58,7 +58,7 @@ Full setup (including Gmail OAuth and Anthropic API key) is in **[SETUP.md](./SE
 
 ## Architecture in one paragraph
 
-Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma 7 schema. A cron-driven Gmail watcher polls your inbox every 15 minutes, runs each new email through a rules-first classifier (regex patterns for templated rejection / interview / recruiter language), and falls back to Claude Haiku for ambiguous cases. High-confidence classifications auto-update application status; ambiguous ones land in a review queue that's typically 0-3 items per day. A bookmarklet captures new applications by POSTing to `/api/capture`; Phase 13 is extending that endpoint for a local Chrome MV3 extension with bearer-token auth. Browser-side runs Tailwind v4 and local UI primitives, optimized for laptop daily use. Single-user mode for now; multi-tenant-ready schema (every record has `userId`) so a future public flip does not require a schema rewrite.
+Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma 7 schema. A cron-driven Gmail watcher polls your inbox every 15 minutes, runs each new email through a rules-first classifier (regex patterns for templated rejection / interview / recruiter language), and falls back to the selected LLM provider for ambiguous cases. High-confidence classifications auto-update application status; ambiguous ones land in a review queue that's typically 0-3 items per day. A bookmarklet and local Chrome MV3 extension capture new applications by POSTing to `/api/capture`; extension requests use bearer-token auth. Browser-side runs Tailwind v4 and local UI primitives, optimized for laptop daily use. Single-user mode for now; multi-tenant-ready schema (every record has `userId`) so a future public flip does not require a schema rewrite.
 
 ---
 
@@ -68,7 +68,8 @@ Next.js 16 (App Router) on the front, serving a Postgres-backed Prisma 7 schema.
 |-----------|--------|-------|
 | **Lean** | ✅ Shipped 2026-05-09 | Manual entry + Gmail polling + classifier + review queue + applications list/detail |
 | **Standard** | ✅ Shipped 2026-05-10 | Bookmarklet capture + Today dashboard + tags + search + keyboard shortcuts + E2E baseline |
-| **Full** | 🚧 In progress | Reminders and document storage are complete; Phase 13 Chrome MV3 extension is underway; recruiter, analytics, and calendar remain |
+| **Full** | ✅ Shipped 2026-05-11 | Reminders, document storage, Chrome MV3 extension, recruiters, analytics, and calendar |
+| **Future** | 🚧 Next scope TBD | Multi-LLM provider abstraction is complete; next v0.4 scope is not defined yet |
 
 See **[.planning/ROADMAP.md](./.planning/ROADMAP.md)** for the live phase plan and **[docs/milestones/](./docs/milestones/)** for milestone-level checklists and acceptance criteria.
 
@@ -79,7 +80,7 @@ See **[.planning/ROADMAP.md](./.planning/ROADMAP.md)** for the live phase plan a
 - **Runtime**: Next.js 16 (App Router) + TypeScript 5
 - **UI**: Tailwind CSS v4 + shadcn/ui primitives + lucide-react
 - **DB**: PostgreSQL 16 via Prisma 7
-- **LLM**: Claude Haiku via Anthropic SDK (classifier fallback only)
+- **LLM**: Anthropic Claude by default, optional OpenAI provider for classifier fallback
 - **Email**: Gmail API via googleapis SDK
 - **Tests**: Vitest (unit + integration with Testcontainers PostgreSQL) + Playwright E2E
 - **Container**: Docker + Docker Compose (dual-track: native dev + full-Docker dev)
